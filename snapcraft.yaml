@@ -63,10 +63,21 @@ parts:
       - librsvg2-2
       - libpango-1.0-0
       - libcairo2
+      - libgl1
+      - libgles2
+      - libglx-mesa0
+      - libgbm1
+      - libegl1
+      - libdrm-amdgpu1
+      - libdrm-common
 
 layout:
   /usr/lib/x86_64-linux-gnu/webkit2gtk-4.1:
     bind: $SNAP/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1
+  /usr/lib/x86_64-linux-gnu/dri:
+    bind: $SNAP/usr/lib/x86_64-linux-gnu/dri
+  /usr/share/libdrm:
+    bind: $SNAP/usr/share/libdrm
 
 plugs:
   browser-support:
