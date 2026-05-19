@@ -144,6 +144,43 @@
 
     /* ── INSTALL ── */
     .install-section { background: var(--bg2); }
+
+    /* Smart download (auto-detected OS) */
+    .smart-download {
+      max-width: 860px; margin: 0 auto 2rem;
+      background: linear-gradient(180deg, rgba(45,212,191,.1) 0%, rgba(45,212,191,.04) 100%);
+      border: 1px solid rgba(45,212,191,.35);
+      border-radius: var(--radius); padding: 1.6rem 1.8rem;
+    }
+    .smart-download-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: .8rem; margin-bottom: 1.1rem;
+    }
+    .smart-download-os { display: flex; align-items: center; gap: .8rem; }
+    .smart-download-os h3 { font-size: 1.05rem; font-weight: 600; }
+    .smart-download-os .badge { margin: 0; }
+    .smart-download-version { font-size: .78rem; color: var(--muted); font-family: "SF Mono","Fira Code",monospace; }
+    .smart-download-buttons { display: flex; gap: .7rem; flex-wrap: wrap; }
+    .smart-btn {
+      background: var(--teal); color: #09090b;
+      padding: .6rem 1.1rem; border-radius: 8px;
+      font-weight: 600; font-size: .88rem; text-decoration: none;
+      display: inline-flex; align-items: center; gap: .4rem;
+      transition: opacity .15s;
+    }
+    .smart-btn:hover { opacity: .85; }
+    .smart-btn-secondary {
+      background: rgba(255,255,255,.06); color: var(--text);
+      border: 1px solid var(--border); font-weight: 500;
+    }
+    .smart-btn-secondary:hover { border-color: rgba(45,212,191,.4); opacity: 1; }
+    .smart-download-alt {
+      font-size: .82rem; color: var(--muted); margin-top: 1rem;
+      padding-top: 1rem; border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .smart-download-alt a { color: var(--teal); text-decoration: none; }
+    .smart-download-alt a:hover { text-decoration: underline; }
+
     .install-grid { display: grid; gap: 1.2rem; max-width: 860px; margin: 0 auto; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
     .install-card {
       background: var(--bg); border: 1px solid var(--border);
@@ -244,7 +281,7 @@
   </p>
 
   <div class="hero-actions">
-    <a class="btn-primary" href="https://github.com/sindus/stayup-desktop/releases/latest">
+    <a class="btn-primary" href="#install">
       <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
       Download latest
     </a>
@@ -330,7 +367,22 @@
   <h2>Install StayUp</h2>
   <p class="section-sub">Choose the package that fits your system.</p>
 
-  <div class="install-grid">
+  <!-- Auto-detected OS — populated by JS, hidden by default -->
+  <div id="smart-download" class="smart-download" hidden>
+    <div class="smart-download-header">
+      <div class="smart-download-os">
+        <span class="badge"><span class="badge-dot"></span>Recommended for you</span>
+        <h3 id="smart-download-os-label"></h3>
+      </div>
+      <span class="smart-download-version" id="smart-download-version"></span>
+    </div>
+    <div class="smart-download-buttons" id="smart-download-buttons"></div>
+    <div class="smart-download-alt">
+      Not your system? <a href="#install-grid">See all platforms ↓</a>
+    </div>
+  </div>
+
+  <div id="install-grid" class="install-grid">
 
     <!-- macOS -->
     <div class="install-card">
@@ -462,6 +514,106 @@
   </div>
   <div style="margin-top:.5rem">MIT © sindus</div>
 </footer>
+
+<script>
+  // Smart download: detect user's OS/arch and surface the matching release asset.
+  // Falls back silently if the GitHub API is unreachable or the OS is unknown.
+  (async function () {
+    const REPO = "sindus/stayup-desktop";
+
+    function detectOS() {
+      const ua = navigator.userAgent || "";
+      const plat = navigator.platform || "";
+      if (/Mac/i.test(plat) || /Mac OS X/i.test(ua)) return "mac";
+      if (/Win/i.test(plat) || /Windows/i.test(ua)) return "win";
+      if (/Linux/i.test(plat) || /X11/i.test(ua)) {
+        // Exclude Android (Linux kernel but not a desktop target)
+        if (/Android/i.test(ua)) return null;
+        return "linux";
+      }
+      return null;
+    }
+
+    async function detectArch() {
+      try {
+        if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+          const data = await navigator.userAgentData.getHighEntropyValues(["architecture"]);
+          if (data.architecture === "arm") return "arm";
+          if (data.architecture === "x86") return "x64";
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    function findAsset(assets, pattern) {
+      return assets.find((a) => pattern.test(a.name));
+    }
+
+    function makeButton(href, label, primary) {
+      const a = document.createElement("a");
+      a.className = "smart-btn" + (primary ? "" : " smart-btn-secondary");
+      a.href = href;
+      a.textContent = (primary ? "↓ " : "") + label;
+      return a;
+    }
+
+    const os = detectOS();
+    if (!os) return;
+
+    let release;
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+        headers: { Accept: "application/vnd.github+json" },
+      });
+      if (!res.ok) return;
+      release = await res.json();
+    } catch (_) {
+      return;
+    }
+    if (!release || !Array.isArray(release.assets)) return;
+
+    const buttons = [];
+    let osLabel = "";
+
+    if (os === "mac") {
+      osLabel = "🍎 macOS";
+      const arm = findAsset(release.assets, /_aarch64\.dmg$/);
+      const x64 = findAsset(release.assets, /_x64\.dmg$/);
+      const arch = await detectArch();
+      // Default to ARM for Mac (most machines since 2020); flip if Intel detected.
+      const armFirst = arch !== "x64";
+      if (armFirst) {
+        if (arm) buttons.push(makeButton(arm.browser_download_url, "Apple Silicon (M1/M2/M3…)", true));
+        if (x64) buttons.push(makeButton(x64.browser_download_url, "Intel", false));
+      } else {
+        if (x64) buttons.push(makeButton(x64.browser_download_url, "Intel", true));
+        if (arm) buttons.push(makeButton(arm.browser_download_url, "Apple Silicon", false));
+      }
+    } else if (os === "win") {
+      osLabel = "🪟 Windows";
+      const exe = findAsset(release.assets, /_x64-setup\.exe$/);
+      const msi = findAsset(release.assets, /_x64_en-US\.msi$/);
+      if (exe) buttons.push(makeButton(exe.browser_download_url, "Installer (.exe)", true));
+      if (msi) buttons.push(makeButton(msi.browser_download_url, "MSI (enterprise)", false));
+    } else if (os === "linux") {
+      osLabel = "🐧 Linux";
+      const deb = findAsset(release.assets, /_amd64\.deb$/);
+      const rpm = findAsset(release.assets, /\.x86_64\.rpm$/);
+      const app = findAsset(release.assets, /_amd64\.AppImage$/);
+      if (deb) buttons.push(makeButton(deb.browser_download_url, ".deb (Debian / Ubuntu)", true));
+      if (rpm) buttons.push(makeButton(rpm.browser_download_url, ".rpm (Fedora / RHEL)", false));
+      if (app) buttons.push(makeButton(app.browser_download_url, "AppImage", false));
+    }
+
+    if (buttons.length === 0) return;
+
+    document.getElementById("smart-download-os-label").textContent = osLabel;
+    document.getElementById("smart-download-version").textContent = release.tag_name || "";
+    const btnContainer = document.getElementById("smart-download-buttons");
+    buttons.forEach((b) => btnContainer.appendChild(b));
+    document.getElementById("smart-download").hidden = false;
+  })();
+</script>
 
 </body>
 </html>
