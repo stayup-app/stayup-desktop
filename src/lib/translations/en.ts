@@ -27,6 +27,7 @@ export const en: Translations = {
       youtube: "YouTube",
       rss: "RSS",
       scrap: "Web scraping",
+      documentation: "Documentation",
     },
   },
   addFlux: {
@@ -58,6 +59,11 @@ export const en: Translations = {
     requestSent: "Request sent!",
     requestSentDescription: "Your request has been sent. An administrator will process it shortly.",
     requestUrlError: "The URL is not valid",
+    docRegistry: "Available documentation",
+    selectDocRegistry: "Select documentation",
+    noDocRegistries: "No documentation available",
+    docRequestUrl: "Documentation URL",
+    docRequestUrlPlaceholder: "https://docs.example.com",
   },
   documentation: {
     myDocs: "Documentation",

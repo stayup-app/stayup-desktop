@@ -192,3 +192,14 @@ export async function createScrapRequest(
     body: JSON.stringify(body),
   })
 }
+
+export async function createDocRequest(
+  body: { url: string },
+  token: string,
+  apiUrl: string,
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>("/doc/requests", token, apiUrl, {
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+}

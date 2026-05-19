@@ -1,4 +1,4 @@
-export type Provider = "changelog" | "youtube" | "rss" | "scrap"
+export type Provider = "changelog" | "youtube" | "rss" | "scrap" | "documentation"
 
 export interface UserRepository {
   id: string
@@ -110,7 +110,7 @@ export interface ScrapRequest {
   user_id: string
   user_email: string
   url: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: "pending" | "approved" | "rejected"
   created_at: string
 }
 

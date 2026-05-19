@@ -73,6 +73,28 @@ const PROVIDER_META: Record<
       </svg>
     ),
   },
+  documentation: {
+    label: "Documentation",
+    color: "var(--indigo)",
+    dimColor: "var(--indigo-dim)",
+    icon: (
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <rect
+          x="2"
+          y="1"
+          width="9"
+          height="12"
+          rx="1"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          fill="none"
+        />
+        <rect x="4" y="4" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.7" />
+        <rect x="4" y="6.5" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
+        <rect x="4" y="9" width="3" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
 }
 
 interface FeedSidebarProps {

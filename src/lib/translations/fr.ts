@@ -25,6 +25,7 @@ export const fr = {
       youtube: "YouTube",
       rss: "RSS",
       scrap: "Scraping web",
+      documentation: "Documentation",
     },
   },
   addFlux: {
@@ -54,8 +55,14 @@ export const fr = {
     requestUrl: "URL de la page à scraper",
     requestUrlPlaceholder: "https://example.com/blog",
     requestSent: "Demande envoyée !",
-    requestSentDescription: "Votre demande a bien été envoyée. Un administrateur la traitera prochainement.",
+    requestSentDescription:
+      "Votre demande a bien été envoyée. Un administrateur la traitera prochainement.",
     requestUrlError: "L'URL n'est pas valide",
+    docRegistry: "Documentation disponible",
+    selectDocRegistry: "Sélectionner une documentation",
+    noDocRegistries: "Aucune documentation disponible",
+    docRequestUrl: "URL de la documentation",
+    docRequestUrlPlaceholder: "https://docs.example.com",
   },
   documentation: {
     myDocs: "Documentation",
