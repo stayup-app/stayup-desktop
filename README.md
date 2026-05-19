@@ -85,12 +85,6 @@ chmod +x StayUp_x.x.x_amd64.AppImage
 ./StayUp_x.x.x_amd64.AppImage
 ```
 
-#### Snap
-
-```sh
-sudo snap install stayup
-```
-
 ---
 
 ## Uninstallation
@@ -135,12 +129,6 @@ sudo apt remove stayup
 sudo rpm -e StayUp
 ```
 
-#### Snap
-
-```sh
-sudo snap remove stayup
-```
-
 User data is stored in `~/.local/share/dev.r-sik.stayup-desktop`.
 
 ---
@@ -156,9 +144,9 @@ StayUp checks for updates automatically at launch and notifies you via a banner.
 | Workflow | Trigger | Description |
 |---|---|---|
 | **CI** | Push / PR on `main` | Runs TypeScript type checking, ESLint, Prettier, and unit tests |
-| **Release** | Push of a `v*` tag | Builds for macOS (ARM + x64), Windows, Linux, and Snap; publishes to GitHub Releases and updates the Homebrew cask |
+| **Release** | Push of a `v*` tag | Builds for macOS (ARM + x64), Windows, and Linux; publishes to GitHub Releases and updates the Homebrew cask |
 
-Releases are only published when **all** platform builds succeed, including the Snap build.
+Releases are only published when **all** platform builds succeed.
 
 ---
 

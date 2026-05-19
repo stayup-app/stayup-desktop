@@ -26,12 +26,6 @@ dist-ssr
 # Tauri
 src-tauri/target/
 
-# Snapcraft build artifacts
-parts/
-stage/
-prime/
-*.snap
-
 # Test artifacts
 coverage/
 playwright-report/

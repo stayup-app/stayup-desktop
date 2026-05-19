@@ -57,22 +57,6 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .setup(|app| {
-            #[cfg(target_os = "linux")]
-            {
-                use webkit2gtk::{SettingsExt, WebViewExt};
-                let window = app
-                    .get_webview_window("main")
-                    .ok_or("could not find main window")?;
-                window.with_webview(|webview| {
-                    let settings = webview.inner().settings().unwrap();
-                    settings.set_hardware_acceleration_policy(
-                        webkit2gtk::HardwareAccelerationPolicy::Never,
-                    );
-                })?;
-            }
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![greet, open_oauth_window])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

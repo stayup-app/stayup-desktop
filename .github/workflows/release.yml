@@ -111,29 +111,8 @@ jobs:
           tagName: ${{ github.ref_name }}
           args: ${{ matrix.args }}
 
-  snap:
-    needs: create-release
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build snap
-        uses: snapcore/action-build@v1
-        id: build
-        with:
-          snapcraft-channel: stable
-
-      - name: Publish snap
-        uses: snapcore/action-publish@v1
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        with:
-          snap: ${{ steps.build.outputs.snap }}
-          release: stable
-
   publish-release:
-    needs: [create-release, build, snap]
+    needs: [create-release, build]
     runs-on: ubuntu-latest
 
     steps:
