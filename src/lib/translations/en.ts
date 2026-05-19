@@ -51,6 +51,13 @@ export const en: Translations = {
     requiredError: "This field is required",
     selectError: "Select a feed",
     loading: "Loading…",
+    makeRequest: "Make a request",
+    chooseExisting: "Choose an existing feed",
+    requestUrl: "URL to scrape",
+    requestUrlPlaceholder: "https://example.com/blog",
+    requestSent: "Request sent!",
+    requestSentDescription: "Your request has been sent. An administrator will process it shortly.",
+    requestUrlError: "The URL is not valid",
   },
   documentation: {
     myDocs: "Documentation",

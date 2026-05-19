@@ -49,6 +49,13 @@ export const fr = {
     requiredError: "Ce champ est requis",
     selectError: "Sélectionnez un flux",
     loading: "Chargement…",
+    makeRequest: "Faire une demande",
+    chooseExisting: "Choisir un flux existant",
+    requestUrl: "URL de la page à scraper",
+    requestUrlPlaceholder: "https://example.com/blog",
+    requestSent: "Demande envoyée !",
+    requestSentDescription: "Votre demande a bien été envoyée. Un administrateur la traitera prochainement.",
+    requestUrlError: "L'URL n'est pas valide",
   },
   documentation: {
     myDocs: "Documentation",
