@@ -90,6 +90,7 @@ interface UnifiedFeedListProps {
   selectedIndex: number | null
   onSelect: (index: number) => void
   repositories: { repository_id: number; url: string }[]
+  readIds?: Set<string>
 }
 
 export function UnifiedFeedList({
@@ -97,6 +98,7 @@ export function UnifiedFeedList({
   selectedIndex,
   onSelect,
   repositories,
+  readIds,
 }: UnifiedFeedListProps) {
   const { t } = useLanguage()
 
@@ -116,6 +118,7 @@ export function UnifiedFeedList({
         const color = PROVIDER_COLORS[tagged.provider]
         const icon = PROVIDER_ICONS[tagged.provider]
         const isSelected = selectedIndex === i
+        const isRead = readIds?.has(`${tagged.provider}:${tagged.item.id}`) ?? false
 
         return (
           <div
@@ -126,6 +129,7 @@ export function UnifiedFeedList({
               background: isSelected ? "var(--surface-2)" : undefined,
               borderLeft: isSelected ? `2px solid ${color}` : "2px solid transparent",
               borderBottom: "1px solid var(--border-subtle)",
+              opacity: isRead && !isSelected ? 0.45 : 1,
             }}
             onClick={() => onSelect(i)}
           >

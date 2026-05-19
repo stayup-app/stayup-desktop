@@ -106,6 +106,8 @@ export const fr = {
     help: {
       title: "Aide",
       about: "À propos de StayUp",
+      aboutComment:
+        "Agrège vos releases GitHub, vidéos YouTube, flux RSS et pages web dans un fil personnalisé.",
     },
   },
   updater: {

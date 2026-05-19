@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useNavigationStore } from "@/store/navigation"
+import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
 import { useFeed } from "@/hooks/useFeed"
 import { useMenu } from "@/hooks/useMenu"
 import { useLanguage } from "@/context/LanguageContext"
@@ -68,10 +69,15 @@ function getItemExternalUrl(tagged: TaggedItem, repoUrlMap: Record<number, strin
 
 export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProps) {
   const { selection } = useNavigationStore()
+  const { readIds, initialized, init, markRead, cleanup } = useReadItemsStore()
   const { fluxes, connectors, loading, error, refresh } = useFeed(session.userId)
   const { lang, t, setLang } = useLanguage()
   const { theme, setTheme } = useTheme()
   const listContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    void init()
+  }, [init])
 
   const stableRefresh = useCallback(() => refresh(), [refresh])
 
@@ -167,6 +173,27 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     const el = listContainerRef.current?.querySelector(`[data-index="${selectedIndex}"]`)
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
   }, [selectedIndex])
+
+  // Mark selected item as read
+  useEffect(() => {
+    if (selectedIndex === null) return
+    const item = sortedItems[selectedIndex]
+    if (item) void markRead(item)
+  }, [selectedIndex, sortedItems, markRead])
+
+  // Cleanup read items that are no longer in the feed
+  useEffect(() => {
+    if (!connectors || !initialized) return
+    const allIds = new Set<string>([
+      ...(connectors.changelog ?? []).map((item) =>
+        getTaggedItemId({ provider: "changelog", item }),
+      ),
+      ...(connectors.youtube ?? []).map((item) => getTaggedItemId({ provider: "youtube", item })),
+      ...(connectors.rss ?? []).map((item) => getTaggedItemId({ provider: "rss", item })),
+      ...(connectors.scrap ?? []).map((item) => getTaggedItemId({ provider: "scrap", item })),
+    ])
+    void cleanup(allIds)
+  }, [connectors, initialized, cleanup])
 
   // Keyboard navigation
   useEffect(() => {
@@ -269,6 +296,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                   selectedIndex={selectedIndex}
                   onSelect={handleSelect}
                   repositories={repositories}
+                  readIds={readIds}
                 />
               )}
             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { Menu, MenuItem, Submenu, CheckMenuItem, PredefinedMenuItem } from "@tauri-apps/api/menu"
 import { getCurrentWindow } from "@tauri-apps/api/window"
+import { getVersion } from "@tauri-apps/api/app"
 import { exit } from "@tauri-apps/plugin-process"
 import type { Language, Translations } from "@/lib/translations"
 import type { Theme } from "@/context/ThemeContext"
@@ -96,9 +97,25 @@ export function useMenu({
         ],
       })
 
+      const version = await getVersion()
       const helpMenu = await Submenu.new({
         text: t.menu.help.title,
-        items: [await MenuItem.new({ text: t.menu.help.about })],
+        items: [
+          await PredefinedMenuItem.new({
+            text: t.menu.help.about,
+            item: {
+              About: {
+                name: "StayUp",
+                version,
+                copyright: "© sindus",
+                website: "https://github.com/sindus/stayup-desktop",
+                websiteLabel: "GitHub",
+                authors: ["sindus"],
+                comments: t.menu.help.aboutComment,
+              },
+            },
+          }),
+        ],
       })
 
       if (cancelled) return

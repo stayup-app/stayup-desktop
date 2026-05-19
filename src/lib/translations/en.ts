@@ -108,6 +108,8 @@ export const en: Translations = {
     help: {
       title: "Help",
       about: "About StayUp",
+      aboutComment:
+        "Aggregates your GitHub releases, YouTube videos, RSS feeds, and web pages into one personalized feed.",
     },
   },
   updater: {

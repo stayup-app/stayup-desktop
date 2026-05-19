@@ -46,3 +46,15 @@ export async function writeLang(lang: Language): Promise<void> {
   const store = await getStore()
   await store.set(LANG_KEY, lang)
 }
+
+const READ_ITEMS_KEY = "read_items"
+
+export async function readReadItems(): Promise<string[]> {
+  const store = await getStore()
+  return (await store.get<string[]>(READ_ITEMS_KEY)) ?? []
+}
+
+export async function writeReadItems(ids: string[]): Promise<void> {
+  const store = await getStore()
+  await store.set(READ_ITEMS_KEY, ids)
+}
