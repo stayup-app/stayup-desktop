@@ -181,6 +181,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     return sortedItems
   }, [sortedItems, readIds, filterMode])
 
+  // Keep a ref so the mark-as-read effect can read current items without depending on them
+  const filteredItemsRef = useRef(filteredItems)
+  filteredItemsRef.current = filteredItems
+
   const unreadCount = useMemo(
     () => sortedItems.filter((item) => !readIds.has(getTaggedItemId(item))).length,
     [sortedItems, readIds],
@@ -215,12 +219,13 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
   }, [selectedIndex])
 
-  // Mark selected item as read
+  // Mark selected item as read — depends only on selectedIndex, not filteredItems,
+  // to prevent a cascade when filteredItems shrinks in "unread" mode.
   useEffect(() => {
     if (selectedIndex === null) return
-    const item = filteredItems[selectedIndex]
+    const item = filteredItemsRef.current[selectedIndex]
     if (item) void markRead(item)
-  }, [selectedIndex, filteredItems, markRead])
+  }, [selectedIndex, markRead])
 
   // Mark all items in current view as read
   const handleMarkAllRead = useCallback(() => {
