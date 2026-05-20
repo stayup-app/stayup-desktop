@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { ChevronDown, ChevronRight, LayoutList, BookOpen, Plus, Trash2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, stripUrlScheme } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
@@ -289,7 +289,7 @@ export function FeedSidebar({
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
-                            <span className="truncate">{flux.identifier}</span>
+                            <span className="truncate">{stripUrlScheme(flux.identifier)}</span>
                             {fluxUnread > 0 && (
                               <span
                                 className="text-[12px] font-mono px-1 rounded shrink-0"

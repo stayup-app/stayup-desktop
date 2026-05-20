@@ -7,6 +7,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function stripUrlScheme(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?/, "").replace(/^www\./, "")
+}
+
 export function formatDate(date: string | null | undefined): string {
   if (!date) return ""
   return new Intl.DateTimeFormat("fr-FR", {
