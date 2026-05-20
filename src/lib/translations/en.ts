@@ -22,6 +22,9 @@ export const en: Translations = {
     confirmDelete: 'Delete "{id}"?',
     tokenMissing: "Missing token",
     deleteAriaLabel: "Delete this feed",
+    filterAll: "All",
+    filterUnread: "Unread",
+    markAllRead: "Mark all read",
     providers: {
       changelog: "GitHub Changelog",
       youtube: "YouTube",

@@ -123,7 +123,7 @@ export function UnifiedFeedList({
 
   if (items.length === 0) {
     return (
-      <p className="text-[13px] text-muted-foreground italic py-12 text-center">
+      <p className="text-[15px] text-muted-foreground italic py-12 text-center">
         {t.feed.noContent}
       </p>
     )
@@ -199,22 +199,22 @@ function ChangelogEntry({
     <div>
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-[12px] font-mono text-muted-foreground truncate">
+          <span className="text-[14px] font-mono text-muted-foreground truncate">
             {repoUrl?.replace("https://github.com/", "") ?? repositoryLabel}
           </span>
           <span
-            className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0"
+            className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0"
             style={{ background: dimColor, color }}
           >
             {item.version}
           </span>
         </div>
-        <span className="text-[11px] font-mono shrink-0 text-gray-500">
+        <span className="text-[13px] font-mono shrink-0 text-gray-500">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
       {item.content && (
-        <p className="text-[12px] text-muted-foreground line-clamp-1 leading-relaxed">
+        <p className="text-[14px] text-muted-foreground line-clamp-1 leading-relaxed">
           {item.content
             .replace(/#{1,6}\s/g, "")
             .replace(/\r\n/g, " ")
@@ -272,16 +272,16 @@ function YoutubeEntry({
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium line-clamp-2 leading-snug text-gray-900 dark:text-gray-100 mb-0.5">
+        <p className="text-[15px] font-medium line-clamp-2 leading-snug text-gray-900 dark:text-gray-100 mb-0.5">
           {parsed?.title ?? noTitle}
         </p>
         <div className="flex items-center gap-2">
           {parsed?.url && (
-            <span className="text-[11px] font-mono truncate" style={{ color }}>
+            <span className="text-[13px] font-mono truncate" style={{ color }}>
               {extractChannelName(parsed.url)}
             </span>
           )}
-          <span className="text-[11px] font-mono shrink-0 text-gray-500">
+          <span className="text-[13px] font-mono shrink-0 text-gray-500">
             {formatDate(item.datetime ?? item.executed_at)}
           </span>
         </div>
@@ -311,15 +311,15 @@ function RssEntry({
   return (
     <div>
       <div className="flex items-start justify-between gap-2 mb-0.5">
-        <span className="text-[13px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
+        <span className="text-[15px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
           {parsed?.title ?? noTitle}
         </span>
-        <span className="text-[11px] font-mono shrink-0 text-gray-500">
+        <span className="text-[13px] font-mono shrink-0 text-gray-500">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
       {source && (
-        <p className="text-[11px] font-mono" style={{ color }}>
+        <p className="text-[13px] font-mono" style={{ color }}>
           {source}
         </p>
       )}
@@ -352,15 +352,15 @@ function ScrapEntry({
   return (
     <div>
       <div className="flex items-start justify-between gap-2 mb-0.5">
-        <span className="text-[13px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
+        <span className="text-[15px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
           {item.content?.slice(0, 80) ?? params?.url ?? scrapLabel}
         </span>
-        <span className="text-[11px] font-mono shrink-0 text-gray-500">
+        <span className="text-[13px] font-mono shrink-0 text-gray-500">
           {formatDate(item.executed_at)}
         </span>
       </div>
       {source && (
-        <p className="text-[11px] font-mono" style={{ color }}>
+        <p className="text-[13px] font-mono" style={{ color }}>
           {source}
         </p>
       )}

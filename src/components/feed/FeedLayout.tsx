@@ -13,6 +13,7 @@ import { DocViewer } from "@/components/documentation/DocViewer"
 import { HistoryList } from "@/components/documentation/HistoryList"
 import { DiffViewer } from "@/components/documentation/DiffViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
+import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import type { AppSession } from "@/lib/session"
 import type { TaggedItem, Provider } from "@/types"
@@ -22,6 +23,8 @@ interface FeedLayoutProps {
   onLogout: () => void
   onCheckUpdates: () => void
 }
+
+type FilterMode = "all" | "unread"
 
 function getItemDate(tagged: TaggedItem): string {
   const item = tagged.item
@@ -104,14 +107,18 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   const isFeedView =
     selection.type === "all" || selection.type === "category" || selection.type === "flux"
 
-  // Stable key for the current feed view — resets selected index when it changes
   const selectionId = useMemo(() => {
     if (selection.type === "category") return `category:${selection.provider}`
     if (selection.type === "flux") return `flux:${selection.fluxId}`
     return selection.type
   }, [selection])
 
-  // Store selectionId alongside the index so stale indexes are ignored without a reset effect
+  const [filterState, setFilterState] = useState<{ selectionId: string; mode: FilterMode }>({
+    selectionId: "",
+    mode: "all",
+  })
+  const filterMode = filterState.selectionId === selectionId ? filterState.mode : "all"
+
   const [selectedState, setSelectedState] = useState<{ id: string; index: number | null }>({
     id: "",
     index: null,
@@ -167,6 +174,40 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     )
   }, [connectors, selection, fluxes, isFeedView])
 
+  const filteredItems = useMemo(() => {
+    if (filterMode === "unread") {
+      return sortedItems.filter((item) => !readIds.has(getTaggedItemId(item)))
+    }
+    return sortedItems
+  }, [sortedItems, readIds, filterMode])
+
+  const unreadCount = useMemo(
+    () => sortedItems.filter((item) => !readIds.has(getTaggedItemId(item))).length,
+    [sortedItems, readIds],
+  )
+
+  // Unread counts per repository (for sidebar badges)
+  const allConnectorItems = useMemo((): TaggedItem[] => {
+    if (!connectors) return []
+    return [
+      ...(connectors.changelog ?? []).map((item) => ({ provider: "changelog" as const, item })),
+      ...(connectors.youtube ?? []).map((item) => ({ provider: "youtube" as const, item })),
+      ...(connectors.rss ?? []).map((item) => ({ provider: "rss" as const, item })),
+      ...(connectors.scrap ?? []).map((item) => ({ provider: "scrap" as const, item })),
+    ]
+  }, [connectors])
+
+  const unreadCountByRepoId = useMemo(() => {
+    const counts: Record<number, number> = {}
+    for (const tagged of allConnectorItems) {
+      if (!readIds.has(getTaggedItemId(tagged))) {
+        const repoId = tagged.item.repository_id
+        counts[repoId] = (counts[repoId] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [allConnectorItems, readIds])
+
   // Scroll selected item into view
   useEffect(() => {
     if (selectedIndex === null) return
@@ -177,9 +218,16 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   // Mark selected item as read
   useEffect(() => {
     if (selectedIndex === null) return
-    const item = sortedItems[selectedIndex]
+    const item = filteredItems[selectedIndex]
     if (item) void markRead(item)
-  }, [selectedIndex, sortedItems, markRead])
+  }, [selectedIndex, filteredItems, markRead])
+
+  // Mark all items in current view as read
+  const handleMarkAllRead = useCallback(() => {
+    for (const item of sortedItems) {
+      void markRead(item)
+    }
+  }, [sortedItems, markRead])
 
   // Cleanup read items that are no longer in the feed
   useEffect(() => {
@@ -201,7 +249,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (!sortedItems.length) return
+      if (!filteredItems.length) return
 
       if (e.key === "ArrowDown") {
         e.preventDefault()
@@ -209,7 +257,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           const idx = prev.id === selectionId ? prev.index : null
           return {
             id: selectionId,
-            index: idx === null ? 0 : Math.min(idx + 1, sortedItems.length - 1),
+            index: idx === null ? 0 : Math.min(idx + 1, filteredItems.length - 1),
           }
         })
       } else if (e.key === "ArrowUp") {
@@ -222,14 +270,14 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           }
         })
       } else if (e.key === "Enter" && selectedIndex !== null) {
-        const url = getItemExternalUrl(sortedItems[selectedIndex], repoUrlMap)
+        const url = getItemExternalUrl(filteredItems[selectedIndex], repoUrlMap)
         if (url) void openUrl(url)
       }
     }
 
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [isFeedView, sortedItems, selectionId, repoUrlMap, selectedIndex])
+  }, [isFeedView, filteredItems, selectionId, repoUrlMap, selectedIndex])
 
   const initial = session.userId?.charAt(0)?.toUpperCase() ?? "?"
 
@@ -248,14 +296,14 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
             <rect width="26" height="26" rx="6" fill="var(--teal)" />
             <path d="M13 6L19.5 15H15V20H11V15H6.5L13 6Z" fill="#09090b" />
           </svg>
-          <span className="font-semibold text-[14px]" style={{ letterSpacing: "-0.02em" }}>
+          <span className="font-semibold text-[16px]" style={{ letterSpacing: "-0.02em" }}>
             StayUp
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-[14px] font-semibold"
             style={{
               background: "linear-gradient(135deg, var(--teal), oklch(0.65 0.22 280))",
               color: "#fafafa",
@@ -269,42 +317,102 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
-        <FeedSidebar fluxes={fluxes} userId={session.userId} onRefresh={stableRefresh} />
+        <FeedSidebar
+          fluxes={fluxes}
+          userId={session.userId}
+          onRefresh={stableRefresh}
+          unreadCountByRepoId={unreadCountByRepoId}
+        />
 
         {isFeedView ? (
           <>
             {/* List panel */}
             <div
-              ref={listContainerRef}
-              className="w-[380px] shrink-0 overflow-y-auto"
+              className="w-[380px] shrink-0 flex flex-col"
               style={{ borderRight: "1px solid hsl(var(--border))" }}
             >
-              {loading ? (
-                <p className="text-[13px] text-muted-foreground italic py-12 text-center">
-                  {t.feed.loading}
-                </p>
-              ) : error ? (
-                <div className="py-12 text-center space-y-2">
-                  <p className="text-[13px] text-destructive">{error}</p>
-                  <button onClick={refresh} className="text-xs text-muted-foreground underline">
-                    {t.feed.retry}
+              {/* Filter bar */}
+              <div
+                className="flex items-center gap-1 px-3 py-2 shrink-0"
+                style={{ borderBottom: "1px solid var(--border-subtle)" }}
+              >
+                <button
+                  onClick={() => setFilterState({ selectionId, mode: "all" })}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
+                    filterMode === "all"
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  style={filterMode === "all" ? { background: "var(--surface-3)" } : undefined}
+                >
+                  {t.feed.filterAll}
+                  <span
+                    className="text-[13px] font-mono px-1.5 py-0.5 rounded"
+                    style={{ background: "var(--surface-2)", color: "var(--dim)" }}
+                  >
+                    {sortedItems.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setFilterState({ selectionId, mode: "unread" })}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
+                    filterMode === "unread"
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  style={filterMode === "unread" ? { background: "var(--surface-3)" } : undefined}
+                >
+                  {t.feed.filterUnread}
+                  {unreadCount > 0 && (
+                    <span
+                      className="text-[13px] font-mono px-1.5 py-0.5 rounded"
+                      style={{ background: "var(--teal-dim)", color: "var(--teal)" }}
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                <div className="flex-1" />
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[13px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-accent"
+                  >
+                    {t.feed.markAllRead}
                   </button>
-                </div>
-              ) : (
-                <UnifiedFeedList
-                  items={sortedItems}
-                  selectedIndex={selectedIndex}
-                  onSelect={handleSelect}
-                  repositories={repositories}
-                  readIds={readIds}
-                />
-              )}
+                )}
+              </div>
+
+              <div ref={listContainerRef} className="flex-1 overflow-y-auto">
+                {loading ? (
+                  <p className="text-[15px] text-muted-foreground italic py-12 text-center">
+                    {t.feed.loading}
+                  </p>
+                ) : error ? (
+                  <div className="py-12 text-center space-y-2">
+                    <p className="text-[15px] text-destructive">{error}</p>
+                    <button onClick={refresh} className="text-[13px] text-muted-foreground underline">
+                      {t.feed.retry}
+                    </button>
+                  </div>
+                ) : (
+                  <UnifiedFeedList
+                    items={filteredItems}
+                    selectedIndex={selectedIndex}
+                    onSelect={handleSelect}
+                    repositories={repositories}
+                    readIds={readIds}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Content panel */}
             <div className="flex-1 min-w-0 overflow-y-auto">
               <FeedContentViewer
-                item={selectedIndex !== null ? sortedItems[selectedIndex] : null}
+                item={selectedIndex !== null ? filteredItems[selectedIndex] : null}
                 repositories={repositories}
               />
             </div>

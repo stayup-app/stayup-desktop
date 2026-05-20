@@ -1,3 +1,4 @@
+import { useState } from "react"
 import type {
   TaggedItem,
   YoutubeItemContent,
@@ -7,6 +8,10 @@ import type {
 } from "@/types"
 import { formatDate, openUrl } from "@/lib/utils"
 import { useLanguage } from "@/context/LanguageContext"
+
+const LS_FONT_KEY = "STAYUP_FONT_SIZE_OFFSET"
+const MIN_OFFSET = -4
+const MAX_OFFSET = 10
 
 function extractHostname(url: string): string {
   try {
@@ -61,11 +66,64 @@ interface FeedContentViewerProps {
 
 export function FeedContentViewer({ item, repositories }: FeedContentViewerProps) {
   const { t } = useLanguage()
+  const [fontSizeOffset, setFontSizeOffset] = useState(() => {
+    try {
+      const stored = localStorage.getItem(LS_FONT_KEY)
+      return stored ? parseInt(stored, 10) || 0 : 0
+    } catch {
+      return 0
+    }
+  })
+
+  function changeFontSize(delta: number) {
+    setFontSizeOffset((prev) => {
+      const next = Math.max(MIN_OFFSET, Math.min(MAX_OFFSET, prev + delta))
+      try {
+        localStorage.setItem(LS_FONT_KEY, String(next))
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  }
+
+  const fontControls = (
+    <div
+      className="sticky top-0 z-10 flex justify-end items-center gap-1 px-4 py-2 shrink-0"
+      style={{
+        borderBottom: "1px solid var(--border-subtle)",
+        background: "hsl(var(--background))",
+      }}
+    >
+      <span className="text-[13px] font-mono text-muted-foreground mr-1">A</span>
+      <button
+        onClick={() => changeFontSize(-1)}
+        disabled={fontSizeOffset <= MIN_OFFSET}
+        className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+        style={{ border: "1px solid hsl(var(--border))" }}
+        aria-label="Réduire la police"
+      >
+        <span className="text-[16px] leading-none select-none">−</span>
+      </button>
+      <button
+        onClick={() => changeFontSize(1)}
+        disabled={fontSizeOffset >= MAX_OFFSET}
+        className="w-6 h-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
+        style={{ border: "1px solid hsl(var(--border))" }}
+        aria-label="Agrandir la police"
+      >
+        <span className="text-[16px] leading-none select-none">+</span>
+      </button>
+    </div>
+  )
 
   if (!item) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-[13px] italic text-muted-foreground">{t.viewer.selectItem}</p>
+      <div className="flex flex-col h-full">
+        {fontControls}
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-[15px] italic text-muted-foreground">{t.viewer.selectItem}</p>
+        </div>
       </div>
     )
   }
@@ -74,24 +132,48 @@ export function FeedContentViewer({ item, repositories }: FeedContentViewerProps
   const color = PROVIDER_COLORS[item.provider]
   const dimColor = PROVIDER_DIM[item.provider]
 
-  if (item.provider === "changelog") {
-    return (
-      <ChangelogContent
-        item={item.item}
-        repoUrl={repoUrlMap[item.item.repository_id] ?? ""}
-        color={color}
-        dimColor={dimColor}
-        labels={t.viewer}
-      />
-    )
-  }
-  if (item.provider === "youtube") {
-    return <YoutubeContent item={item.item} color={color} dimColor={dimColor} labels={t.viewer} />
-  }
-  if (item.provider === "rss") {
-    return <RssContent item={item.item} color={color} dimColor={dimColor} labels={t.viewer} />
-  }
-  return <ScrapContent item={item.item} color={color} dimColor={dimColor} labels={t.viewer} />
+  return (
+    <>
+      {fontControls}
+      {item.provider === "changelog" && (
+        <ChangelogContent
+          item={item.item}
+          repoUrl={repoUrlMap[item.item.repository_id] ?? ""}
+          color={color}
+          dimColor={dimColor}
+          labels={t.viewer}
+          fontSizeOffset={fontSizeOffset}
+        />
+      )}
+      {item.provider === "youtube" && (
+        <YoutubeContent
+          item={item.item}
+          color={color}
+          dimColor={dimColor}
+          labels={t.viewer}
+          fontSizeOffset={fontSizeOffset}
+        />
+      )}
+      {item.provider === "rss" && (
+        <RssContent
+          item={item.item}
+          color={color}
+          dimColor={dimColor}
+          labels={t.viewer}
+          fontSizeOffset={fontSizeOffset}
+        />
+      )}
+      {item.provider === "scrap" && (
+        <ScrapContent
+          item={item.item}
+          color={color}
+          dimColor={dimColor}
+          labels={t.viewer}
+          fontSizeOffset={fontSizeOffset}
+        />
+      )}
+    </>
+  )
 }
 
 function ExternalLinkIcon() {
@@ -122,7 +204,7 @@ function OpenButton({
   return (
     <button
       onClick={() => void openUrl(href)}
-      className="mt-6 inline-flex items-center gap-2 text-[12px] font-mono px-3 py-1.5 rounded transition-opacity hover:opacity-80"
+      className="mt-6 inline-flex items-center gap-2 text-[14px] font-mono px-3 py-1.5 rounded transition-opacity hover:opacity-80"
       style={{ background: dimColor, color }}
     >
       <ExternalLinkIcon />
@@ -145,12 +227,14 @@ function ChangelogContent({
   color,
   dimColor,
   labels,
+  fontSizeOffset,
 }: {
   item: import("@/types").ChangelogItem
   repoUrl: string
   color: string
   dimColor: string
   labels: ViewerLabels
+  fontSizeOffset: number
 }) {
   const href = repoUrl ? `${repoUrl}/releases/tag/${item.version}` : undefined
   const repoName = repoUrl.replace("https://github.com/", "") || "repository"
@@ -158,20 +242,23 @@ function ChangelogContent({
   return (
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-[12px] font-mono text-gray-500">{repoName}</span>
+        <span className="text-[14px] font-mono text-gray-500">{repoName}</span>
         <span
-          className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded"
+          className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded"
           style={{ background: dimColor, color }}
         >
           {item.version}
         </span>
-        <span className="ml-auto text-[11px] font-mono text-gray-500">
+        <span className="ml-auto text-[13px] font-mono text-gray-500">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
 
       {item.content && (
-        <div className="text-[13px] text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+        <div
+          className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap"
+          style={{ fontSize: `${15 + fontSizeOffset}px` }}
+        >
           {item.content
             .replace(/#{1,6}\s/g, "")
             .replace(/\*\*(.*?)\*\*/g, "$1")
@@ -191,11 +278,13 @@ function YoutubeContent({
   color,
   dimColor,
   labels,
+  fontSizeOffset,
 }: {
   item: import("@/types").YoutubeItem
   color: string
   dimColor: string
   labels: ViewerLabels
+  fontSizeOffset: number
 }) {
   let parsed: YoutubeItemContent | null = null
   try {
@@ -211,17 +300,20 @@ function YoutubeContent({
 
   return (
     <div className="p-6 max-w-2xl">
-      <h2 className="text-[16px] font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2">
+      <h2
+        className="font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2"
+        style={{ fontSize: `${18 + fontSizeOffset}px` }}
+      >
         {parsed?.title ?? labels.noTitle}
       </h2>
 
       <div className="flex items-center gap-3 mb-5">
         {channelName && (
-          <span className="text-[12px] font-mono" style={{ color }}>
+          <span className="text-[14px] font-mono" style={{ color }}>
             {channelName}
           </span>
         )}
-        <span className="text-[11px] font-mono text-gray-500">
+        <span className="text-[13px] font-mono text-gray-500">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
@@ -257,15 +349,15 @@ function YoutubeContent({
   )
 }
 
-const getRssStyles = (color: string) => `
-  .rss-body { font-size: 13px; line-height: 1.65; color: rgb(156 163 175); }
+const getRssStyles = (color: string, fontSize: number) => `
+  .rss-body { font-size: ${fontSize}px; line-height: 1.65; color: rgb(156 163 175); }
   .rss-body p { margin: 0 0 0.9em; }
   .rss-body a { color: ${color}; text-decoration: underline; }
-  .rss-body h1, .rss-body h2, .rss-body h3 { color: rgb(243 244 246); margin: 1.2em 0 0.4em; font-weight: 600; font-size: 14px; }
+  .rss-body h1, .rss-body h2, .rss-body h3 { color: rgb(243 244 246); margin: 1.2em 0 0.4em; font-weight: 600; font-size: ${fontSize + 1}px; }
   .rss-body ul, .rss-body ol { padding-left: 1.5em; margin: 0 0 0.9em; }
   .rss-body li { line-height: 1.65; }
   .rss-body img { max-width: 100%; height: auto; border-radius: 4px; margin: 0.5em 0; }
-  .rss-body code { background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: monospace; }
+  .rss-body code { background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: ${fontSize - 1}px; font-family: monospace; }
   .rss-body pre { background: var(--surface-2); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 0 0 0.9em; }
   .rss-body blockquote { border-left: 2px solid ${color}; padding-left: 12px; margin: 0 0 0.9em; color: rgb(107 114 128); }
 `
@@ -275,11 +367,13 @@ function RssContent({
   color,
   dimColor,
   labels,
+  fontSizeOffset,
 }: {
   item: import("@/types").RssItem
   color: string
   dimColor: string
   labels: ViewerLabels
+  fontSizeOffset: number
 }) {
   let parsed: RssItemContent | null = null
   try {
@@ -292,24 +386,27 @@ function RssContent({
 
   return (
     <div className="p-6 max-w-2xl">
-      <h2 className="text-[16px] font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2">
+      <h2
+        className="font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2"
+        style={{ fontSize: `${18 + fontSizeOffset}px` }}
+      >
         {parsed?.title ?? labels.noTitle}
       </h2>
 
       <div className="flex items-center gap-3 mb-6">
         {source && (
-          <span className="text-[12px] font-mono" style={{ color }}>
+          <span className="text-[14px] font-mono" style={{ color }}>
             {source}
           </span>
         )}
-        <span className="text-[11px] font-mono text-gray-500">
+        <span className="text-[13px] font-mono text-gray-500">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
 
       {parsed?.summary && (
         <>
-          <style>{getRssStyles(color)}</style>
+          <style>{getRssStyles(color, 15 + fontSizeOffset)}</style>
           <div className="rss-body" dangerouslySetInnerHTML={{ __html: parsed.summary }} />
         </>
       )}
@@ -331,11 +428,13 @@ function ScrapContent({
   color,
   dimColor,
   labels,
+  fontSizeOffset,
 }: {
   item: import("@/types").ScrapItem
   color: string
   dimColor: string
   labels: ViewerLabels
+  fontSizeOffset: number
 }) {
   const params: ScrapItemParams | null =
     typeof item.params === "string"
@@ -352,17 +451,20 @@ function ScrapContent({
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-3 mb-5">
         {params?.url && (
-          <span className="text-[12px] font-mono truncate" style={{ color }}>
+          <span className="text-[14px] font-mono truncate" style={{ color }}>
             {params.url}
           </span>
         )}
-        <span className="text-[11px] font-mono shrink-0 text-gray-500">
+        <span className="text-[13px] font-mono shrink-0 text-gray-500">
           {formatDate(item.executed_at)}
         </span>
       </div>
 
       {item.content && (
-        <p className="text-[13px] text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+        <p
+          className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap"
+          style={{ fontSize: `${15 + fontSizeOffset}px` }}
+        >
           {item.content}
         </p>
       )}

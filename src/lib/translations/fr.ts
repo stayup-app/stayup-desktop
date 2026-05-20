@@ -20,6 +20,9 @@ export const fr = {
     confirmDelete: 'Supprimer "{id}" ?',
     tokenMissing: "Token manquant",
     deleteAriaLabel: "Supprimer ce flux",
+    filterAll: "Tous",
+    filterUnread: "Non lu",
+    markAllRead: "Tout marquer lu",
     providers: {
       changelog: "GitHub Changelog",
       youtube: "YouTube",

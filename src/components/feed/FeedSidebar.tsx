@@ -101,9 +101,15 @@ interface FeedSidebarProps {
   fluxes: FeedFlux[]
   userId: string
   onRefresh: () => void
+  unreadCountByRepoId?: Record<number, number>
 }
 
-export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
+export function FeedSidebar({
+  fluxes,
+  userId,
+  onRefresh,
+  unreadCountByRepoId = {},
+}: FeedSidebarProps) {
   const { selection, setSelection } = useNavigationStore()
   const { t } = useLanguage()
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -155,7 +161,7 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
         <button
           onClick={() => setSelection({ type: "all" })}
           className={cn(
-            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[13px] transition-colors mb-1",
+            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[15px] transition-colors mb-1",
             selection.type === "all"
               ? "text-foreground font-medium"
               : "text-muted-foreground hover:text-foreground",
@@ -170,7 +176,7 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
         <button
           onClick={() => setSelection({ type: "documentation" })}
           className={cn(
-            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[13px] transition-colors mb-3",
+            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[15px] transition-colors mb-3",
             isDocActive
               ? "text-foreground font-medium"
               : "text-muted-foreground hover:text-foreground",
@@ -184,7 +190,7 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
         {/* My feeds section */}
         <div className="flex items-center justify-between mb-2 px-2">
           <span
-            className="text-[10px] font-mono font-semibold uppercase tracking-widest"
+            className="text-[12px] font-mono font-semibold uppercase tracking-widest"
             style={{ color: "var(--dim)" }}
           >
             {t.feed.myFeeds}
@@ -206,7 +212,11 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
             const isCategoryActive =
               selection.type === "category" && selection.provider === provider
             const open = isExpanded(provider)
-            const count = byProvider[provider]?.length ?? 0
+            const providerFluxes = byProvider[provider] ?? []
+            const totalUnread = providerFluxes.reduce(
+              (sum, flux) => sum + (unreadCountByRepoId[flux.repository_id] ?? 0),
+              0,
+            )
 
             return (
               <div key={provider}>
@@ -224,7 +234,7 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
                   <button
                     onClick={() => setSelection({ type: "category", provider })}
                     className={cn(
-                      "flex flex-1 items-center gap-2 px-2 py-1.5 text-[13px] rounded-md transition-colors",
+                      "flex flex-1 items-center gap-2 px-2 py-1.5 text-[15px] rounded-md transition-colors",
                       isCategoryActive
                         ? "text-foreground font-medium"
                         : "text-muted-foreground hover:text-foreground",
@@ -233,19 +243,22 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
                   >
                     <span style={{ color: meta.color }}>{meta.icon}</span>
                     <span className="truncate flex-1">{meta.label}</span>
-                    <span
-                      className="text-[10px] font-mono px-1.5 py-0.5 rounded-full shrink-0"
-                      style={{ background: meta.dimColor, color: meta.color }}
-                    >
-                      {count}
-                    </span>
+                    {totalUnread > 0 && (
+                      <span
+                        className="text-[12px] font-mono px-1.5 py-0.5 rounded-full shrink-0"
+                        style={{ background: meta.dimColor, color: meta.color }}
+                      >
+                        {totalUnread}
+                      </span>
+                    )}
                   </button>
                 </div>
 
                 {open && (
                   <div className="ml-7 mt-0.5 space-y-0.5 mb-1">
-                    {(byProvider[provider] ?? []).map((flux) => {
+                    {providerFluxes.map((flux) => {
                       const isActive = selection.type === "flux" && selection.fluxId === flux.id
+                      const fluxUnread = unreadCountByRepoId[flux.repository_id] ?? 0
                       return (
                         <div
                           key={flux.id}
@@ -270,13 +283,21 @@ export function FeedSidebar({ fluxes, userId, onRefresh }: FeedSidebarProps) {
                               })
                             }
                             className={cn(
-                              "flex-1 truncate px-2 py-1 text-[12px] font-mono text-left",
+                              "flex flex-1 items-center gap-1 px-2 py-1 text-[14px] font-mono text-left min-w-0",
                               isActive
                                 ? "text-foreground font-medium"
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
-                            {flux.identifier}
+                            <span className="truncate">{flux.identifier}</span>
+                            {fluxUnread > 0 && (
+                              <span
+                                className="text-[12px] font-mono px-1 rounded shrink-0"
+                                style={{ background: meta.dimColor, color: meta.color }}
+                              >
+                                {fluxUnread}
+                              </span>
+                            )}
                           </button>
                           <button
                             onClick={(e) => handleDelete(flux, e)}
