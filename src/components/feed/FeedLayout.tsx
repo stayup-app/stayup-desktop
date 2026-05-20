@@ -337,7 +337,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 style={{ borderBottom: "1px solid var(--border-subtle)" }}
               >
                 <button
-                  onClick={() => setFilterState({ selectionId, mode: "all" })}
+                  onClick={() => {
+                    setFilterState({ selectionId, mode: "all" })
+                    setSelectedState({ id: "", index: null })
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
                     filterMode === "all"
@@ -355,7 +358,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                   </span>
                 </button>
                 <button
-                  onClick={() => setFilterState({ selectionId, mode: "unread" })}
+                  onClick={() => {
+                    setFilterState({ selectionId, mode: "unread" })
+                    setSelectedState({ id: "", index: null })
+                  }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
                     filterMode === "unread"
