@@ -393,7 +393,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 ) : error ? (
                   <div className="py-12 text-center space-y-2">
                     <p className="text-[15px] text-destructive">{error}</p>
-                    <button onClick={refresh} className="text-[13px] text-muted-foreground underline">
+                    <button
+                      onClick={refresh}
+                      className="text-[13px] text-muted-foreground underline"
+                    >
                       {t.feed.retry}
                     </button>
                   </div>
