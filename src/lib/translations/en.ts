@@ -86,6 +86,13 @@ export const en: Translations = {
     noContentScrapped: "Content not scraped yet.",
     current: "Current",
     notScrappedYet: "Not scraped yet",
+    requestBtn: "Make a request",
+    requestTitle: "Documentation request",
+    requestUrlLabel: "Documentation URL",
+    requestUrlPlaceholder: "https://docs.example.com",
+    requestSubmit: "Submit request",
+    requestSuccess: "Request sent",
+    requestSuccessDesc: "Your request will be reviewed by an administrator.",
   },
   viewer: {
     selectItem: "Select an item.",

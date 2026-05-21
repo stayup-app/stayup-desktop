@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react"
+import { CheckCheck } from "lucide-react"
 import { useNavigationStore } from "@/store/navigation"
 import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
 import { useFeed } from "@/hooks/useFeed"
@@ -459,9 +460,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
-                    className="text-[13px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-accent"
+                    title={t.feed.markAllRead}
+                    className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                   >
-                    {t.feed.markAllRead}
+                    <CheckCheck size={16} />
                   </button>
                 )}
               </div>

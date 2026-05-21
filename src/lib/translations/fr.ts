@@ -85,6 +85,13 @@ export const fr = {
     noContentScrapped: "Contenu non encore scrappé.",
     current: "Actuel",
     notScrappedYet: "Pas encore scrappé",
+    requestBtn: "Faire une demande",
+    requestTitle: "Demande de documentation",
+    requestUrlLabel: "URL de la documentation",
+    requestUrlPlaceholder: "https://docs.example.com",
+    requestSubmit: "Envoyer la demande",
+    requestSuccess: "Demande envoyée",
+    requestSuccessDesc: "Votre demande sera traitée par un administrateur.",
   },
   viewer: {
     selectItem: "Sélectionnez un élément.",
