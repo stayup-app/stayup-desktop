@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { useDocContent } from "@/hooks/useDocumentation"
@@ -56,9 +57,9 @@ export function DocViewer({ docId }: DocViewerProps) {
             {t.documentation.version} {current.version} &middot; {t.documentation.scrapedAt}{" "}
             {new Date(current.scraped_at).toLocaleDateString()}
           </p>
-          <pre className="whitespace-pre-wrap font-mono text-xs bg-muted/40 rounded-md p-4 overflow-x-auto leading-relaxed">
-            {current.content}
-          </pre>
+          <div className="prose prose-sm max-w-none bg-muted/40 rounded-md p-4 overflow-x-auto [&_img]:max-w-full [&_img]:rounded [&_pre]:overflow-x-auto [&_code]:text-xs [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm">
+            <ReactMarkdown>{current.content}</ReactMarkdown>
+          </div>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground italic">{t.documentation.noContentScrapped}</p>
