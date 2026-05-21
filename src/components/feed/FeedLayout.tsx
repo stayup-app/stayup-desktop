@@ -248,10 +248,17 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
       const item = filteredItems[index]
       if (!item) return
       setOpenState({ selectionId, itemId: getTaggedItemId(item) })
-      void markRead(item)
     },
-    [filteredItems, selectionId, markRead],
+    [filteredItems, selectionId],
   )
+
+  // Mark the open item as read after openItemId is committed, so the filter
+  // keeps it visible during the same render cycle (readIds updates after).
+  useEffect(() => {
+    if (openItemId === null) return
+    const item = sortedItems.find((i) => getTaggedItemId(i) === openItemId)
+    if (item) void markRead(item)
+  }, [openItemId, sortedItems, markRead])
 
   const unreadCount = useMemo(
     () => sortedItems.filter((item) => !readIds.has(getTaggedItemId(item))).length,
@@ -325,7 +332,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
         const next = current[nextIdx]
         if (next) {
           setOpenState({ selectionId, itemId: getTaggedItemId(next) })
-          void markRead(next)
         }
       } else if (e.key === "ArrowUp") {
         e.preventDefault()
@@ -333,7 +339,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
         const next = current[nextIdx]
         if (next) {
           setOpenState({ selectionId, itemId: getTaggedItemId(next) })
-          void markRead(next)
         }
       } else if (e.key === "Enter" && currentId !== null) {
         const item = current.find((i) => getTaggedItemId(i) === currentId)
@@ -346,7 +351,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [isFeedView, selectionId, repoUrlMap, markRead])
+  }, [isFeedView, selectionId, repoUrlMap])
 
   const initial = session.userId?.charAt(0)?.toUpperCase() ?? "?"
 
@@ -411,7 +416,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 <button
                   onClick={() => {
                     setFilterState({ selectionId, mode: "all" })
-                    setOpenState({ selectionId, itemId: null })
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
@@ -432,7 +436,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 <button
                   onClick={() => {
                     setFilterState({ selectionId, mode: "unread" })
-                    setOpenState({ selectionId, itemId: null })
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
