@@ -272,7 +272,7 @@ function YoutubeEntry({
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-medium line-clamp-2 leading-snug text-gray-900 dark:text-gray-100 mb-0.5">
+        <p className="text-[15px] font-medium line-clamp-2 leading-snug text-foreground mb-0.5">
           {parsed?.title ?? noTitle}
         </p>
         <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ function RssEntry({
   return (
     <div>
       <div className="flex items-start justify-between gap-2 mb-0.5">
-        <span className="text-[15px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
+        <span className="text-[15px] font-medium line-clamp-1 text-foreground">
           {parsed?.title ?? noTitle}
         </span>
         <span className="text-[13px] font-mono shrink-0 text-gray-500">
@@ -352,7 +352,7 @@ function ScrapEntry({
   return (
     <div>
       <div className="flex items-start justify-between gap-2 mb-0.5">
-        <span className="text-[15px] font-medium line-clamp-1 text-gray-900 dark:text-gray-100">
+        <span className="text-[15px] font-medium line-clamp-1 text-foreground">
           {item.content?.slice(0, 80) ?? params?.url ?? scrapLabel}
         </span>
         <span className="text-[13px] font-mono shrink-0 text-gray-500">

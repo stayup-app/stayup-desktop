@@ -102,6 +102,7 @@ interface FeedSidebarProps {
   userId: string
   onRefresh: () => void
   unreadCountByRepoId?: Record<number, number>
+  width?: number
 }
 
 export function FeedSidebar({
@@ -109,6 +110,7 @@ export function FeedSidebar({
   userId,
   onRefresh,
   unreadCountByRepoId = {},
+  width = 220,
 }: FeedSidebarProps) {
   const { selection, setSelection } = useNavigationStore()
   const { t } = useLanguage()
@@ -152,10 +154,7 @@ export function FeedSidebar({
     selection.type === "doc-diff"
 
   return (
-    <aside
-      className="w-[220px] shrink-0 overflow-y-auto"
-      style={{ borderRight: "1px solid hsl(var(--border))" }}
-    >
+    <aside className="shrink-0 overflow-y-auto" style={{ width, minWidth: 120, maxWidth: 500 }}>
       <div className="px-3 pt-2">
         {/* All feed */}
         <button

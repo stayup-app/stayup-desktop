@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react"
 import { useNavigationStore } from "@/store/navigation"
 import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
 import { useFeed } from "@/hooks/useFeed"
@@ -78,6 +78,53 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   const { theme, setTheme } = useTheme()
   const listContainerRef = useRef<HTMLDivElement>(null)
 
+  const [sidebarWidth, setSidebarWidth] = useState(220)
+  const [listWidth, setListWidth] = useState(380)
+
+  const handleSidebarDrag = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const startX = e.clientX
+      const startWidth = sidebarWidth
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+      const onMove = (ev: MouseEvent) => {
+        setSidebarWidth(Math.max(150, Math.min(420, startWidth + (ev.clientX - startX))))
+      }
+      const onUp = () => {
+        document.body.style.cursor = ""
+        document.body.style.userSelect = ""
+        window.removeEventListener("mousemove", onMove)
+        window.removeEventListener("mouseup", onUp)
+      }
+      window.addEventListener("mousemove", onMove)
+      window.addEventListener("mouseup", onUp)
+    },
+    [sidebarWidth],
+  )
+
+  const handleListDrag = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const startX = e.clientX
+      const startWidth = listWidth
+      document.body.style.cursor = "col-resize"
+      document.body.style.userSelect = "none"
+      const onMove = (ev: MouseEvent) => {
+        setListWidth(Math.max(260, Math.min(600, startWidth + (ev.clientX - startX))))
+      }
+      const onUp = () => {
+        document.body.style.cursor = ""
+        document.body.style.userSelect = ""
+        window.removeEventListener("mousemove", onMove)
+        window.removeEventListener("mouseup", onUp)
+      }
+      window.addEventListener("mousemove", onMove)
+      window.addEventListener("mouseup", onUp)
+    },
+    [listWidth],
+  )
+
   useEffect(() => {
     void init()
   }, [init])
@@ -119,16 +166,12 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   })
   const filterMode = filterState.selectionId === selectionId ? filterState.mode : "all"
 
-  const [selectedState, setSelectedState] = useState<{ id: string; index: number | null }>({
-    id: "",
-    index: null,
+  // Track open item by ID (not index) so selection stays stable when filteredItems shrinks
+  const [openState, setOpenState] = useState<{ selectionId: string; itemId: string | null }>({
+    selectionId: "",
+    itemId: null,
   })
-  const selectedIndex = selectedState.id === selectionId ? selectedState.index : null
-
-  const handleSelect = useCallback(
-    (index: number) => setSelectedState({ id: selectionId, index }),
-    [selectionId],
-  )
+  const openItemId = openState.selectionId === selectionId ? openState.itemId : null
 
   const sortedItems = useMemo((): TaggedItem[] => {
     if (!connectors || !isFeedView) return []
@@ -174,16 +217,41 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     )
   }, [connectors, selection, fluxes, isFeedView])
 
+  // In "unread" mode: include unread items + the currently open item so it stays
+  // visible while reading. It disappears only when another item is opened.
   const filteredItems = useMemo(() => {
     if (filterMode === "unread") {
-      return sortedItems.filter((item) => !readIds.has(getTaggedItemId(item)))
+      return sortedItems.filter(
+        (item) => !readIds.has(getTaggedItemId(item)) || getTaggedItemId(item) === openItemId,
+      )
     }
     return sortedItems
-  }, [sortedItems, readIds, filterMode])
+  }, [sortedItems, readIds, filterMode, openItemId])
 
-  // Keep a ref so the mark-as-read effect can read current items without depending on them
+  // Refs for keyboard handler — always current without re-registering the listener
   const filteredItemsRef = useRef(filteredItems)
-  filteredItemsRef.current = filteredItems
+  const openItemIdRef = useRef(openItemId)
+  useLayoutEffect(() => {
+    filteredItemsRef.current = filteredItems
+    openItemIdRef.current = openItemId
+  })
+
+  // Derive selectedIndex from openItemId — stable even when list shrinks
+  const selectedIndex = useMemo(() => {
+    if (openItemId === null) return null
+    const idx = filteredItems.findIndex((i) => getTaggedItemId(i) === openItemId)
+    return idx === -1 ? null : idx
+  }, [filteredItems, openItemId])
+
+  const handleSelect = useCallback(
+    (index: number) => {
+      const item = filteredItems[index]
+      if (!item) return
+      setOpenState({ selectionId, itemId: getTaggedItemId(item) })
+      void markRead(item)
+    },
+    [filteredItems, selectionId, markRead],
+  )
 
   const unreadCount = useMemo(
     () => sortedItems.filter((item) => !readIds.has(getTaggedItemId(item))).length,
@@ -219,14 +287,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     el?.scrollIntoView({ block: "nearest", behavior: "smooth" })
   }, [selectedIndex])
 
-  // Mark selected item as read — depends only on selectedIndex, not filteredItems,
-  // to prevent a cascade when filteredItems shrinks in "unread" mode.
-  useEffect(() => {
-    if (selectedIndex === null) return
-    const item = filteredItemsRef.current[selectedIndex]
-    if (item) void markRead(item)
-  }, [selectedIndex, markRead])
-
   // Mark all items in current view as read
   const handleMarkAllRead = useCallback(() => {
     for (const item of sortedItems) {
@@ -248,41 +308,45 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     void cleanup(allIds)
   }, [connectors, initialized, cleanup])
 
-  // Keyboard navigation
+  // Keyboard navigation — uses refs so the handler never goes stale
   useEffect(() => {
     if (!isFeedView) return
 
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (!filteredItems.length) return
+      const current = filteredItemsRef.current
+      const currentId = openItemIdRef.current
+      const currentIdx =
+        currentId !== null ? current.findIndex((i) => getTaggedItemId(i) === currentId) : -1
 
       if (e.key === "ArrowDown") {
         e.preventDefault()
-        setSelectedState((prev) => {
-          const idx = prev.id === selectionId ? prev.index : null
-          return {
-            id: selectionId,
-            index: idx === null ? 0 : Math.min(idx + 1, filteredItems.length - 1),
-          }
-        })
+        const nextIdx = currentIdx === -1 ? 0 : Math.min(currentIdx + 1, current.length - 1)
+        const next = current[nextIdx]
+        if (next) {
+          setOpenState({ selectionId, itemId: getTaggedItemId(next) })
+          void markRead(next)
+        }
       } else if (e.key === "ArrowUp") {
         e.preventDefault()
-        setSelectedState((prev) => {
-          const idx = prev.id === selectionId ? prev.index : null
-          return {
-            id: selectionId,
-            index: idx === null ? 0 : Math.max(idx - 1, 0),
-          }
-        })
-      } else if (e.key === "Enter" && selectedIndex !== null) {
-        const url = getItemExternalUrl(filteredItems[selectedIndex], repoUrlMap)
-        if (url) void openUrl(url)
+        const nextIdx = currentIdx === -1 ? 0 : Math.max(currentIdx - 1, 0)
+        const next = current[nextIdx]
+        if (next) {
+          setOpenState({ selectionId, itemId: getTaggedItemId(next) })
+          void markRead(next)
+        }
+      } else if (e.key === "Enter" && currentId !== null) {
+        const item = current.find((i) => getTaggedItemId(i) === currentId)
+        if (item) {
+          const url = getItemExternalUrl(item, repoUrlMap)
+          if (url) void openUrl(url)
+        }
       }
     }
 
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [isFeedView, filteredItems, selectionId, repoUrlMap, selectedIndex])
+  }, [isFeedView, selectionId, repoUrlMap, markRead])
 
   const initial = session.userId?.charAt(0)?.toUpperCase() ?? "?"
 
@@ -327,15 +391,18 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           userId={session.userId}
           onRefresh={stableRefresh}
           unreadCountByRepoId={unreadCountByRepoId}
+          width={sidebarWidth}
+        />
+        <div
+          className="w-[4px] shrink-0 cursor-col-resize hover:bg-accent transition-colors"
+          style={{ borderRight: "1px solid hsl(var(--border))" }}
+          onMouseDown={handleSidebarDrag}
         />
 
         {isFeedView ? (
           <>
             {/* List panel */}
-            <div
-              className="w-[380px] shrink-0 flex flex-col"
-              style={{ borderRight: "1px solid hsl(var(--border))" }}
-            >
+            <div className="shrink-0 flex flex-col" style={{ width: listWidth }}>
               {/* Filter bar */}
               <div
                 className="flex items-center gap-1 px-3 py-2 shrink-0"
@@ -344,7 +411,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 <button
                   onClick={() => {
                     setFilterState({ selectionId, mode: "all" })
-                    setSelectedState({ id: "", index: null })
+                    setOpenState({ selectionId, itemId: null })
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
@@ -365,7 +432,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 <button
                   onClick={() => {
                     setFilterState({ selectionId, mode: "unread" })
-                    setSelectedState({ id: "", index: null })
+                    setOpenState({ selectionId, itemId: null })
                   }}
                   className={cn(
                     "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
@@ -423,10 +490,20 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
               </div>
             </div>
 
+            <div
+              className="w-[4px] shrink-0 cursor-col-resize hover:bg-accent transition-colors"
+              style={{ borderRight: "1px solid hsl(var(--border))" }}
+              onMouseDown={handleListDrag}
+            />
+
             {/* Content panel */}
             <div className="flex-1 min-w-0 overflow-y-auto">
               <FeedContentViewer
-                item={selectedIndex !== null ? filteredItems[selectedIndex] : null}
+                item={
+                  openItemId !== null
+                    ? (filteredItems.find((i) => getTaggedItemId(i) === openItemId) ?? null)
+                    : null
+                }
                 repositories={repositories}
               />
             </div>
