@@ -44,7 +44,7 @@ function DocRequestDialog({ onClose }: { onClose: () => void }) {
                 onClick={onClose}
                 className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-muted transition-colors"
               >
-                {t.addFlux.cancel}
+                {t.addFlux.close}
               </button>
             </div>
           </div>

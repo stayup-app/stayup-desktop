@@ -411,7 +411,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
               onClick={handleClose}
               className="px-4 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors"
             >
-              {t.addFlux.cancel}
+              {requestSuccess ? t.addFlux.close : t.addFlux.cancel}
             </button>
             {!requestSuccess && (
               <button

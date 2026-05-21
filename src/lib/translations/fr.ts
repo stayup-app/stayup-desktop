@@ -48,6 +48,7 @@ export const fr = {
     selectScrapRepo: "Sélectionner un flux",
     noScrapRepos: "Aucun flux disponible",
     cancel: "Annuler",
+    close: "Fermer",
     add: "Ajouter",
     adding: "Ajout…",
     requiredError: "Ce champ est requis",
@@ -104,6 +105,8 @@ export const fr = {
     visitWebsite: "Visiter le site",
   },
   common: {
+    cancel: "Annuler",
+    delete: "Supprimer",
     error: "Une erreur est survenue.",
   },
   userMenu: {

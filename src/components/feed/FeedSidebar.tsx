@@ -117,6 +117,7 @@ export function FeedSidebar({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [addOpen, setAddOpen] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<FeedFlux | null>(null)
 
   const byProvider = fluxes.reduce<Partial<Record<Provider, FeedFlux[]>>>((acc, flux) => {
     ;(acc[flux.provider] ??= []).push(flux)
@@ -133,9 +134,15 @@ export function FeedSidebar({
     setExpanded((prev) => ({ ...prev, [provider]: !isExpanded(provider) }))
   }
 
-  async function handleDelete(flux: FeedFlux, e: React.MouseEvent) {
+  function handleDeleteClick(flux: FeedFlux, e: React.MouseEvent) {
     e.stopPropagation()
-    if (!confirm(t.feed.confirmDelete.replace("{id}", flux.identifier))) return
+    setConfirmTarget(flux)
+  }
+
+  async function handleDeleteConfirm() {
+    if (!confirmTarget) return
+    const flux = confirmTarget
+    setConfirmTarget(null)
     setDeleting(flux.id)
     try {
       const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
@@ -299,7 +306,7 @@ export function FeedSidebar({
                             )}
                           </button>
                           <button
-                            onClick={(e) => handleDelete(flux, e)}
+                            onClick={(e) => handleDeleteClick(flux, e)}
                             disabled={deleting === flux.id}
                             className="shrink-0 p-1 mr-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity disabled:opacity-50"
                             aria-label={t.feed.deleteAriaLabel}
@@ -323,6 +330,31 @@ export function FeedSidebar({
         userId={userId}
         onSuccess={onRefresh}
       />
+
+      {confirmTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmTarget(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
+            <p className="text-sm mb-4">
+              {t.feed.confirmDelete.replace("{id}", confirmTarget.identifier)}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmTarget(null)}
+                className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-muted transition-colors"
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-md bg-destructive px-4 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              >
+                {t.common.delete}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

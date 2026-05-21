@@ -50,6 +50,7 @@ export const en: Translations = {
     selectScrapRepo: "Select a feed",
     noScrapRepos: "No feeds available",
     cancel: "Cancel",
+    close: "Close",
     add: "Add",
     adding: "Adding…",
     requiredError: "This field is required",
@@ -105,6 +106,8 @@ export const en: Translations = {
     visitWebsite: "Visit website",
   },
   common: {
+    cancel: "Cancel",
+    delete: "Delete",
     error: "An error occurred.",
   },
   userMenu: {
