@@ -27,7 +27,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEEzNTREQTZGRTVBRUM4RTgKUldUb3lLN2xiOXBVbzlYT3JGbHRMUGZLNVNWSjIwVVFIZEJjWWNRdzAvN0NFQWl3Zm1sMVRUT2YK",
       "endpoints": [
-        "https://github.com/sindus/stayup-desktop/releases/latest/download/latest.json"
+        "https://github.com/stayup-app/stayup-desktop/releases/latest/download/latest.json"
       ]
     }
   },

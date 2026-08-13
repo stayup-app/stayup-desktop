@@ -135,11 +135,11 @@ jobs:
           VERSION="${VERSION#v}"
 
           ARM_SHA=$(gh release download "${{ github.ref_name }}" \
-            --repo sindus/stayup-desktop \
+            --repo stayup-app/stayup-desktop \
             --pattern "StayUp_${VERSION}_aarch64.dmg" \
             --output - | sha256sum | awk '{print $1}')
           X64_SHA=$(gh release download "${{ github.ref_name }}" \
-            --repo sindus/stayup-desktop \
+            --repo stayup-app/stayup-desktop \
             --pattern "StayUp_${VERSION}_x64.dmg" \
             --output - | sha256sum | awk '{print $1}')
 
@@ -147,7 +147,7 @@ jobs:
           echo "$TAP_DEPLOY_KEY" > ~/.ssh/tap_key
           chmod 600 ~/.ssh/tap_key
           GIT_SSH_COMMAND="ssh -i ~/.ssh/tap_key -o StrictHostKeyChecking=no" \
-            git clone git@github.com:sindus/homebrew-tap.git /tmp/homebrew-tap
+            git clone git@github.com:stayup-app/homebrew-tap.git /tmp/homebrew-tap
 
           cd /tmp/homebrew-tap
           sed -i "s/version \".*\"/version \"${VERSION}\"/" Casks/stayup.rb

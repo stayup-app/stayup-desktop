@@ -107,10 +107,10 @@ export function useMenu({
               About: {
                 name: "StayUp",
                 version,
-                copyright: "© sindus",
-                website: "https://github.com/sindus/stayup-desktop",
+                copyright: "© StayUp",
+                website: "https://github.com/stayup-app/stayup-desktop",
                 websiteLabel: "GitHub",
-                authors: ["sindus"],
+                authors: ["StayUp"],
                 comments: t.menu.help.aboutComment,
               },
             },

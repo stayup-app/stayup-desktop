@@ -8,16 +8,16 @@
 
 StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into a single personalized feed — so you never miss a release or update again.
 
-[![CI](https://github.com/sindus/stayup-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/sindus/stayup-desktop/actions/workflows/ci.yml)
-[![Release](https://github.com/sindus/stayup-desktop/actions/workflows/release.yml/badge.svg)](https://github.com/sindus/stayup-desktop/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/sindus/stayup-desktop)](https://github.com/sindus/stayup-desktop/releases/latest)
-[![License](https://img.shields.io/github/license/sindus/stayup-desktop)](LICENSE)
+[![CI](https://github.com/stayup-app/stayup-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/stayup-app/stayup-desktop/actions/workflows/ci.yml)
+[![Release](https://github.com/stayup-app/stayup-desktop/actions/workflows/release.yml/badge.svg)](https://github.com/stayup-app/stayup-desktop/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/stayup-app/stayup-desktop)](https://github.com/stayup-app/stayup-desktop/releases/latest)
+[![License](https://img.shields.io/github/license/stayup-app/stayup-desktop)](LICENSE)
 
 ![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
 
-[**Download**](https://github.com/sindus/stayup-desktop/releases/latest) · [**Landing page**](https://sindus.github.io/stayup-desktop)
+[**Download**](https://github.com/stayup-app/stayup-desktop/releases/latest) · [**Landing page**](https://stayup-app.github.io/stayup-desktop)
 
 </div>
 
@@ -41,7 +41,7 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 
 ### macOS
 
-Download the `.dmg` for your architecture from the [latest release](https://github.com/sindus/stayup-desktop/releases/latest):
+Download the `.dmg` for your architecture from the [latest release](https://github.com/stayup-app/stayup-desktop/releases/latest):
 
 | Architecture | File |
 |---|---|
@@ -55,12 +55,12 @@ Open the `.dmg`, drag **StayUp** to your Applications folder, and launch it.
 **Homebrew Cask**
 
 ```sh
-brew install --cask sindus/tap/stayup
+brew install --cask stayup-app/tap/stayup
 ```
 
 ### Windows
 
-Download `StayUp_x.x.x_x64-setup.exe` from the [latest release](https://github.com/sindus/stayup-desktop/releases/latest) and run the installer.
+Download `StayUp_x.x.x_x64-setup.exe` from the [latest release](https://github.com/stayup-app/stayup-desktop/releases/latest) and run the installer.
 
 An MSI package (`StayUp_x.x.x_x64_en-US.msi`) is also available for enterprise/group-policy deployments.
 
@@ -188,4 +188,4 @@ npm run tauri build    # Production build
 
 ## License
 
-MIT © [sindus](https://github.com/sindus)
+MIT © [StayUp](https://github.com/stayup-app)
