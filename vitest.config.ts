@@ -12,7 +12,15 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      exclude: ["node_modules/", "tests/", "src-tauri/", "*.config.*"],
+      // Report on every source file, not only the ones a test happened to import
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/vite-env.d.ts", "src/types/index.ts"],
+      thresholds: {
+        statements: 97,
+        branches: 95,
+        functions: 97,
+        lines: 98,
+      },
     },
   },
 })

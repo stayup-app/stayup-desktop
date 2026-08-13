@@ -1,5 +1,15 @@
-import { describe, it, expect } from "vitest"
-import { cn, formatDate, extractIdentifier } from "@/lib/utils"
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { open } from "@tauri-apps/plugin-shell"
+import {
+  cn,
+  formatDate,
+  extractIdentifier,
+  stripUrlScheme,
+  normalizeIdentifier,
+  toRepositoryUrl,
+  openUrl,
+} from "@/lib/utils"
+import type { Provider } from "@/types"
 
 describe("cn", () => {
   it("merges class names", () => {
@@ -20,6 +30,28 @@ describe("cn", () => {
   })
 })
 
+describe("stripUrlScheme", () => {
+  it("removes the https scheme", () => {
+    expect(stripUrlScheme("https://example.com/feed")).toBe("example.com/feed")
+  })
+
+  it("removes the http scheme", () => {
+    expect(stripUrlScheme("http://example.com")).toBe("example.com")
+  })
+
+  it("removes the www prefix along with the scheme", () => {
+    expect(stripUrlScheme("https://www.example.com")).toBe("example.com")
+  })
+
+  it("removes a bare www prefix without a scheme", () => {
+    expect(stripUrlScheme("www.example.com")).toBe("example.com")
+  })
+
+  it("leaves an already-bare value untouched", () => {
+    expect(stripUrlScheme("facebook/react")).toBe("facebook/react")
+  })
+})
+
 describe("formatDate", () => {
   it("returns empty string for null", () => {
     expect(formatDate(null)).toBe("")
@@ -27,6 +59,10 @@ describe("formatDate", () => {
 
   it("returns empty string for undefined", () => {
     expect(formatDate(undefined)).toBe("")
+  })
+
+  it("returns empty string for an empty string", () => {
+    expect(formatDate("")).toBe("")
   })
 
   it("formats a valid ISO date using the French locale", () => {
@@ -67,5 +103,89 @@ describe("extractIdentifier", () => {
     expect(extractIdentifier("https://github.com/vercel/next.js/releases", "changelog")).toBe(
       "vercel/next.js",
     )
+  })
+
+  it("returns the raw URL for an unknown provider", () => {
+    expect(extractIdentifier("https://example.com/x", "unknown" as Provider)).toBe(
+      "https://example.com/x",
+    )
+  })
+})
+
+describe("normalizeIdentifier", () => {
+  it("extracts owner/repo from a full GitHub URL", () => {
+    expect(normalizeIdentifier("https://github.com/facebook/react", "changelog")).toBe(
+      "facebook/react",
+    )
+  })
+
+  it("strips a .git suffix from a GitHub URL", () => {
+    expect(normalizeIdentifier("https://github.com/facebook/react.git", "changelog")).toBe(
+      "facebook/react",
+    )
+  })
+
+  it("strips a trailing slash from a GitHub URL", () => {
+    expect(normalizeIdentifier("github.com/facebook/react/", "changelog")).toBe("facebook/react")
+  })
+
+  it("keeps an already-normalized owner/repo", () => {
+    expect(normalizeIdentifier("  facebook/react  ", "changelog")).toBe("facebook/react")
+  })
+
+  it("strips scheme, .git and trailing slash when the regex does not match", () => {
+    expect(normalizeIdentifier("https://github.com/single/", "changelog")).toBe("single")
+  })
+
+  it("extracts a YouTube handle from an @ URL", () => {
+    expect(normalizeIdentifier("https://youtube.com/@fireship", "youtube")).toBe("fireship")
+  })
+
+  it("extracts a YouTube handle from a /channel/ URL", () => {
+    expect(normalizeIdentifier("https://youtube.com/channel/UC123", "youtube")).toBe("UC123")
+  })
+
+  it("extracts a YouTube handle from a /user/ URL", () => {
+    expect(normalizeIdentifier("https://youtube.com/user/someone", "youtube")).toBe("someone")
+  })
+
+  it("strips a leading @ from a bare YouTube handle", () => {
+    expect(normalizeIdentifier("@fireship", "youtube")).toBe("fireship")
+  })
+
+  it("returns the trimmed value for other providers", () => {
+    expect(normalizeIdentifier("  https://example.com/feed.xml  ", "rss")).toBe(
+      "https://example.com/feed.xml",
+    )
+  })
+})
+
+describe("toRepositoryUrl", () => {
+  it("builds a GitHub repository URL", () => {
+    expect(toRepositoryUrl("facebook/react", "changelog")).toBe(
+      "https://github.com/facebook/react/",
+    )
+  })
+
+  it("builds a YouTube channel URL", () => {
+    expect(toRepositoryUrl("fireship", "youtube")).toBe("https://www.youtube.com/@fireship")
+  })
+
+  it("returns the identifier unchanged for other providers", () => {
+    expect(toRepositoryUrl("https://example.com/feed.xml", "rss")).toBe(
+      "https://example.com/feed.xml",
+    )
+    expect(toRepositoryUrl("https://example.com", "scrap")).toBe("https://example.com")
+  })
+})
+
+describe("openUrl", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("delegates to the Tauri shell opener", async () => {
+    await openUrl("https://example.com")
+    expect(open).toHaveBeenCalledWith("https://example.com")
   })
 })

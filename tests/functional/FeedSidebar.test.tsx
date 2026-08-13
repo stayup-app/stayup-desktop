@@ -1,13 +1,41 @@
-import { describe, it, expect, beforeEach } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { describe, it, expect, beforeEach, vi } from "vitest"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { FeedSidebar } from "@/components/feed/FeedSidebar"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { useNavigationStore } from "@/store/navigation"
+import { deleteUserRepository } from "@/lib/api"
+import { readToken } from "@/lib/store"
+import { fr } from "@/lib/translations/fr"
 import type { FeedFlux } from "@/hooks/useFeed"
+
+vi.mock("@/lib/api", () => ({
+  deleteUserRepository: vi.fn().mockResolvedValue(undefined),
+  addUserRepository: vi.fn().mockResolvedValue(undefined),
+  createScrapRequest: vi.fn().mockResolvedValue({ id: "r" }),
+  getScrapRepos: vi.fn().mockResolvedValue([]),
+  subscribeScrap: vi.fn().mockResolvedValue(undefined),
+}))
+vi.mock("@/lib/store", () => ({
+  readToken: vi.fn().mockResolvedValue("jwt"),
+  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
+  readLang: vi.fn().mockResolvedValue(null),
+  writeLang: vi.fn().mockResolvedValue(undefined),
+}))
 
 function renderWithLang(ui: React.ReactElement) {
   return render(<LanguageProvider>{ui}</LanguageProvider>)
 }
+
+// Typed access to the Node process without pulling in @types/node
+type RejectionHandler = (reason: unknown) => void
+const nodeProcess = (
+  globalThis as unknown as {
+    process: {
+      on: (event: "unhandledRejection", handler: RejectionHandler) => void
+      off: (event: "unhandledRejection", handler: RejectionHandler) => void
+    }
+  }
+).process
 
 const fluxes: FeedFlux[] = [
   {
@@ -34,6 +62,8 @@ const fluxes: FeedFlux[] = [
 ]
 
 beforeEach(() => {
+  vi.clearAllMocks()
+  vi.mocked(readToken).mockResolvedValue("jwt")
   useNavigationStore.setState({ selection: { type: "all" } })
 })
 
@@ -100,5 +130,118 @@ describe("FeedSidebar", () => {
     renderWithLang(<FeedSidebar fluxes={[]} userId="user-1" onRefresh={() => {}} />)
     expect(screen.getByText("Tous les flux")).toBeInTheDocument()
     expect(screen.queryByText("GitHub Changelog")).not.toBeInTheDocument()
+  })
+})
+
+describe("unread badges", () => {
+  it("shows a per-flux count and the provider total", () => {
+    renderWithLang(
+      <FeedSidebar
+        fluxes={fluxes}
+        userId="user-1"
+        onRefresh={() => {}}
+        unreadCountByRepoId={{ 2: 3, 3: 4 }}
+      />,
+    )
+    expect(screen.getByText("3")).toBeInTheDocument()
+    expect(screen.getByText("4")).toBeInTheDocument()
+    expect(screen.getByText("7")).toBeInTheDocument()
+  })
+
+  it("shows no badge when everything is read", () => {
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} unreadCountByRepoId={{}} />,
+    )
+    expect(screen.queryByText("0")).not.toBeInTheDocument()
+  })
+})
+
+describe("layout", () => {
+  it("applies the requested width", () => {
+    const { container } = renderWithLang(
+      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} width={300} />,
+    )
+    expect(container.querySelector("aside")).toHaveStyle({ width: "300px" })
+  })
+
+  it("marks the active flux with an accent bar", () => {
+    useNavigationStore.setState({
+      selection: { type: "flux", fluxId: "1", provider: "changelog" },
+    })
+    const { container } = renderWithLang(
+      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />,
+    )
+    expect(container.querySelector(".w-0\\.5")).not.toBeNull()
+  })
+})
+
+describe("adding a feed", () => {
+  it("opens the add-flux dialog", () => {
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    fireEvent.click(screen.getByLabelText(fr.addFlux.title))
+    expect(screen.getByText(fr.addFlux.provider)).toBeInTheDocument()
+  })
+})
+
+describe("deleting a feed", () => {
+  it("asks for confirmation before deleting", () => {
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+
+    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
+
+    expect(
+      screen.getByText(fr.feed.confirmDelete.replace("{id}", "facebook/react")),
+    ).toBeInTheDocument()
+    expect(deleteUserRepository).not.toHaveBeenCalled()
+  })
+
+  it("deletes and refreshes on confirmation", async () => {
+    const onRefresh = vi.fn()
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={onRefresh} />)
+
+    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
+    fireEvent.click(screen.getByText(fr.common.delete))
+
+    await waitFor(() =>
+      expect(deleteUserRepository).toHaveBeenCalledWith("user-1", "1", "jwt", "https://api.test"),
+    )
+    expect(onRefresh).toHaveBeenCalled()
+  })
+
+  it("aborts on cancel", () => {
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+
+    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
+    fireEvent.click(screen.getByText(fr.common.cancel))
+
+    expect(screen.queryByText(fr.common.delete)).not.toBeInTheDocument()
+    expect(deleteUserRepository).not.toHaveBeenCalled()
+  })
+
+  it("aborts when the backdrop is clicked", () => {
+    const { container } = renderWithLang(
+      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />,
+    )
+
+    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
+    fireEvent.click(container.querySelector(".bg-black\\/50")!)
+
+    expect(screen.queryByText(fr.common.delete)).not.toBeInTheDocument()
+  })
+
+  it("does not call the API when no token is stored", async () => {
+    // handleDeleteConfirm rethrows here without a catch, so the rejection never
+    // reaches the UI — swallow it so it does not fail the run.
+    const swallow = vi.fn()
+    nodeProcess.on("unhandledRejection", swallow)
+    vi.mocked(readToken).mockResolvedValue(null)
+
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
+    fireEvent.click(screen.getByText(fr.common.delete))
+
+    await waitFor(() => expect(readToken).toHaveBeenCalled())
+    expect(deleteUserRepository).not.toHaveBeenCalled()
+    nodeProcess.off("unhandledRejection", swallow)
   })
 })

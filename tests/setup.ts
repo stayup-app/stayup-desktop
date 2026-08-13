@@ -44,3 +44,7 @@ vi.mock("@tauri-apps/plugin-shell", () => ({
 vi.mock("@tauri-apps/api", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
 }))
+
+// jsdom does not implement scrollIntoView, which FeedLayout uses to keep the
+// selected row visible.
+Element.prototype.scrollIntoView = vi.fn()
