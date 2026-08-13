@@ -1,18 +1,10 @@
 import { useState, useEffect } from "react"
-import {
-  addUserRepository,
-  createDocRequest,
-  createScrapRequest,
-  getDocs,
-  getScrapRepos,
-  subscribeDoc,
-  subscribeScrap,
-} from "@/lib/api"
+import { addUserRepository, createScrapRequest, getScrapRepos, subscribeScrap } from "@/lib/api"
 import { readApiUrl, readToken } from "@/lib/store"
 import { normalizeIdentifier, toRepositoryUrl } from "@/lib/utils"
 import { useLanguage } from "@/context/LanguageContext"
 import { cn } from "@/lib/utils"
-import type { DocRegistry, Provider } from "@/types"
+import type { Provider } from "@/types"
 import type { ScrapRepository } from "@/types"
 
 type FeedProvider = "changelog" | "youtube" | "rss"
@@ -36,10 +28,6 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
   const [scrapMode, setScrapMode] = useState<"select" | "request">("select")
   const [requestUrl, setRequestUrl] = useState("")
   const [requestSuccess, setRequestSuccess] = useState(false)
-  const [docMode, setDocMode] = useState<"select" | "request">("select")
-  const [docs, setDocs] = useState<DocRegistry[] | null>(null)
-  const [docId, setDocId] = useState<number | null>(null)
-  const [docRequestUrl, setDocRequestUrl] = useState("")
 
   useEffect(() => {
     if (provider !== "scrap") return
@@ -60,25 +48,6 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     }
   }, [provider])
 
-  useEffect(() => {
-    if (provider !== "documentation") return
-    let cancelled = false
-    Promise.all([readToken(), readApiUrl()])
-      .then(([token, apiUrl]) => {
-        if (cancelled || !token) return []
-        return getDocs(token, apiUrl)
-      })
-      .then((d) => {
-        if (!cancelled) setDocs(d ?? [])
-      })
-      .catch(() => {
-        if (!cancelled) setDocs([])
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [provider])
-
   function handleClose() {
     setProvider("changelog")
     setIdentifier("")
@@ -88,10 +57,6 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     setScrapMode("select")
     setRequestUrl("")
     setRequestSuccess(false)
-    setDocMode("select")
-    setDocs(null)
-    setDocId(null)
-    setDocRequestUrl("")
     onClose()
   }
 
@@ -116,51 +81,6 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
         if (!token) throw new Error(t.feed.tokenMissing)
         await createScrapRequest({ url: requestUrl }, token, apiUrl)
         setRequestSuccess(true)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t.common.error)
-      } finally {
-        setSubmitting(false)
-      }
-      return
-    }
-
-    if (provider === "documentation" && docMode === "request") {
-      if (!docRequestUrl.trim()) {
-        setError(t.addFlux.requiredError)
-        return
-      }
-      try {
-        new URL(docRequestUrl)
-      } catch {
-        setError(t.addFlux.requestUrlError)
-        return
-      }
-      setSubmitting(true)
-      try {
-        const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-        if (!token) throw new Error(t.feed.tokenMissing)
-        await createDocRequest({ url: docRequestUrl }, token, apiUrl)
-        setRequestSuccess(true)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t.common.error)
-      } finally {
-        setSubmitting(false)
-      }
-      return
-    }
-
-    if (provider === "documentation" && docMode === "select") {
-      if (!docId) {
-        setError(t.addFlux.selectError)
-        return
-      }
-      setSubmitting(true)
-      try {
-        const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-        if (!token) throw new Error(t.feed.tokenMissing)
-        await subscribeDoc(docId, token, apiUrl)
-        onSuccess()
-        handleClose()
       } catch (err) {
         setError(err instanceof Error ? err.message : t.common.error)
       } finally {
@@ -244,81 +164,10 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                   <option value="youtube">{t.feed.providers.youtube}</option>
                   <option value="rss">{t.feed.providers.rss}</option>
                   <option value="scrap">{t.feed.providers.scrap}</option>
-                  <option value="documentation">{t.feed.providers.documentation}</option>
                 </select>
               </div>
 
-              {provider === "documentation" ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setDocMode("select")}
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                        docMode === "select"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {t.addFlux.chooseExisting}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDocMode("request")}
-                      className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                        docMode === "request"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {t.addFlux.makeRequest}
-                    </button>
-                  </div>
-
-                  {docMode === "select" ? (
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium">{t.addFlux.docRegistry}</label>
-                      {docs === null ? (
-                        <p className="text-sm text-muted-foreground">{t.addFlux.loading}</p>
-                      ) : (
-                        <select
-                          value={docId ?? ""}
-                          onChange={(e) => setDocId(e.target.value ? Number(e.target.value) : null)}
-                          className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                        >
-                          <option value="">{t.addFlux.selectDocRegistry}</option>
-                          {docs.filter((d) => !d.is_subscribed).length === 0 ? (
-                            <option value="" disabled>
-                              {t.addFlux.noDocRegistries}
-                            </option>
-                          ) : (
-                            docs
-                              .filter((d) => !d.is_subscribed)
-                              .map((d) => (
-                                <option key={d.id} value={String(d.id)}>
-                                  {d.name}
-                                </option>
-                              ))
-                          )}
-                        </select>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium">{t.addFlux.docRequestUrl}</label>
-                      <input
-                        type="url"
-                        value={docRequestUrl}
-                        onChange={(e) => setDocRequestUrl(e.target.value)}
-                        placeholder={t.addFlux.docRequestUrlPlaceholder}
-                        className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : provider === "scrap" ? (
+              {provider === "scrap" ? (
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <button

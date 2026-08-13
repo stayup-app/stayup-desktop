@@ -9,10 +9,6 @@ import { useTheme } from "@/context/ThemeContext"
 import { FeedSidebar } from "./FeedSidebar"
 import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
-import { DocList } from "@/components/documentation/DocList"
-import { DocViewer } from "@/components/documentation/DocViewer"
-import { HistoryList } from "@/components/documentation/HistoryList"
-import { DiffViewer } from "@/components/documentation/DiffViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
@@ -152,9 +148,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     [fluxes],
   )
 
-  const isFeedView =
-    selection.type === "all" || selection.type === "category" || selection.type === "flux"
-
   const selectionId = useMemo(() => {
     if (selection.type === "category") return `category:${selection.provider}`
     if (selection.type === "flux") return `flux:${selection.fluxId}`
@@ -175,7 +168,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   const openItemId = openState.selectionId === selectionId ? openState.itemId : null
 
   const sortedItems = useMemo((): TaggedItem[] => {
-    if (!connectors || !isFeedView) return []
+    if (!connectors) return []
 
     let raw: TaggedItem[] = []
 
@@ -216,7 +209,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     return raw.sort(
       (a, b) => new Date(getItemDate(b)).getTime() - new Date(getItemDate(a)).getTime(),
     )
-  }, [connectors, selection, fluxes, isFeedView])
+  }, [connectors, selection, fluxes])
 
   // In "unread" mode: include unread items + the currently open item so it stays
   // visible while reading. It disappears only when another item is opened.
@@ -318,8 +311,6 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
   // Keyboard navigation — uses refs so the handler never goes stale
   useEffect(() => {
-    if (!isFeedView) return
-
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       const current = filteredItemsRef.current
@@ -352,7 +343,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [isFeedView, selectionId, repoUrlMap])
+  }, [selectionId, repoUrlMap])
 
   const initial = session.userId?.charAt(0)?.toUpperCase() ?? "?"
 
@@ -405,124 +396,108 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           onMouseDown={handleSidebarDrag}
         />
 
-        {isFeedView ? (
-          <>
-            {/* List panel */}
-            <div className="shrink-0 flex flex-col" style={{ width: listWidth }}>
-              {/* Filter bar */}
-              <div
-                className="flex items-center gap-1 px-3 py-2 shrink-0"
-                style={{ borderBottom: "1px solid var(--border-subtle)" }}
+        {/* List panel */}
+        <div className="shrink-0 flex flex-col" style={{ width: listWidth }}>
+          {/* Filter bar */}
+          <div
+            className="flex items-center gap-1 px-3 py-2 shrink-0"
+            style={{ borderBottom: "1px solid var(--border-subtle)" }}
+          >
+            <button
+              onClick={() => {
+                setFilterState({ selectionId, mode: "all" })
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
+                filterMode === "all"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              style={filterMode === "all" ? { background: "var(--surface-3)" } : undefined}
+            >
+              {t.feed.filterAll}
+              <span
+                className="text-[13px] font-mono px-1.5 py-0.5 rounded"
+                style={{ background: "var(--surface-2)", color: "var(--dim)" }}
               >
-                <button
-                  onClick={() => {
-                    setFilterState({ selectionId, mode: "all" })
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
-                    filterMode === "all"
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  style={filterMode === "all" ? { background: "var(--surface-3)" } : undefined}
+                {sortedItems.length}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setFilterState({ selectionId, mode: "unread" })
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
+                filterMode === "unread"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              style={filterMode === "unread" ? { background: "var(--surface-3)" } : undefined}
+            >
+              {t.feed.filterUnread}
+              {unreadCount > 0 && (
+                <span
+                  className="text-[13px] font-mono px-1.5 py-0.5 rounded"
+                  style={{ background: "var(--teal-dim)", color: "var(--teal)" }}
                 >
-                  {t.feed.filterAll}
-                  <span
-                    className="text-[13px] font-mono px-1.5 py-0.5 rounded"
-                    style={{ background: "var(--surface-2)", color: "var(--dim)" }}
-                  >
-                    {sortedItems.length}
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setFilterState({ selectionId, mode: "unread" })
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
-                    filterMode === "unread"
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                  style={filterMode === "unread" ? { background: "var(--surface-3)" } : undefined}
-                >
-                  {t.feed.filterUnread}
-                  {unreadCount > 0 && (
-                    <span
-                      className="text-[13px] font-mono px-1.5 py-0.5 rounded"
-                      style={{ background: "var(--teal-dim)", color: "var(--teal)" }}
-                    >
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-                <div className="flex-1" />
-                {unreadCount > 0 && (
-                  <button
-                    onClick={handleMarkAllRead}
-                    title={t.feed.markAllRead}
-                    className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  >
-                    <CheckCheck size={16} />
-                  </button>
-                )}
-              </div>
-
-              <div ref={listContainerRef} className="flex-1 overflow-y-auto">
-                {loading ? (
-                  <p className="text-[15px] text-muted-foreground italic py-12 text-center">
-                    {t.feed.loading}
-                  </p>
-                ) : error ? (
-                  <div className="py-12 text-center space-y-2">
-                    <p className="text-[15px] text-destructive">{error}</p>
-                    <button
-                      onClick={refresh}
-                      className="text-[13px] text-muted-foreground underline"
-                    >
-                      {t.feed.retry}
-                    </button>
-                  </div>
-                ) : (
-                  <UnifiedFeedList
-                    items={filteredItems}
-                    selectedIndex={selectedIndex}
-                    onSelect={handleSelect}
-                    repositories={repositories}
-                    readIds={readIds}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div
-              className="w-[4px] shrink-0 cursor-col-resize hover:bg-accent transition-colors"
-              style={{ borderRight: "1px solid hsl(var(--border))" }}
-              onMouseDown={handleListDrag}
-            />
-
-            {/* Content panel */}
-            <div className="flex-1 min-w-0 overflow-y-auto">
-              <FeedContentViewer
-                item={
-                  openItemId !== null
-                    ? (filteredItems.find((i) => getTaggedItemId(i) === openItemId) ?? null)
-                    : null
-                }
-                repositories={repositories}
-              />
-            </div>
-          </>
-        ) : (
-          <main className="flex-1 overflow-y-auto px-5 py-4">
-            {selection.type === "documentation" && <DocList />}
-            {selection.type === "doc" && <DocViewer docId={selection.docId} />}
-            {selection.type === "doc-history" && <HistoryList docId={selection.docId} />}
-            {selection.type === "doc-diff" && (
-              <DiffViewer docId={selection.docId} versionId={selection.versionId} />
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <div className="flex-1" />
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                title={t.feed.markAllRead}
+                className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                <CheckCheck size={16} />
+              </button>
             )}
-          </main>
-        )}
+          </div>
+
+          <div ref={listContainerRef} className="flex-1 overflow-y-auto">
+            {loading ? (
+              <p className="text-[15px] text-muted-foreground italic py-12 text-center">
+                {t.feed.loading}
+              </p>
+            ) : error ? (
+              <div className="py-12 text-center space-y-2">
+                <p className="text-[15px] text-destructive">{error}</p>
+                <button onClick={refresh} className="text-[13px] text-muted-foreground underline">
+                  {t.feed.retry}
+                </button>
+              </div>
+            ) : (
+              <UnifiedFeedList
+                items={filteredItems}
+                selectedIndex={selectedIndex}
+                onSelect={handleSelect}
+                repositories={repositories}
+                readIds={readIds}
+              />
+            )}
+          </div>
+        </div>
+
+        <div
+          className="w-[4px] shrink-0 cursor-col-resize hover:bg-accent transition-colors"
+          style={{ borderRight: "1px solid hsl(var(--border))" }}
+          onMouseDown={handleListDrag}
+        />
+
+        {/* Content panel */}
+        <div className="flex-1 min-w-0 overflow-y-auto">
+          <FeedContentViewer
+            item={
+              openItemId !== null
+                ? (filteredItems.find((i) => getTaggedItemId(i) === openItemId) ?? null)
+                : null
+            }
+            repositories={repositories}
+          />
+        </div>
       </div>
     </div>
   )

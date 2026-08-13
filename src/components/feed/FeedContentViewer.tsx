@@ -48,7 +48,6 @@ const PROVIDER_COLORS: Record<Provider, string> = {
   youtube: "var(--rose)",
   rss: "var(--amber)",
   scrap: "var(--green)",
-  documentation: "var(--indigo)",
 }
 
 const PROVIDER_DIM: Record<Provider, string> = {
@@ -56,7 +55,6 @@ const PROVIDER_DIM: Record<Provider, string> = {
   youtube: "var(--rose-dim)",
   rss: "var(--amber-dim)",
   scrap: "var(--green-dim)",
-  documentation: "var(--indigo-dim)",
 }
 
 interface FeedContentViewerProps {

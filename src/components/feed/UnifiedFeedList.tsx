@@ -33,7 +33,6 @@ const PROVIDER_COLORS: Record<Provider, string> = {
   youtube: "var(--rose)",
   rss: "var(--amber)",
   scrap: "var(--green)",
-  documentation: "var(--indigo)",
 }
 
 const PROVIDER_DIM: Record<Provider, string> = {
@@ -41,7 +40,6 @@ const PROVIDER_DIM: Record<Provider, string> = {
   youtube: "var(--rose-dim)",
   rss: "var(--amber-dim)",
   scrap: "var(--green-dim)",
-  documentation: "var(--indigo-dim)",
 }
 
 const PROVIDER_ICONS: Record<Provider, React.ReactNode> = {
@@ -83,23 +81,6 @@ const PROVIDER_ICONS: Record<Provider, React.ReactNode> = {
       <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
       <ellipse cx="7" cy="7" rx="2" ry="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
       <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="1.2" />
-    </svg>
-  ),
-  documentation: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect
-        x="2"
-        y="1"
-        width="9"
-        height="12"
-        rx="1"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        fill="none"
-      />
-      <rect x="4" y="4" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.7" />
-      <rect x="4" y="6.5" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
-      <rect x="4" y="9" width="3" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
     </svg>
   ),
 }

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, LayoutList, BookOpen, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronRight, LayoutList, Plus, Trash2 } from "lucide-react"
 import { cn, stripUrlScheme } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
@@ -73,28 +73,6 @@ const PROVIDER_META: Record<
       </svg>
     ),
   },
-  documentation: {
-    label: "Documentation",
-    color: "var(--indigo)",
-    dimColor: "var(--indigo-dim)",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-        <rect
-          x="2"
-          y="1"
-          width="9"
-          height="12"
-          rx="1"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          fill="none"
-        />
-        <rect x="4" y="4" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.7" />
-        <rect x="4" y="6.5" width="5" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
-        <rect x="4" y="9" width="3" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
-      </svg>
-    ),
-  },
 }
 
 interface FeedSidebarProps {
@@ -154,12 +132,6 @@ export function FeedSidebar({
     }
   }
 
-  const isDocActive =
-    selection.type === "documentation" ||
-    selection.type === "doc" ||
-    selection.type === "doc-history" ||
-    selection.type === "doc-diff"
-
   return (
     <aside className="shrink-0 overflow-y-auto" style={{ width, minWidth: 120, maxWidth: 500 }}>
       <div className="px-3 pt-2">
@@ -167,7 +139,7 @@ export function FeedSidebar({
         <button
           onClick={() => setSelection({ type: "all" })}
           className={cn(
-            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[15px] transition-colors mb-1",
+            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[15px] transition-colors mb-3",
             selection.type === "all"
               ? "text-foreground font-medium"
               : "text-muted-foreground hover:text-foreground",
@@ -176,21 +148,6 @@ export function FeedSidebar({
         >
           <LayoutList className="h-3.5 w-3.5 shrink-0" />
           <span>{t.feed.allFeeds}</span>
-        </button>
-
-        {/* Documentation */}
-        <button
-          onClick={() => setSelection({ type: "documentation" })}
-          className={cn(
-            "flex w-full items-center gap-2 px-2 py-1.5 rounded-md text-[15px] transition-colors mb-3",
-            isDocActive
-              ? "text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-          style={isDocActive ? { background: "var(--surface-3)" } : undefined}
-        >
-          <BookOpen className="h-3.5 w-3.5 shrink-0" />
-          <span>{t.documentation.myDocs}</span>
         </button>
 
         {/* My feeds section */}

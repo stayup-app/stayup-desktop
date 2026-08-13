@@ -10,6 +10,7 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 
 [![CI](https://github.com/stayup-app/stayup-desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/stayup-app/stayup-desktop/actions/workflows/ci.yml)
 [![Release](https://github.com/stayup-app/stayup-desktop/actions/workflows/release.yml/badge.svg)](https://github.com/stayup-app/stayup-desktop/actions/workflows/release.yml)
+[![Pages](https://github.com/stayup-app/stayup-desktop/actions/workflows/pages.yml/badge.svg)](https://github.com/stayup-app/stayup-desktop/actions/workflows/pages.yml)
 [![Latest release](https://img.shields.io/github/v/release/stayup-app/stayup-desktop)](https://github.com/stayup-app/stayup-desktop/releases/latest)
 [![License](https://img.shields.io/github/license/stayup-app/stayup-desktop)](LICENSE)
 
@@ -29,7 +30,6 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 - **YouTube channels** — follow creators and see new videos in your feed
 - **RSS / Atom feeds** — add any RSS URL to stay updated from blogs, podcasts, and news sites
 - **Web scraping** — track web pages via CSS selectors when no feed is available
-- **Documentation tracking** — monitor docs sites and view diffs between versions
 - **Unified feed** — all sources merged and sorted chronologically in one view
 - **Auto-update** — the app updates itself silently in the background
 - **Light & dark theme** — follows your OS preference

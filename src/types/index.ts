@@ -1,4 +1,4 @@
-export type Provider = "changelog" | "youtube" | "rss" | "scrap" | "documentation"
+export type Provider = "changelog" | "youtube" | "rss" | "scrap"
 
 export interface UserRepository {
   id: string
@@ -112,32 +112,4 @@ export interface ScrapRequest {
   url: string
   status: "pending" | "approved" | "rejected"
   created_at: string
-}
-
-// ─── Documentation ─────────────────────────────────────────────────────────────
-
-export interface DocRegistry {
-  id: number
-  name: string
-  url: string
-  created_at: string
-  is_subscribed: boolean
-  current_version: number | null
-  last_scraped_at: string | null
-}
-
-export interface DocContent {
-  id: number
-  content: string
-  version: number
-  scraped_at: string
-}
-
-export interface DocVersion {
-  id: number
-  version: number
-  is_current: boolean
-  scraped_at: string
-  archived_at: string | null
-  has_diff: boolean
 }
