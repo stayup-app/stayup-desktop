@@ -10,6 +10,7 @@ import { FeedSidebar } from "./FeedSidebar"
 import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
+import { ProfileModal } from "@/components/profile/ProfileModal"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import type { AppSession } from "@/lib/session"
@@ -69,7 +70,7 @@ function getItemExternalUrl(tagged: TaggedItem, repoUrlMap: Record<number, strin
 
 export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProps) {
   const { selection } = useNavigationStore()
-  const { readIds, initialized, init, markRead, cleanup } = useReadItemsStore()
+  const { readIds, initialized, init, markRead, markAllRead, cleanup } = useReadItemsStore()
   const { fluxes, connectors, loading, error, refresh } = useFeed(session.userId)
   const { lang, t, setLang } = useLanguage()
   const { theme, setTheme } = useTheme()
@@ -77,6 +78,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [listWidth, setListWidth] = useState(380)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const handleSidebarDrag = useCallback(
     (e: React.MouseEvent) => {
@@ -290,10 +292,8 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
   // Mark all items in current view as read
   const handleMarkAllRead = useCallback(() => {
-    for (const item of sortedItems) {
-      void markRead(item)
-    }
-  }, [sortedItems, markRead])
+    void markAllRead(sortedItems)
+  }, [sortedItems, markAllRead])
 
   // Cleanup read items that are no longer in the feed
   useEffect(() => {
@@ -377,7 +377,11 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           >
             {initial}
           </div>
-          <UserMenu session={session} onLogout={onLogout} />
+          <UserMenu
+            session={session}
+            onLogout={onLogout}
+            onOpenProfile={() => setProfileOpen(true)}
+          />
         </div>
       </header>
 
@@ -499,6 +503,8 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           />
         </div>
       </div>
+
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} session={session} />
     </div>
   )
 }

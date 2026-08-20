@@ -62,6 +62,22 @@ describe("markRead", () => {
   })
 })
 
+describe("markAllRead", () => {
+  it("adds every missing id in a single write", async () => {
+    await useReadItemsStore.getState().markAllRead([taggedItem("rss", 1), taggedItem("rss", 2)])
+
+    expect([...useReadItemsStore.getState().readIds]).toEqual(["rss:1", "rss:2"])
+    expect(writeReadItems).toHaveBeenCalledTimes(1)
+    expect(writeReadItems).toHaveBeenCalledWith(["rss:1", "rss:2"])
+  })
+
+  it("is a no-op when nothing is new", async () => {
+    useReadItemsStore.setState({ readIds: new Set(["rss:1"]) })
+    await useReadItemsStore.getState().markAllRead([taggedItem("rss", 1)])
+    expect(writeReadItems).not.toHaveBeenCalled()
+  })
+})
+
 describe("cleanup", () => {
   it("drops ids that are no longer in the feed", async () => {
     useReadItemsStore.setState({ readIds: new Set(["changelog:1", "rss:2"]) })
