@@ -4,6 +4,7 @@ import { cn, stripUrlScheme } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
+import { ImportExportButtons } from "./ImportExportButtons"
 import { deleteUserRepository } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -158,14 +159,17 @@ export function FeedSidebar({
           >
             {t.feed.myFeeds}
           </span>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
-            style={{ border: "1px solid hsl(var(--border))" }}
-            aria-label={t.addFlux.title}
-          >
-            <Plus className="h-3 w-3" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setAddOpen(true)}
+              className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
+              style={{ border: "1px solid hsl(var(--border))" }}
+              aria-label={t.addFlux.title}
+            >
+              <Plus className="h-3 w-3" />
+            </button>
+            <ImportExportButtons fluxes={fluxes} userId={userId} onSuccess={onRefresh} />
+          </div>
         </div>
 
         {/* Provider groups */}
