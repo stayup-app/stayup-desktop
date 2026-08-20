@@ -19,19 +19,26 @@ function renderWithLang(ui: React.ReactElement) {
 
 describe("UserMenu", () => {
   it("shows the signed-in email", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} />)
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
     expect(screen.getByText("alice@test.com")).toBeInTheDocument()
   })
 
   it("calls onLogout when the sign-out button is clicked", () => {
     const onLogout = vi.fn()
-    renderWithLang(<UserMenu session={session} onLogout={onLogout} />)
+    renderWithLang(<UserMenu session={session} onLogout={onLogout} onOpenProfile={() => {}} />)
     fireEvent.click(screen.getByText(fr.userMenu.signOut))
     expect(onLogout).toHaveBeenCalled()
   })
 
+  it("calls onOpenProfile when the email is clicked", () => {
+    const onOpenProfile = vi.fn()
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={onOpenProfile} />)
+    fireEvent.click(screen.getByText("alice@test.com"))
+    expect(onOpenProfile).toHaveBeenCalled()
+  })
+
   it("embeds the language switcher", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} />)
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
     expect(screen.getByLabelText("Français")).toBeInTheDocument()
     expect(screen.getByLabelText("English")).toBeInTheDocument()
   })
@@ -48,7 +55,7 @@ describe("LanguageSwitcher", () => {
     renderWithLang(
       <>
         <LanguageSwitcher />
-        <UserMenu session={session} onLogout={() => {}} />
+        <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
       </>,
     )
 
@@ -61,7 +68,7 @@ describe("LanguageSwitcher", () => {
     renderWithLang(
       <>
         <LanguageSwitcher />
-        <UserMenu session={session} onLogout={() => {}} />
+        <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
       </>,
     )
 

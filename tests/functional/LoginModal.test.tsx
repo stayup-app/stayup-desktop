@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { LoginModal } from "@/components/auth/LoginModal"
 import { OAuthButtons } from "@/components/auth/OAuthButtons"
 import { LanguageProvider } from "@/context/LanguageContext"
@@ -11,7 +11,15 @@ function renderWithLang(ui: React.ReactElement) {
 
 describe("LoginModal", () => {
   it("renders the branding, subtitle and both sign-in paths", () => {
-    renderWithLang(<LoginModal onLogin={vi.fn()} onOAuth={vi.fn()} loading={false} error={null} />)
+    renderWithLang(
+      <LoginModal
+        onLogin={vi.fn()}
+        onRegister={vi.fn()}
+        onOAuth={vi.fn()}
+        loading={false}
+        error={null}
+      />,
+    )
 
     expect(screen.getByText("StayUp")).toBeInTheDocument()
     expect(screen.getByText(fr.auth.subtitle)).toBeInTheDocument()
@@ -22,16 +30,70 @@ describe("LoginModal", () => {
 
   it("forwards the error to the login form", () => {
     renderWithLang(
-      <LoginModal onLogin={vi.fn()} onOAuth={vi.fn()} loading={false} error="Bad credentials" />,
+      <LoginModal
+        onLogin={vi.fn()}
+        onRegister={vi.fn()}
+        onOAuth={vi.fn()}
+        loading={false}
+        error="Bad credentials"
+      />,
     )
     expect(screen.getByText("Bad credentials")).toBeInTheDocument()
   })
 
   it("forwards the loading state to both sign-in paths", () => {
-    renderWithLang(<LoginModal onLogin={vi.fn()} onOAuth={vi.fn()} loading error={null} />)
+    renderWithLang(
+      <LoginModal onLogin={vi.fn()} onRegister={vi.fn()} onOAuth={vi.fn()} loading error={null} />,
+    )
 
     expect(screen.getByText(fr.auth.signingIn)).toBeInTheDocument()
     expect(screen.getByText(fr.auth.continueWithGitHub).closest("button")).toBeDisabled()
+  })
+
+  it("switches to the register form and back", () => {
+    renderWithLang(
+      <LoginModal
+        onLogin={vi.fn()}
+        onRegister={vi.fn()}
+        onOAuth={vi.fn()}
+        loading={false}
+        error={null}
+      />,
+    )
+
+    fireEvent.click(screen.getByText(fr.auth.signUp))
+
+    expect(screen.getByLabelText(fr.auth.name)).toBeInTheDocument()
+    expect(screen.getByText(fr.auth.alreadyHaveAccount)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(fr.auth.signIn))
+
+    expect(screen.queryByLabelText(fr.auth.name)).not.toBeInTheDocument()
+  })
+
+  it("submits the register form via onRegister", async () => {
+    const onRegister = vi.fn()
+    renderWithLang(
+      <LoginModal
+        onLogin={vi.fn()}
+        onRegister={onRegister}
+        onOAuth={vi.fn()}
+        loading={false}
+        error={null}
+      />,
+    )
+
+    fireEvent.click(screen.getByText(fr.auth.signUp))
+    fireEvent.change(screen.getByLabelText(fr.auth.name), { target: { value: "Alice" } })
+    fireEvent.change(screen.getByLabelText(fr.auth.email), {
+      target: { value: "alice@test.com" },
+    })
+    fireEvent.change(screen.getByLabelText(fr.auth.password), { target: { value: "password123" } })
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp }))
+
+    await waitFor(() => {
+      expect(onRegister).toHaveBeenCalledWith("Alice", "alice@test.com", "password123")
+    })
   })
 })
 
