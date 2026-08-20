@@ -21,7 +21,7 @@ const session: AppSession = {
 
 function renderModal(open = true, onClose = vi.fn()) {
   render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ProfileModal open={open} onClose={onClose} session={session} />
     </LanguageProvider>,
   )

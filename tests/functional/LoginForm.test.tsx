@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/auth/LoginForm"
 import { LanguageProvider } from "@/context/LanguageContext"
 
 function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider>{ui}</LanguageProvider>)
+  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
 describe("LoginForm", () => {

@@ -57,18 +57,22 @@ export function useMenu({
 
       const langMenu = await Submenu.new({
         text: t.menu.language.title,
-        items: [
-          await CheckMenuItem.new({
-            text: t.menu.language.french,
-            checked: lang === "fr",
-            action: () => setLang("fr"),
-          }),
-          await CheckMenuItem.new({
-            text: t.menu.language.english,
-            checked: lang === "en",
-            action: () => setLang("en"),
-          }),
-        ],
+        items: await Promise.all(
+          (
+            [
+              ["en", t.menu.language.english],
+              ["fr", t.menu.language.french],
+              ["de", t.menu.language.german],
+              ["es", t.menu.language.spanish],
+              ["it", t.menu.language.italian],
+              ["pt", t.menu.language.portuguese],
+              ["ja", t.menu.language.japanese],
+              ["zh", t.menu.language.chinese],
+            ] as const
+          ).map(([code, text]) =>
+            CheckMenuItem.new({ text, checked: lang === code, action: () => setLang(code) }),
+          ),
+        ),
       })
 
       const displayMenu = await Submenu.new({

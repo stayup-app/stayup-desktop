@@ -121,7 +121,7 @@ function renderLayout(props: Partial<React.ComponentProps<typeof FeedLayout>> = 
   const onLogout = vi.fn()
   const onCheckUpdates = vi.fn()
   const view = render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ThemeProvider>
         <FeedLayout
           session={session}

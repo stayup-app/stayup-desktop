@@ -14,7 +14,7 @@ const session: AppSession = {
 }
 
 function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider>{ui}</LanguageProvider>)
+  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
 describe("UserMenu", () => {
@@ -39,16 +39,14 @@ describe("UserMenu", () => {
 
   it("embeds the language switcher", () => {
     renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
-    expect(screen.getByLabelText("Français")).toBeInTheDocument()
-    expect(screen.getByLabelText("English")).toBeInTheDocument()
+    expect(screen.getByLabelText("Language")).toBeInTheDocument()
   })
 })
 
 describe("LanguageSwitcher", () => {
-  it("highlights the active language", () => {
+  it("shows the active language as the selected option", () => {
     renderWithLang(<LanguageSwitcher />)
-    expect(screen.getByLabelText("Français").className).toContain("text-foreground")
-    expect(screen.getByLabelText("English").className).toContain("opacity-50")
+    expect(screen.getByLabelText("Language")).toHaveValue("fr")
   })
 
   it("switches the app to English", async () => {
@@ -59,7 +57,7 @@ describe("LanguageSwitcher", () => {
       </>,
     )
 
-    fireEvent.click(screen.getAllByLabelText("English")[0])
+    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "en" } })
 
     await waitFor(() => expect(screen.getByText(en.userMenu.signOut)).toBeInTheDocument())
   })
@@ -72,10 +70,17 @@ describe("LanguageSwitcher", () => {
       </>,
     )
 
-    fireEvent.click(screen.getAllByLabelText("English")[0])
+    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "en" } })
     await waitFor(() => expect(screen.getByText(en.userMenu.signOut)).toBeInTheDocument())
 
-    fireEvent.click(screen.getAllByLabelText("Français")[0])
+    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "fr" } })
     await waitFor(() => expect(screen.getByText(fr.userMenu.signOut)).toBeInTheDocument())
+  })
+
+  it("offers every supported language", () => {
+    renderWithLang(<LanguageSwitcher />)
+    const select = screen.getByLabelText("Language") as HTMLSelectElement
+    const values = Array.from(select.options).map((o) => o.value)
+    expect(values).toEqual(["en", "fr", "de", "es", "it", "pt", "ja", "zh"])
   })
 })

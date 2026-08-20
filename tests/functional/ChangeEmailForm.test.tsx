@@ -16,7 +16,7 @@ vi.mock("@/lib/store", () => ({
 
 function renderForm() {
   return render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ChangeEmailForm userId="user-1" currentEmail="alice@test.com" />
     </LanguageProvider>,
   )

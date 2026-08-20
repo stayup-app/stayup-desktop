@@ -74,7 +74,7 @@ const scrapItem: TaggedItem = {
 
 function renderViewer(item: TaggedItem | null, repos = repositories) {
   return render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <FeedContentViewer item={item} repositories={repos} />
     </LanguageProvider>,
   )

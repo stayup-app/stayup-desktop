@@ -36,7 +36,7 @@ function flux(overrides: Partial<FeedFlux> = {}): FeedFlux {
 
 function renderButtons(fluxes: FeedFlux[] = [], onSuccess = vi.fn()) {
   render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ImportExportButtons fluxes={fluxes} userId="user-1" onSuccess={onSuccess} />
     </LanguageProvider>,
   )

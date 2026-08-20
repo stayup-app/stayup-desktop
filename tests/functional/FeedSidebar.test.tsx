@@ -23,7 +23,7 @@ vi.mock("@/lib/store", () => ({
 }))
 
 function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider>{ui}</LanguageProvider>)
+  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
 // Typed access to the Node process without pulling in @types/node

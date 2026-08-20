@@ -28,7 +28,7 @@ function renderDialog(open = true) {
   const onClose = vi.fn()
   const onSuccess = vi.fn()
   const view = render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <AddFluxDialog open={open} onClose={onClose} userId="user-1" onSuccess={onSuccess} />
     </LanguageProvider>,
   )

@@ -1,6 +1,4 @@
-import type { Translations } from "./fr"
-
-export const en: Translations = {
+export const en = {
   auth: {
     subtitle: "Sign in to access your feeds",
     email: "Email",
@@ -127,8 +125,14 @@ export const en: Translations = {
     },
     language: {
       title: "Language",
-      french: "🇫🇷 Français",
       english: "🇬🇧 English",
+      french: "🇫🇷 Français",
+      german: "🇩🇪 Deutsch",
+      spanish: "🇪🇸 Español",
+      italian: "🇮🇹 Italiano",
+      portuguese: "🇵🇹 Português",
+      japanese: "🇯🇵 日本語",
+      chinese: "🇨🇳 中文",
     },
     display: {
       title: "View",
@@ -152,3 +156,5 @@ export const en: Translations = {
     error: "Error checking for updates.",
   },
 }
+
+export type Translations = typeof en
