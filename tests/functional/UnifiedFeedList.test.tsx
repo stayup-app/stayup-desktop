@@ -75,7 +75,7 @@ const scrapItem: TaggedItem = {
 function renderList(props: Partial<React.ComponentProps<typeof UnifiedFeedList>> = {}) {
   const onSelect = vi.fn()
   const view = render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <UnifiedFeedList
         items={[changelogItem, youtubeItem, rssItem, scrapItem]}
         selectedIndex={null}

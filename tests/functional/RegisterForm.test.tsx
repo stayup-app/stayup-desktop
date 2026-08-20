@@ -5,7 +5,7 @@ import { RegisterForm } from "@/components/auth/RegisterForm"
 import { LanguageProvider } from "@/context/LanguageContext"
 
 function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider>{ui}</LanguageProvider>)
+  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
 describe("RegisterForm", () => {

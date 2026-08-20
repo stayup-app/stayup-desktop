@@ -64,7 +64,7 @@ function mockUpdater(overrides: Partial<UpdaterState> = {}) {
 
 function renderApp() {
   return render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ThemeProvider>
         <App />
       </ThemeProvider>

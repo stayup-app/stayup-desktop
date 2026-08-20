@@ -16,7 +16,7 @@ vi.mock("@/lib/store", () => ({
 
 function renderForm() {
   return render(
-    <LanguageProvider>
+    <LanguageProvider initialLang="fr">
       <ChangePasswordForm userId="user-1" />
     </LanguageProvider>,
   )

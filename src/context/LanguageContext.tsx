@@ -1,8 +1,19 @@
 import { createContext, useContext, useState, useEffect } from "react"
-import { fr, en, type Translations, type Language } from "@/lib/translations"
+import {
+  en,
+  fr,
+  de,
+  es,
+  it,
+  pt,
+  ja,
+  zh,
+  type Translations,
+  type Language,
+} from "@/lib/translations"
 import { readLang, writeLang } from "@/lib/store"
 
-const dictionaries: Record<Language, Translations> = { fr, en }
+const dictionaries: Record<Language, Translations> = { en, fr, de, es, it, pt, ja, zh }
 
 interface LanguageContextType {
   lang: Language
@@ -12,8 +23,14 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | null>(null)
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLangState] = useState<Language>("fr")
+export function LanguageProvider({
+  children,
+  initialLang = "en",
+}: {
+  children: React.ReactNode
+  initialLang?: Language
+}) {
+  const [lang, setLangState] = useState<Language>(initialLang)
 
   useEffect(() => {
     readLang().then((stored) => {

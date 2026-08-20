@@ -6,7 +6,7 @@ import { LanguageProvider } from "@/context/LanguageContext"
 import { fr } from "@/lib/translations/fr"
 
 function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider>{ui}</LanguageProvider>)
+  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
 describe("LoginModal", () => {
