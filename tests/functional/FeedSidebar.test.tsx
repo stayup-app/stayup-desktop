@@ -175,6 +175,24 @@ describe("layout", () => {
   })
 })
 
+describe("refreshing feeds", () => {
+  it("calls onRefresh when the refresh button is clicked", () => {
+    const onRefresh = vi.fn()
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={onRefresh} />)
+
+    fireEvent.click(screen.getByLabelText(fr.menu.file.refresh))
+    expect(onRefresh).toHaveBeenCalled()
+  })
+
+  it("disables the refresh button and spins its icon while loading", () => {
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} loading />)
+
+    const button = screen.getByLabelText(fr.menu.file.refresh)
+    expect(button).toBeDisabled()
+    expect(button.querySelector("svg")?.getAttribute("class")).toContain("animate-spin")
+  })
+})
+
 describe("adding a feed", () => {
   it("opens the add-flux dialog", () => {
     renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
