@@ -1,16 +1,20 @@
+import { useState } from "react"
 import { LoginForm } from "./LoginForm"
+import { RegisterForm } from "./RegisterForm"
 import { OAuthButtons } from "./OAuthButtons"
 import { useLanguage } from "@/context/LanguageContext"
 
 interface LoginModalProps {
   onLogin: (email: string, password: string) => Promise<void>
+  onRegister: (name: string, email: string, password: string) => Promise<void>
   onOAuth: (provider: "github" | "google") => Promise<void>
   loading: boolean
   error: string | null
 }
 
-export function LoginModal({ onLogin, onOAuth, loading, error }: LoginModalProps) {
+export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: LoginModalProps) {
   const { t } = useLanguage()
+  const [mode, setMode] = useState<"login" | "register">("login")
 
   return (
     <div
@@ -44,9 +48,11 @@ export function LoginModal({ onLogin, onOAuth, loading, error }: LoginModalProps
         >
           <div className="text-center mb-6">
             <h1 className="text-[20px] font-bold mb-1" style={{ letterSpacing: "-0.02em" }}>
-              Bon retour
+              {mode === "login" ? t.auth.signIn : t.auth.signUp}
             </h1>
-            <p className="text-[13px] text-muted-foreground">{t.auth.subtitle}</p>
+            {mode === "login" && (
+              <p className="text-[13px] text-muted-foreground">{t.auth.subtitle}</p>
+            )}
           </div>
 
           <div className="mb-5">
@@ -59,7 +65,22 @@ export function LoginModal({ onLogin, onOAuth, loading, error }: LoginModalProps
             <div className="flex-1 h-px" style={{ background: "hsl(var(--border))" }} />
           </div>
 
-          <LoginForm onSubmit={onLogin} loading={loading} error={error} />
+          {mode === "login" ? (
+            <LoginForm onSubmit={onLogin} loading={loading} error={error} />
+          ) : (
+            <RegisterForm onSubmit={onRegister} loading={loading} error={error} />
+          )}
+
+          <p className="mt-5 text-center text-[13px] text-muted-foreground">
+            {mode === "login" ? t.auth.noAccount : t.auth.alreadyHaveAccount}{" "}
+            <button
+              type="button"
+              onClick={() => setMode(mode === "login" ? "register" : "login")}
+              className="font-medium text-foreground hover:underline"
+            >
+              {mode === "login" ? t.auth.signUp : t.auth.signIn}
+            </button>
+          </p>
         </div>
       </div>
     </div>

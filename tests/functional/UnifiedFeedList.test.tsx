@@ -132,9 +132,10 @@ describe("changelog entries", () => {
     expect(screen.getByText("Heading Some release notes")).toBeInTheDocument()
   })
 
-  it("renders an empty repo label when the repository is unknown", () => {
+  it("falls back to the translated repository label when the repository is unknown", () => {
     renderList({ items: [changelogItem], repositories: [] })
     expect(screen.getByText("v19.0.0")).toBeInTheDocument()
+    expect(screen.getByText("dépôt")).toBeInTheDocument()
   })
 
   it("omits the content paragraph when the release has no body", () => {

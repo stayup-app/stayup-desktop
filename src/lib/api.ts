@@ -71,6 +71,37 @@ export async function loginWithPassword(
   return token
 }
 
+export async function registerWithPassword(
+  name: string,
+  email: string,
+  password: string,
+  apiUrl: string,
+): Promise<string> {
+  const res = await fetch(`${apiUrl.replace(/\/$/, "")}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password }),
+  })
+
+  if (res.status === 409) throw new Error("Un compte existe déjà avec cet email.")
+  if (!res.ok) throw new Error("Erreur serveur, réessayez.")
+
+  const { token } = (await res.json()) as { token: string }
+  return token
+}
+
+export async function updateProfile(
+  userId: string,
+  token: string,
+  apiUrl: string,
+  data: { name?: string; email?: string; password?: string },
+): Promise<void> {
+  await apiFetch(`/ui/users/${userId}`, token, apiUrl, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
+
 export async function getUserFeed(
   userId: string,
   token: string,

@@ -181,7 +181,7 @@ function ChangelogEntry({
       <div className="flex items-center justify-between gap-2 mb-0.5">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[14px] font-mono text-muted-foreground truncate">
-            {repoUrl?.replace("https://github.com/", "") ?? repositoryLabel}
+            {repoUrl?.replace("https://github.com/", "") || repositoryLabel}
           </span>
           <span
             className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0"

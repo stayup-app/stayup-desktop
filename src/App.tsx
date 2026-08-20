@@ -6,7 +6,7 @@ import { FeedLayout } from "@/components/feed/FeedLayout"
 import { UpdateBanner } from "@/components/ui/UpdateBanner"
 
 export default function App() {
-  const { session, loading, error, login, loginOAuth, logout } = useAuth()
+  const { session, loading, error, login, register, loginOAuth, logout } = useAuth()
   const {
     status: updateStatus,
     downloadProgress,
@@ -33,7 +33,15 @@ export default function App() {
   }
 
   if (!session) {
-    return <LoginModal onLogin={login} onOAuth={loginOAuth} loading={loading} error={error} />
+    return (
+      <LoginModal
+        onLogin={login}
+        onRegister={register}
+        onOAuth={loginOAuth}
+        loading={loading}
+        error={error}
+      />
+    )
   }
 
   return (

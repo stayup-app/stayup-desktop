@@ -11,6 +11,7 @@ interface ReadItemsState {
   initialized: boolean
   init: () => Promise<void>
   markRead: (tagged: TaggedItem) => Promise<void>
+  markAllRead: (items: TaggedItem[]) => Promise<void>
   cleanup: (currentIds: Set<string>) => Promise<void>
 }
 
@@ -30,6 +31,15 @@ export const useReadItemsStore = create<ReadItemsState>()((set, get) => ({
     if (readIds.has(id)) return
     const next = new Set(readIds)
     next.add(id)
+    set({ readIds: next })
+    await writeReadItems([...next])
+  },
+
+  markAllRead: async (items: TaggedItem[]) => {
+    const { readIds } = get()
+    const next = new Set(readIds)
+    for (const tagged of items) next.add(getTaggedItemId(tagged))
+    if (next.size === readIds.size) return
     set({ readIds: next })
     await writeReadItems([...next])
   },

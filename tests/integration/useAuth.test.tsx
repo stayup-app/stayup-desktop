@@ -4,11 +4,11 @@ import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { useAuth } from "@/hooks/useAuth"
 import { readToken, writeToken, clearToken, readApiUrl } from "@/lib/store"
-import { loginWithPassword } from "@/lib/api"
+import { loginWithPassword, registerWithPassword } from "@/lib/api"
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(undefined) }))
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }))
-vi.mock("@/lib/api", () => ({ loginWithPassword: vi.fn() }))
+vi.mock("@/lib/api", () => ({ loginWithPassword: vi.fn(), registerWithPassword: vi.fn() }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn(),
   writeToken: vi.fn().mockResolvedValue(undefined),
@@ -104,6 +104,46 @@ describe("login", () => {
     await act(() => result.current.login("a@b.c", "x"))
 
     expect(result.current.error).toBe("Erreur de connexion.")
+  })
+})
+
+describe("register", () => {
+  it("persists the token and exposes the decoded session", async () => {
+    vi.mocked(registerWithPassword).mockResolvedValue(validToken)
+    const { result } = renderHook(() => useAuth())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() => result.current.register("Alice", "alice@test.com", "pass1234"))
+
+    expect(registerWithPassword).toHaveBeenCalledWith(
+      "Alice",
+      "alice@test.com",
+      "pass1234",
+      "https://api.test",
+    )
+    expect(writeToken).toHaveBeenCalledWith(validToken)
+    expect(result.current.session?.email).toBe("alice@test.com")
+  })
+
+  it("surfaces the API error message", async () => {
+    vi.mocked(registerWithPassword).mockRejectedValue(new Error("Email already in use."))
+    const { result } = renderHook(() => useAuth())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() => result.current.register("Alice", "taken@test.com", "pass1234"))
+
+    expect(result.current.error).toBe("Email already in use.")
+    expect(result.current.session).toBeNull()
+  })
+
+  it("falls back to a generic message for a non-Error rejection", async () => {
+    vi.mocked(registerWithPassword).mockRejectedValue("nope")
+    const { result } = renderHook(() => useAuth())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() => result.current.register("Alice", "a@b.c", "pass1234"))
+
+    expect(result.current.error).toBe("Erreur d'inscription.")
   })
 })
 
