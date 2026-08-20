@@ -391,6 +391,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
           fluxes={fluxes}
           userId={session.userId}
           onRefresh={stableRefresh}
+          loading={loading}
           unreadCountByRepoId={unreadCountByRepoId}
           width={sidebarWidth}
         />

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, LayoutList, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronRight, LayoutList, Plus, RefreshCw, Trash2 } from "lucide-react"
 import { cn, stripUrlScheme } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
@@ -80,6 +80,7 @@ interface FeedSidebarProps {
   fluxes: FeedFlux[]
   userId: string
   onRefresh: () => void
+  loading?: boolean
   unreadCountByRepoId?: Record<number, number>
   width?: number
 }
@@ -88,6 +89,7 @@ export function FeedSidebar({
   fluxes,
   userId,
   onRefresh,
+  loading = false,
   unreadCountByRepoId = {},
   width = 220,
 }: FeedSidebarProps) {
@@ -160,6 +162,15 @@ export function FeedSidebar({
             {t.feed.myFeeds}
           </span>
           <div className="flex items-center gap-1">
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              style={{ border: "1px solid hsl(var(--border))" }}
+              aria-label={t.menu.file.refresh}
+            >
+              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+            </button>
             <button
               onClick={() => setAddOpen(true)}
               className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
