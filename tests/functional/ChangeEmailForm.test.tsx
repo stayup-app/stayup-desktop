@@ -66,4 +66,12 @@ describe("ChangeEmailForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Mettre à jour l'e-mail" }))
     await screen.findByText("Erreur serveur.")
   })
+
+  it("shows an error when the token is missing", async () => {
+    vi.mocked(readToken).mockResolvedValue(null)
+    renderForm()
+    fireEvent.submit(screen.getByRole("button", { name: "Mettre à jour l'e-mail" }))
+    await screen.findByText("Token manquant")
+    expect(updateProfile).not.toHaveBeenCalled()
+  })
 })

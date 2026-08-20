@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import {
   loginWithPassword,
+  registerWithPassword,
+  updateProfile,
   getUserFeed,
   addUserRepository,
   deleteUserRepository,
@@ -53,6 +55,52 @@ describe("loginWithPassword", () => {
     vi.stubGlobal("fetch", fetchMock)
     await loginWithPassword("u@test.com", "pass", "https://api.example.com/")
     expect(fetchMock).toHaveBeenCalledWith("https://api.example.com/auth/login", expect.anything())
+  })
+})
+
+describe("registerWithPassword", () => {
+  it("returns the token string on successful registration", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: async () => ({ token: "jwt-new-1" }),
+      }),
+    )
+    const token = await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)
+    expect(token).toBe("jwt-new-1")
+  })
+
+  it("throws 'Un compte existe déjà avec cet email.' on 409", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409 }))
+    await expect(
+      registerWithPassword("Alice", "taken@test.com", "pass1234", API_URL),
+    ).rejects.toThrow("Un compte existe déjà avec cet email.")
+  })
+
+  it("throws 'Erreur serveur' on 5xx", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    await expect(registerWithPassword("Alice", "a@test.com", "pass1234", API_URL)).rejects.toThrow(
+      "Erreur serveur, réessayez.",
+    )
+  })
+})
+
+describe("updateProfile", () => {
+  it("PATCHes the profile payload", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
+    vi.stubGlobal("fetch", fetchMock)
+
+    await updateProfile("user-1", TOKEN, API_URL, { email: "new@test.com" })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API_URL}/ui/users/user-1`,
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({ email: "new@test.com" }),
+      }),
+    )
   })
 })
 

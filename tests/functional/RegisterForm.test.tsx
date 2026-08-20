@@ -30,6 +30,15 @@ describe("RegisterForm", () => {
     })
   })
 
+  it("shows a validation error for an invalid email", async () => {
+    renderWithLang(<RegisterForm onSubmit={vi.fn()} loading={false} error={null} />)
+    await userEvent.type(screen.getByLabelText("Nom"), "Alice")
+    await userEvent.type(screen.getByLabelText("Email"), "not-an-email")
+    await userEvent.type(screen.getByLabelText("Mot de passe"), "password123")
+    fireEvent.submit(screen.getByRole("button", { name: "Créer un compte" }))
+    await screen.findByText("Email invalide")
+  })
+
   it("shows a validation error when the name is empty", async () => {
     renderWithLang(<RegisterForm onSubmit={vi.fn()} loading={false} error={null} />)
     await userEvent.type(screen.getByLabelText("Email"), "alice@test.com")

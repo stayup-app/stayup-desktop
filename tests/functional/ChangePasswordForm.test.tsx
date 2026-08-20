@@ -70,4 +70,14 @@ describe("ChangePasswordForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
     await screen.findByText("Erreur serveur.")
   })
+
+  it("shows an error when the token is missing", async () => {
+    vi.mocked(readToken).mockResolvedValue(null)
+    renderForm()
+    await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
+    await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")
+    fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
+    await screen.findByText("Token manquant")
+    expect(updateProfile).not.toHaveBeenCalled()
+  })
 })

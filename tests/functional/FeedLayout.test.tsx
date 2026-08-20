@@ -26,6 +26,7 @@ vi.mock("@/lib/api", () => ({
   createScrapRequest: vi.fn().mockResolvedValue({ id: "r" }),
   getScrapRepos: vi.fn().mockResolvedValue([]),
   subscribeScrap: vi.fn().mockResolvedValue(undefined),
+  updateProfile: vi.fn().mockResolvedValue(undefined),
 }))
 
 const session: AppSession = {
@@ -161,6 +162,16 @@ describe("header", () => {
     const { onLogout } = renderLayout()
     fireEvent.click(screen.getByText(fr.userMenu.signOut))
     expect(onLogout).toHaveBeenCalled()
+  })
+
+  it("opens and closes the profile modal from the user menu", () => {
+    renderLayout()
+
+    fireEvent.click(screen.getByText("alice@test.com"))
+    expect(screen.getByText(fr.profile.title)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(fr.common.close))
+    expect(screen.queryByText(fr.profile.title)).not.toBeInTheDocument()
   })
 })
 
