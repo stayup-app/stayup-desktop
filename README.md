@@ -39,6 +39,22 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 
 ## Installation
 
+### Quick install (one line)
+
+**macOS / Linux**
+
+```sh
+curl -fsSL https://stayup-app.github.io/stayup-desktop/install.sh | sh
+```
+
+**Windows** (PowerShell)
+
+```powershell
+irm https://stayup-app.github.io/stayup-desktop/install.ps1 | iex
+```
+
+This detects your OS/architecture and installs the latest release (via Homebrew on macOS, `.deb`/`.rpm`/AppImage on Linux, the `.exe` installer on Windows). See below for manual, platform-specific installation.
+
 ### macOS
 
 Download the `.dmg` for your architecture from the [latest release](https://github.com/stayup-app/stayup-desktop/releases/latest):
@@ -88,6 +104,28 @@ chmod +x StayUp_x.x.x_amd64.AppImage
 ---
 
 ## Uninstallation
+
+### Quick uninstall (one line)
+
+**macOS**
+
+```sh
+curl -fsSL https://stayup-app.github.io/stayup-desktop/uninstall.sh | sh
+```
+
+**Windows** (PowerShell)
+
+```powershell
+irm https://stayup-app.github.io/stayup-desktop/uninstall.ps1 | iex
+```
+
+**Linux**
+
+```sh
+curl -fsSL https://stayup-app.github.io/stayup-desktop/uninstall.sh | sh
+```
+
+Each script detects how StayUp was installed (Homebrew, `.deb`, `.rpm`, or AppImage) and removes it accordingly. Add `--purge` (`-Purge` on Windows) to also delete your user data — see below for manual, platform-specific uninstallation.
 
 ### macOS
 

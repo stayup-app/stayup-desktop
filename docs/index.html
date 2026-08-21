@@ -144,6 +144,31 @@
     /* ── INSTALL ── */
     .install-section { background: var(--bg2); }
 
+    /* One-line install */
+    .quick-install {
+      max-width: 860px; margin: 0 auto 1.4rem;
+      display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    .quick-install-row {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: .9rem 1.1rem;
+    }
+    .quick-install-label {
+      display: block; font-size: .72rem; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem;
+    }
+    .quick-install-row pre {
+      margin: 0; white-space: nowrap; cursor: pointer; position: relative;
+    }
+    .quick-install-row pre:hover { border-color: rgba(45,212,191,.4); }
+    .quick-install-row pre::after {
+      content: "Click to copy"; position: absolute; right: .7rem; top: 50%; transform: translateY(-50%);
+      font-size: .68rem; color: var(--muted); background: var(--bg3); padding: 0 .3rem;
+      opacity: 0; transition: opacity .15s;
+    }
+    .quick-install-row pre:hover::after { opacity: 1; }
+    .quick-install-row pre.copied::after { content: "Copied ✓"; color: var(--teal-light); opacity: 1; }
+
     /* Smart download (auto-detected OS) */
     .smart-download {
       max-width: 860px; margin: 0 auto 2rem;
@@ -361,6 +386,18 @@
   <h2>Install StayUp</h2>
   <p class="section-sub">Choose the package that fits your system.</p>
 
+  <!-- One-line install -->
+  <div class="quick-install">
+    <div class="quick-install-row">
+      <span class="quick-install-label">macOS / Linux</span>
+      <pre>curl -fsSL stayup-app.github.io/stayup-desktop/install.sh | sh</pre>
+    </div>
+    <div class="quick-install-row">
+      <span class="quick-install-label">Windows (PowerShell)</span>
+      <pre>irm stayup-app.github.io/stayup-desktop/install.ps1 | iex</pre>
+    </div>
+  </div>
+
   <!-- Auto-detected OS — populated by JS, hidden by default -->
   <div id="smart-download" class="smart-download" hidden>
     <div class="smart-download-header">
@@ -438,6 +475,21 @@
   <!-- Uninstall note -->
   <div style="max-width:860px;margin:2rem auto 0;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.6rem">
     <p style="font-size:.88rem;font-weight:600;margin-bottom:.6rem">Uninstalling</p>
+    <div class="quick-install" style="margin:0 0 1rem">
+      <div class="quick-install-row">
+        <span class="quick-install-label">🍎 macOS</span>
+        <pre>curl -fsSL stayup-app.github.io/stayup-desktop/uninstall.sh | sh</pre>
+      </div>
+      <div class="quick-install-row">
+        <span class="quick-install-label">🪟 Windows (PowerShell)</span>
+        <pre>irm stayup-app.github.io/stayup-desktop/uninstall.ps1 | iex</pre>
+      </div>
+      <div class="quick-install-row">
+        <span class="quick-install-label">🐧 Linux</span>
+        <pre>curl -fsSL stayup-app.github.io/stayup-desktop/uninstall.sh | sh</pre>
+      </div>
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);margin:0 0 1rem">Each script detects how StayUp was installed and removes it. Add <code>--purge</code> (<code>-Purge</code> on Windows) to also delete your user data.</p>
     <div style="display:grid;gap:.5rem;font-size:.83rem;color:var(--muted)">
       <div><strong style="color:var(--text)">macOS:</strong> drag StayUp from /Applications to Trash · <code>brew uninstall --cask stayup</code></div>
       <div><strong style="color:var(--text)">Windows:</strong> Settings → Apps → Installed apps → StayUp → Uninstall</div>
@@ -508,6 +560,19 @@
   </div>
   <div style="margin-top:.5rem">MIT © StayUp</div>
 </footer>
+
+<script>
+  // Click-to-copy for one-line install/uninstall commands.
+  document.querySelectorAll(".quick-install-row pre").forEach((pre) => {
+    pre.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pre.textContent);
+        pre.classList.add("copied");
+        setTimeout(() => pre.classList.remove("copied"), 1500);
+      } catch (_) {}
+    });
+  });
+</script>
 
 <script>
   // Smart download: detect user's OS/arch and surface the matching release asset.
