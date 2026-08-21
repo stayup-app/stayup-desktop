@@ -157,17 +157,18 @@
       display: block; font-size: .72rem; font-weight: 600; color: var(--muted);
       text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem;
     }
-    .quick-install-row pre {
-      margin: 0; white-space: nowrap; cursor: pointer; position: relative;
+    .quick-install-row pre { margin: 0; white-space: nowrap; }
+
+    /* Copy button (attached to any .cmd > pre) */
+    .cmd { position: relative; }
+    .copy-btn {
+      position: absolute; top: .5rem; right: .5rem;
+      background: var(--bg2); border: 1px solid var(--border); color: var(--muted);
+      font-size: .7rem; font-weight: 600; font-family: inherit; line-height: 1;
+      padding: .3rem .6rem; border-radius: 6px; cursor: pointer; transition: all .15s;
     }
-    .quick-install-row pre:hover { border-color: rgba(45,212,191,.4); }
-    .quick-install-row pre::after {
-      content: "Click to copy"; position: absolute; right: .7rem; top: 50%; transform: translateY(-50%);
-      font-size: .68rem; color: var(--muted); background: var(--bg3); padding: 0 .3rem;
-      opacity: 0; transition: opacity .15s;
-    }
-    .quick-install-row pre:hover::after { opacity: 1; }
-    .quick-install-row pre.copied::after { content: "Copied ✓"; color: var(--teal-light); opacity: 1; }
+    .copy-btn:hover { border-color: rgba(45,212,191,.5); color: var(--teal-light); }
+    .copy-btn.copied { border-color: var(--teal); color: var(--teal-light); background: rgba(45,212,191,.1); }
 
     /* Smart download (auto-detected OS) */
     .smart-download {
@@ -220,6 +221,7 @@
       font-size: .8rem; overflow-x: auto; color: var(--teal-light);
       font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
     }
+    .cmd pre { padding-right: 4.2rem; }
     .download-link {
       display: inline-flex; align-items: center; gap: .4rem;
       color: var(--teal); font-size: .85rem; font-weight: 500; text-decoration: none;
@@ -280,6 +282,7 @@
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#install">Install</a>
+    <a href="#uninstall">Uninstall</a>
     <a href="#ci">CI / CD</a>
     <a href="https://github.com/stayup-app/stayup-desktop">GitHub</a>
   </div>
@@ -390,11 +393,17 @@
   <div class="quick-install">
     <div class="quick-install-row">
       <span class="quick-install-label">macOS / Linux</span>
-      <pre>curl -fsSL stayup-app.github.io/stayup-desktop/install.sh | sh</pre>
+      <div class="cmd">
+        <pre>curl -fsSL stayup-app.github.io/stayup-desktop/install.sh | sh</pre>
+        <button class="copy-btn" type="button">Copy</button>
+      </div>
     </div>
     <div class="quick-install-row">
       <span class="quick-install-label">Windows (PowerShell)</span>
-      <pre>irm stayup-app.github.io/stayup-desktop/install.ps1 | iex</pre>
+      <div class="cmd">
+        <pre>irm stayup-app.github.io/stayup-desktop/install.ps1 | iex</pre>
+        <button class="copy-btn" type="button">Copy</button>
+      </div>
     </div>
   </div>
 
@@ -420,7 +429,10 @@
       <h3>🍎 macOS</h3>
       <div class="install-method">
         <div class="method-name">Homebrew Cask</div>
-        <pre>brew install --cask stayup-app/tap/stayup</pre>
+        <div class="cmd">
+          <pre>brew install --cask stayup-app/tap/stayup</pre>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>
       </div>
       <div class="install-method">
         <div class="method-name">Direct download</div>
@@ -452,11 +464,17 @@
       <h3>🐧 Linux — Debian / Fedora</h3>
       <div class="install-method">
         <div class="method-name">Debian / Ubuntu (.deb)</div>
-        <pre>sudo dpkg -i StayUp_*_amd64.deb</pre>
+        <div class="cmd">
+          <pre>sudo dpkg -i StayUp_*_amd64.deb</pre>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>
       </div>
       <div class="install-method">
         <div class="method-name">Fedora / RHEL (.rpm)</div>
-        <pre>sudo rpm -i StayUp-*-1.x86_64.rpm</pre>
+        <div class="cmd">
+          <pre>sudo rpm -i StayUp-*-1.x86_64.rpm</pre>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>
       </div>
     </div>
 
@@ -465,36 +483,55 @@
       <h3>🐧 Linux — Universal</h3>
       <div class="install-method">
         <div class="method-name">AppImage (any distro)</div>
-        <pre>chmod +x StayUp_*_amd64.AppImage
+        <div class="cmd">
+          <pre>chmod +x StayUp_*_amd64.AppImage
 ./StayUp_*_amd64.AppImage</pre>
+          <button class="copy-btn" type="button">Copy</button>
+        </div>
       </div>
     </div>
 
   </div>
+</section>
 
-  <!-- Uninstall note -->
-  <div style="max-width:860px;margin:2rem auto 0;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.6rem">
-    <p style="font-size:.88rem;font-weight:600;margin-bottom:.6rem">Uninstalling</p>
-    <div class="quick-install" style="margin:0 0 1rem">
-      <div class="quick-install-row">
-        <span class="quick-install-label">🍎 macOS</span>
+<!-- UNINSTALL -->
+<section id="uninstall">
+  <p class="section-label">Moving on</p>
+  <h2>Uninstall StayUp</h2>
+  <p class="section-sub">One command removes StayUp, however it was installed.</p>
+
+  <div class="quick-install">
+    <div class="quick-install-row">
+      <span class="quick-install-label">🍎 macOS</span>
+      <div class="cmd">
         <pre>curl -fsSL stayup-app.github.io/stayup-desktop/uninstall.sh | sh</pre>
+        <button class="copy-btn" type="button">Copy</button>
       </div>
-      <div class="quick-install-row">
-        <span class="quick-install-label">🪟 Windows (PowerShell)</span>
+    </div>
+    <div class="quick-install-row">
+      <span class="quick-install-label">🪟 Windows (PowerShell)</span>
+      <div class="cmd">
         <pre>irm stayup-app.github.io/stayup-desktop/uninstall.ps1 | iex</pre>
+        <button class="copy-btn" type="button">Copy</button>
       </div>
-      <div class="quick-install-row">
-        <span class="quick-install-label">🐧 Linux</span>
+    </div>
+    <div class="quick-install-row">
+      <span class="quick-install-label">🐧 Linux</span>
+      <div class="cmd">
         <pre>curl -fsSL stayup-app.github.io/stayup-desktop/uninstall.sh | sh</pre>
+        <button class="copy-btn" type="button">Copy</button>
       </div>
     </div>
-    <p style="font-size:.78rem;color:var(--muted);margin:0 0 1rem">Each script detects how StayUp was installed and removes it. Add <code>--purge</code> (<code>-Purge</code> on Windows) to also delete your user data.</p>
-    <div style="display:grid;gap:.5rem;font-size:.83rem;color:var(--muted)">
-      <div><strong style="color:var(--text)">macOS:</strong> drag StayUp from /Applications to Trash · <code>brew uninstall --cask stayup</code></div>
-      <div><strong style="color:var(--text)">Windows:</strong> Settings → Apps → Installed apps → StayUp → Uninstall</div>
-      <div><strong style="color:var(--text)">Linux deb:</strong> <code>sudo apt remove stayup</code> · rpm: <code>sudo rpm -e StayUp</code></div>
-    </div>
+  </div>
+
+  <p style="text-align:center;font-size:.82rem;color:var(--muted);max-width:600px;margin:0 auto 2rem">
+    Each script detects how StayUp was installed (Homebrew, .deb, .rpm, or AppImage) and removes it. Add <code>--purge</code> (<code>-Purge</code> on Windows) to also delete your user data.
+  </p>
+
+  <div style="max-width:860px;margin:0 auto;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem 1.6rem;display:grid;gap:.5rem;font-size:.83rem;color:var(--muted)">
+    <div><strong style="color:var(--text)">macOS:</strong> drag StayUp from /Applications to Trash · <code>brew uninstall --cask stayup</code></div>
+    <div><strong style="color:var(--text)">Windows:</strong> Settings → Apps → Installed apps → StayUp → Uninstall</div>
+    <div><strong style="color:var(--text)">Linux deb:</strong> <code>sudo apt remove stayup</code> · rpm: <code>sudo rpm -e StayUp</code></div>
   </div>
 </section>
 
@@ -562,13 +599,20 @@
 </footer>
 
 <script>
-  // Click-to-copy for one-line install/uninstall commands.
-  document.querySelectorAll(".quick-install-row pre").forEach((pre) => {
-    pre.addEventListener("click", async () => {
+  // Copy-to-clipboard buttons on every command block.
+  document.querySelectorAll(".copy-btn").forEach((btn) => {
+    const pre = btn.previousElementSibling;
+    if (!pre) return;
+    btn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(pre.textContent);
-        pre.classList.add("copied");
-        setTimeout(() => pre.classList.remove("copied"), 1500);
+        const original = btn.textContent;
+        btn.textContent = "Copied ✓";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = original;
+          btn.classList.remove("copied");
+        }, 1500);
       } catch (_) {}
     });
   });
