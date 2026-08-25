@@ -122,19 +122,12 @@ describe("useMenu", () => {
     expect(props.setLang).toHaveBeenCalledWith("fr")
   })
 
-  it("checks the active theme and switches on click", async () => {
-    const props = { ...baseProps(), theme: "dark" as const }
-    renderHook(() => useMenu(props))
+  it("does not offer a light/dark switch — Aurora is dark-only", async () => {
+    renderHook(() => useMenu(baseProps()))
     await waitFor(() => expect(setAsAppMenu).toHaveBeenCalled())
 
-    expect(optionsFor(fr.menu.display.darkMode).checked).toBe(true)
-    expect(optionsFor(fr.menu.display.lightMode).checked).toBe(false)
-
-    optionsFor(fr.menu.display.lightMode).action!()
-    expect(props.setTheme).toHaveBeenCalledWith("light")
-
-    optionsFor(fr.menu.display.darkMode).action!()
-    expect(props.setTheme).toHaveBeenCalledWith("dark")
+    expect(created.some((o) => o.text === fr.menu.display.lightMode)).toBe(false)
+    expect(created.some((o) => o.text === fr.menu.display.darkMode)).toBe(false)
   })
 
   it("toggles fullscreen on the current window", async () => {
@@ -156,10 +149,12 @@ describe("useMenu", () => {
     await waitFor(() => expect(setAsAppMenu).toHaveBeenCalled())
 
     const about = optionsFor(fr.menu.help.about).item as {
-      About: { version: string; comments: string }
+      About: { version: string; comments: string; authors?: string[] }
     }
     expect(about.About.version).toBe("9.9.9")
     expect(about.About.comments).toBe(fr.menu.help.aboutComment)
+    // No `authors` — keeps the native About dialog to a single pane, no Credits tab.
+    expect(about.About.authors).toBeUndefined()
   })
 
   it("does not install the menu when the effect is torn down mid-build", async () => {

@@ -49,8 +49,7 @@ describe("ProfileModal", () => {
 
   it("calls onClose when the backdrop is clicked", () => {
     const onClose = renderModal(true)
-    const backdrop = document.querySelector(".bg-black\\/50")!
-    fireEvent.click(backdrop)
+    fireEvent.click(screen.getByTestId("dialog-backdrop"))
     expect(onClose).toHaveBeenCalled()
   })
 })

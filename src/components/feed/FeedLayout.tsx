@@ -11,6 +11,7 @@ import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
 import { ProfileModal } from "@/components/profile/ProfileModal"
+import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import type { AppSession } from "@/lib/session"
@@ -345,38 +346,19 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     return () => window.removeEventListener("keydown", handler)
   }, [selectionId, repoUrlMap])
 
-  const initial = session.userId?.charAt(0)?.toUpperCase() ?? "?"
-
   return (
-    <div
-      className="flex flex-col flex-1 overflow-hidden"
-      style={{ background: "hsl(var(--background))" }}
-    >
+    <div className="flex flex-col flex-1 overflow-hidden" style={{ background: "var(--bg)" }}>
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 h-[52px] shrink-0"
-        style={{ borderBottom: "1px solid hsl(var(--border))" }}
+        data-tauri-drag-region
+        style={{ borderBottom: "1px solid var(--border-soft)" }}
       >
         <div className="flex items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 26 26" fill="none">
-            <rect width="26" height="26" rx="6" fill="var(--teal)" />
-            <path d="M13 6L19.5 15H15V20H11V15H6.5L13 6Z" fill="#09090b" />
-          </svg>
-          <span className="font-semibold text-[16px]" style={{ letterSpacing: "-0.02em" }}>
-            StayUp
-          </span>
+          <AuroraWordmark size={14} />
         </div>
 
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[14px] font-semibold"
-            style={{
-              background: "linear-gradient(135deg, var(--teal), oklch(0.65 0.22 280))",
-              color: "#fafafa",
-            }}
-          >
-            {initial}
-          </div>
           <UserMenu
             session={session}
             onLogout={onLogout}

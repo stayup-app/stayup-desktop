@@ -54,15 +54,15 @@ describe("UpdateBanner", () => {
   })
 
   it("renders a progress bar sized to the download progress", () => {
-    const { container } = renderBanner("downloading", 75)
-    const bar = container.querySelector<HTMLElement>(".bg-primary")
+    renderBanner("downloading", 75)
+    const bar = screen.getByTestId("update-progress-bar")
     expect(bar).not.toBeNull()
-    expect(bar!.style.width).toBe("75%")
+    expect(bar.style.width).toBe("75%")
   })
 
   it("renders no progress bar when progress is unknown", () => {
-    const { container } = renderBanner("downloading", null)
-    expect(container.querySelector(".bg-primary")).toBeNull()
+    renderBanner("downloading", null)
+    expect(screen.queryByTestId("update-progress-bar")).toBeNull()
   })
 
   it.each(["up-to-date", "error"] as const)("is dismissible when %s", (status) => {

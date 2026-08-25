@@ -2,7 +2,9 @@ import type { Translations } from "./en"
 
 export const ja: Translations = {
   auth: {
-    subtitle: "サインインしてフィードにアクセス",
+    subtitle: "前回の続きから始めよう。",
+    loginTitle: "おかえりなさい。",
+    registerTitle: "アカウントを作成しよう。",
     email: "メールアドレス",
     password: "パスワード",
     name: "名前",
@@ -35,10 +37,10 @@ export const ja: Translations = {
     filterUnread: "未読",
     markAllRead: "すべて既読にする",
     providers: {
-      changelog: "GitHub 更新履歴",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "Webスクレイピング",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -52,7 +54,8 @@ export const ja: Translations = {
     close: "閉じる",
   },
   addFlux: {
-    title: "フィードを追加",
+    title: "何をフォローする？",
+    description: "ソースを選べば、あとはおまかせ。",
     provider: "プロバイダー",
     identifierLabels: {
       changelog: "GitHubリポジトリ",
@@ -83,7 +86,8 @@ export const ja: Translations = {
     requestUrlError: "URLが無効です",
   },
   viewer: {
-    selectItem: "項目を選択してください。",
+    selectItem: "読む項目を選んでください。",
+    selectItemHint: "左のリストは新しい順に並んでいます。",
     noTitle: "タイトルなし",
     thumbnail: "サムネイル",
     repository: "リポジトリ",

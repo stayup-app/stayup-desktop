@@ -21,7 +21,7 @@ describe("LoginModal", () => {
       />,
     )
 
-    expect(screen.getByText("StayUp")).toBeInTheDocument()
+    expect(screen.getByText(fr.auth.loginTitle)).toBeInTheDocument()
     expect(screen.getByText(fr.auth.subtitle)).toBeInTheDocument()
     expect(screen.getByText(fr.auth.or)).toBeInTheDocument()
     expect(screen.getByText(fr.auth.continueWithGitHub)).toBeInTheDocument()
@@ -127,9 +127,9 @@ describe("OAuthButtons", () => {
     const button = screen.getByText(fr.auth.continueWithGitHub).closest("button")!
 
     fireEvent.mouseEnter(button)
-    expect(button.style.background).toBe("var(--surface-3)")
+    expect(button.style.background).toBe("var(--surface-hi)")
 
     fireEvent.mouseLeave(button)
-    expect(button.style.background).toBe("var(--surface-2)")
+    expect(button.style.background).toBe("var(--surface)")
   })
 })

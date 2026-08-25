@@ -1,9 +1,8 @@
 import { describe, it, expect, vi } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { UserMenu } from "@/components/layout/UserMenu"
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher"
 import { LanguageProvider } from "@/context/LanguageContext"
-import { fr, en } from "@/lib/translations"
+import { fr } from "@/lib/translations"
 import type { AppSession } from "@/lib/session"
 
 const session: AppSession = {
@@ -18,69 +17,53 @@ function renderWithLang(ui: React.ReactElement) {
 }
 
 describe("UserMenu", () => {
-  it("shows the signed-in email", () => {
+  it("shows the avatar initial from the user's name, not the email", () => {
     renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
-    expect(screen.getByText("alice@test.com")).toBeInTheDocument()
+    expect(screen.getByText("A")).toBeInTheDocument()
+    expect(screen.queryByText("alice@test.com")).not.toBeInTheDocument()
   })
 
-  it("calls onLogout when the sign-out button is clicked", () => {
+  it("keeps the menu closed until the avatar is clicked", () => {
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTitle("Alice"))
+    expect(screen.getByText(fr.userMenu.profile)).toBeInTheDocument()
+  })
+
+  it("calls onOpenProfile and closes when Profil is clicked", () => {
+    const onOpenProfile = vi.fn()
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={onOpenProfile} />)
+
+    fireEvent.click(screen.getByTitle("Alice"))
+    fireEvent.click(screen.getByText(fr.userMenu.profile))
+
+    expect(onOpenProfile).toHaveBeenCalled()
+    expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
+  })
+
+  it("calls onLogout when sign-out is clicked", () => {
     const onLogout = vi.fn()
     renderWithLang(<UserMenu session={session} onLogout={onLogout} onOpenProfile={() => {}} />)
+
+    fireEvent.click(screen.getByTitle("Alice"))
     fireEvent.click(screen.getByText(fr.userMenu.signOut))
+
     expect(onLogout).toHaveBeenCalled()
   })
 
-  it("calls onOpenProfile when the email is clicked", () => {
-    const onOpenProfile = vi.fn()
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={onOpenProfile} />)
-    fireEvent.click(screen.getByText("alice@test.com"))
-    expect(onOpenProfile).toHaveBeenCalled()
-  })
-
-  it("embeds the language switcher", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
-    expect(screen.getByLabelText("Language")).toBeInTheDocument()
-  })
-})
-
-describe("LanguageSwitcher", () => {
-  it("shows the active language as the selected option", () => {
-    renderWithLang(<LanguageSwitcher />)
-    expect(screen.getByLabelText("Language")).toHaveValue("fr")
-  })
-
-  it("switches the app to English", async () => {
+  it("closes when clicking outside", () => {
     renderWithLang(
-      <>
-        <LanguageSwitcher />
+      <div>
         <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
-      </>,
+        <button>outside</button>
+      </div>,
     )
 
-    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "en" } })
+    fireEvent.click(screen.getByTitle("Alice"))
+    expect(screen.getByText(fr.userMenu.profile)).toBeInTheDocument()
 
-    await waitFor(() => expect(screen.getByText(en.userMenu.signOut)).toBeInTheDocument())
-  })
-
-  it("switches back to French", async () => {
-    renderWithLang(
-      <>
-        <LanguageSwitcher />
-        <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
-      </>,
-    )
-
-    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "en" } })
-    await waitFor(() => expect(screen.getByText(en.userMenu.signOut)).toBeInTheDocument())
-
-    fireEvent.change(screen.getAllByLabelText("Language")[0], { target: { value: "fr" } })
-    await waitFor(() => expect(screen.getByText(fr.userMenu.signOut)).toBeInTheDocument())
-  })
-
-  it("offers every supported language", () => {
-    renderWithLang(<LanguageSwitcher />)
-    const select = screen.getByLabelText("Language") as HTMLSelectElement
-    const values = Array.from(select.options).map((o) => o.value)
-    expect(values).toEqual(["en", "fr", "de", "es", "it", "pt", "ja", "zh"])
+    fireEvent.mouseDown(screen.getByText("outside"))
+    expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
   })
 })

@@ -66,7 +66,7 @@ export function ChangeEmailForm({ userId, currentEmail }: ChangeEmailFormProps) 
 
       {error && <p className="text-xs text-destructive">{error}</p>}
       {success && (
-        <p className="text-xs" style={{ color: "var(--teal)" }}>
+        <p className="text-xs" style={{ color: "var(--sage)" }}>
           {t.profile.emailUpdated}
         </p>
       )}

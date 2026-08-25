@@ -75,7 +75,7 @@ describe("FeedSidebar", () => {
 
   it("renders one entry per provider group", () => {
     renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
-    expect(screen.getByText("GitHub Changelog")).toBeInTheDocument()
+    expect(screen.getByText("GitHub")).toBeInTheDocument()
     expect(screen.getByText("YouTube")).toBeInTheDocument()
   })
 
@@ -129,7 +129,7 @@ describe("FeedSidebar", () => {
   it("renders an empty sidebar without errors when there are no fluxes", () => {
     renderWithLang(<FeedSidebar fluxes={[]} userId="user-1" onRefresh={() => {}} />)
     expect(screen.getByText("Tous les flux")).toBeInTheDocument()
-    expect(screen.queryByText("GitHub Changelog")).not.toBeInTheDocument()
+    expect(screen.queryByText("GitHub")).not.toBeInTheDocument()
   })
 })
 
@@ -237,12 +237,10 @@ describe("deleting a feed", () => {
   })
 
   it("aborts when the backdrop is clicked", () => {
-    const { container } = renderWithLang(
-      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />,
-    )
+    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
 
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
-    fireEvent.click(container.querySelector(".bg-black\\/50")!)
+    fireEvent.click(screen.getByTestId("dialog-backdrop"))
 
     expect(screen.queryByText(fr.common.delete)).not.toBeInTheDocument()
   })

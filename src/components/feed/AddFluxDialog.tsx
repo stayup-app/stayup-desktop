@@ -8,6 +8,69 @@ import type { Provider } from "@/types"
 import type { ScrapRepository } from "@/types"
 
 type FeedProvider = "changelog" | "youtube" | "rss"
+type AllProvider = FeedProvider | "scrap"
+
+const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React.ReactNode }[] = [
+  {
+    id: "changelog",
+    color: "var(--peach)",
+    dim: "var(--peach-dim)",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1L9.5 4H11.5L7 1ZM7 1L4.5 4H2.5L7 1Z" fill="currentColor" opacity="0.85" />
+        <rect x="2" y="4" width="10" height="1" rx="0.5" fill="currentColor" />
+        <rect x="3" y="6.5" width="8" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    id: "youtube",
+    color: "var(--rose)",
+    dim: "var(--rose-dim)",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="3" width="12" height="8" rx="2" fill="currentColor" />
+        <path d="M5.5 5.5L9 7L5.5 8.5V5.5Z" fill="var(--surface)" />
+      </svg>
+    ),
+  },
+  {
+    id: "rss",
+    color: "var(--sage)",
+    dim: "var(--sage-dim)",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+        <circle cx="3" cy="11" r="1.5" fill="currentColor" />
+        <path
+          d="M2 7.5C5 7.5 6.5 9 6.5 11.5"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          fill="none"
+          strokeLinecap="round"
+        />
+        <path
+          d="M2 4C7 4 10 7 10 12"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          fill="none"
+          strokeLinecap="round"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "scrap",
+    color: "var(--sky)",
+    dim: "var(--sky-dim)",
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        <ellipse cx="7" cy="7" rx="2" ry="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+]
 
 interface AddFluxDialogProps {
   open: boolean
@@ -58,6 +121,15 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     setRequestUrl("")
     setRequestSuccess(false)
     onClose()
+  }
+
+  function selectProvider(next: AllProvider) {
+    setProvider(next)
+    setIdentifier("")
+    setScrapRepoId("")
+    setScrapRepos(null)
+    setScrapMode("select")
+    setError(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -132,11 +204,24 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
   const scrapLoading = provider === "scrap" && scrapRepos === null
   const availableScrapRepos = (scrapRepos ?? []).filter((r) => !r.is_subscribed)
 
+  const inputClass =
+    "w-full rounded-[10px] border border-border bg-[var(--bg)] text-foreground px-3.5 py-2.5 text-sm focus:outline-none focus:border-peach/70 focus:shadow-peach-ring transition-colors"
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
-        <h2 className="text-base font-semibold mb-1">{t.addFlux.title}</h2>
+      <div
+        data-testid="dialog-backdrop"
+        className="absolute inset-0"
+        style={{ background: "rgba(8,10,16,0.72)", backdropFilter: "blur(10px)" }}
+        onClick={handleClose}
+      />
+      <div className="aurora-pop relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-7 shadow-modal">
+        <h2 className="font-serif text-[26px] leading-[1.15] tracking-editorial font-normal mb-1">
+          {t.addFlux.title}
+        </h2>
+        {!requestSuccess && (
+          <p className="text-[13px] text-muted-foreground mb-4">{t.addFlux.description}</p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {requestSuccess ? (
@@ -147,24 +232,34 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
           ) : (
             <>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">{t.addFlux.provider}</label>
-                <select
-                  value={provider}
-                  onChange={(e) => {
-                    setProvider(e.target.value as Provider)
-                    setIdentifier("")
-                    setScrapRepoId("")
-                    setScrapRepos(null)
-                    setScrapMode("select")
-                    setError(null)
-                  }}
-                  className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                >
-                  <option value="changelog">{t.feed.providers.changelog}</option>
-                  <option value="youtube">{t.feed.providers.youtube}</option>
-                  <option value="rss">{t.feed.providers.rss}</option>
-                  <option value="scrap">{t.feed.providers.scrap}</option>
-                </select>
+                <label className="text-[11px] font-medium text-fg-soft">{t.addFlux.provider}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROVIDER_TILES.map((tile) => {
+                    const active = provider === tile.id
+                    const label =
+                      tile.id === "scrap" ? t.feed.providers.scrap : t.feed.providers[tile.id]
+                    return (
+                      <button
+                        key={tile.id}
+                        type="button"
+                        onClick={() => selectProvider(tile.id)}
+                        className="flex items-center gap-2 rounded-[10px] px-3 py-2.5 text-[13.5px] font-medium transition-colors border"
+                        style={
+                          active
+                            ? { background: tile.dim, borderColor: tile.color, color: "var(--fg)" }
+                            : {
+                                background: "var(--bg)",
+                                borderColor: "var(--border-color)",
+                                color: "var(--fg-soft)",
+                              }
+                        }
+                      >
+                        <span style={{ color: tile.color }}>{tile.icon}</span>
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {provider === "scrap" ? (
@@ -198,14 +293,16 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
 
                   {scrapMode === "select" ? (
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium">{t.addFlux.scrapRepo}</label>
+                      <label className="text-[11px] font-medium text-fg-soft">
+                        {t.addFlux.scrapRepo}
+                      </label>
                       {scrapLoading ? (
                         <p className="text-sm text-muted-foreground">{t.addFlux.loading}</p>
                       ) : (
                         <select
                           value={scrapRepoId}
                           onChange={(e) => setScrapRepoId(e.target.value)}
-                          className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                          className={inputClass}
                         >
                           <option value="">{t.addFlux.selectScrapRepo}</option>
                           {availableScrapRepos.length === 0 ? (
@@ -224,20 +321,22 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                     </div>
                   ) : (
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium">{t.addFlux.requestUrl}</label>
+                      <label className="text-[11px] font-medium text-fg-soft">
+                        {t.addFlux.requestUrl}
+                      </label>
                       <input
                         type="url"
                         value={requestUrl}
                         onChange={(e) => setRequestUrl(e.target.value)}
                         placeholder={t.addFlux.requestUrlPlaceholder}
-                        className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                        className={inputClass}
                       />
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">
+                  <label className="text-[11px] font-medium text-fg-soft">
                     {t.addFlux.identifierLabels[provider as FeedProvider]}
                   </label>
                   <input
@@ -245,7 +344,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder={t.addFlux.placeholders[provider as FeedProvider]}
-                    className="w-full rounded-md border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    className={inputClass}
                   />
                 </div>
               )}
@@ -258,7 +357,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors"
+              className="px-4 py-2 text-sm rounded-md border border-border hover:bg-surface-hi transition-colors"
             >
               {requestSuccess ? t.addFlux.close : t.addFlux.cancel}
             </button>
@@ -267,9 +366,10 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                 type="submit"
                 disabled={submitting}
                 className={cn(
-                  "px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+                  "px-4 py-2 text-sm font-semibold rounded-md bg-peach hover:opacity-95 transition-opacity",
                   submitting && "opacity-50 cursor-not-allowed",
                 )}
+                style={{ color: "var(--peach-on)" }}
               >
                 {submitting ? t.addFlux.adding : t.addFlux.add}
               </button>

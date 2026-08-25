@@ -15,7 +15,7 @@ const PROVIDER_META: Record<
   { label: string; color: string; dimColor: string; icon: React.ReactNode }
 > = {
   changelog: {
-    label: "GitHub Changelog",
+    label: "GitHub",
     color: "var(--teal)",
     dimColor: "var(--teal-dim)",
     icon: (
@@ -63,7 +63,7 @@ const PROVIDER_META: Record<
     ),
   },
   scrap: {
-    label: "Web Scraping",
+    label: "Web",
     color: "var(--green)",
     dimColor: "var(--green-dim)",
     icon: (
@@ -168,6 +168,7 @@ export function FeedSidebar({
               className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               style={{ border: "1px solid hsl(var(--border))" }}
               aria-label={t.menu.file.refresh}
+              title={t.menu.file.refresh}
             >
               <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
             </button>
@@ -176,6 +177,7 @@ export function FeedSidebar({
               className="w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
               style={{ border: "1px solid hsl(var(--border))" }}
               aria-label={t.addFlux.title}
+              title={t.addFlux.title}
             >
               <Plus className="h-3 w-3" />
             </button>
@@ -305,21 +307,27 @@ export function FeedSidebar({
 
       {confirmTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmTarget(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg">
-            <p className="text-sm mb-4">
+          <div
+            data-testid="dialog-backdrop"
+            className="absolute inset-0"
+            style={{ background: "rgba(8,10,16,0.72)", backdropFilter: "blur(10px)" }}
+            onClick={() => setConfirmTarget(null)}
+          />
+          <div className="aurora-pop relative z-10 w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-modal">
+            <p className="text-sm mb-4 text-fg-soft">
               {t.feed.confirmDelete.replace("{id}", confirmTarget.identifier)}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmTarget(null)}
-                className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-muted transition-colors"
+                className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-surface-hi transition-colors"
               >
                 {t.common.cancel}
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                className="rounded-md bg-destructive px-4 py-1.5 text-sm text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                className="rounded-md bg-destructive px-4 py-1.5 text-sm font-semibold hover:opacity-90 transition-opacity"
+                style={{ color: "var(--rose-on)" }}
               >
                 {t.common.delete}
               </button>

@@ -2,7 +2,9 @@ import type { Translations } from "./en"
 
 export const de: Translations = {
   auth: {
-    subtitle: "Melde dich an, um auf deine Feeds zuzugreifen",
+    subtitle: "Mach da weiter, wo du aufgehört hast.",
+    loginTitle: "Schön, dich wiederzusehen.",
+    registerTitle: "Erstelle dein Konto.",
     email: "E-Mail",
     password: "Passwort",
     name: "Name",
@@ -35,10 +37,10 @@ export const de: Translations = {
     filterUnread: "Ungelesen",
     markAllRead: "Alle als gelesen markieren",
     providers: {
-      changelog: "GitHub Changelog",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "Web-Scraping",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -52,7 +54,8 @@ export const de: Translations = {
     close: "Schließen",
   },
   addFlux: {
-    title: "Feed hinzufügen",
+    title: "Was wollen wir verfolgen?",
+    description: "Wähle eine Quelle, wir kümmern uns um den Rest.",
     provider: "Anbieter",
     identifierLabels: {
       changelog: "GitHub-Repository",
@@ -84,7 +87,8 @@ export const de: Translations = {
     requestUrlError: "Die URL ist ungültig",
   },
   viewer: {
-    selectItem: "Wähle einen Eintrag aus.",
+    selectItem: "Wähle etwas zum Lesen.",
+    selectItemHint: "Die Liste links ist vom neuesten zum ältesten sortiert.",
     noTitle: "Ohne Titel",
     thumbnail: "Vorschaubild",
     repository: "Repository",

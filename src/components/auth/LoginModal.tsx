@@ -3,6 +3,7 @@ import { LoginForm } from "./LoginForm"
 import { RegisterForm } from "./RegisterForm"
 import { OAuthButtons } from "./OAuthButtons"
 import { useLanguage } from "@/context/LanguageContext"
+import { AuroraMark } from "@/components/ui/AuroraMark"
 
 interface LoginModalProps {
   onLogin: (email: string, password: string) => Promise<void>
@@ -20,21 +21,15 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
     <div
       className="flex items-center justify-center h-screen"
       style={{
-        background: "hsl(var(--background))",
+        background: "var(--bg)",
         backgroundImage:
-          "radial-gradient(ellipse 60% 50% at 50% 0%, oklch(0.72 0.22 195 / 0.06), transparent)",
+          "radial-gradient(ellipse 60% 50% at 50% 0%, var(--peach-dim), transparent), radial-gradient(ellipse 50% 40% at 10% 20%, var(--lavender-dim), transparent)",
       }}
     >
       <div className="flex flex-col items-center">
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-8">
-          <svg width="32" height="32" viewBox="0 0 26 26" fill="none">
-            <rect width="26" height="26" rx="6" fill="var(--teal)" />
-            <path d="M13 6L19.5 15H15V20H11V15H6.5L13 6Z" fill="#09090b" />
-          </svg>
-          <span className="font-semibold text-[17px]" style={{ letterSpacing: "-0.02em" }}>
-            StayUp
-          </span>
+        <div className="mb-8">
+          <AuroraMark size={56} />
         </div>
 
         {/* Card */}
@@ -42,13 +37,13 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
           className="w-[380px] rounded-[14px] p-8"
           style={{
             background: "var(--surface)",
-            border: "1px solid hsl(var(--border))",
-            boxShadow: "0 16px 48px rgba(0,0,0,0.4)",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
           }}
         >
           <div className="text-center mb-6">
-            <h1 className="text-[20px] font-bold mb-1" style={{ letterSpacing: "-0.02em" }}>
-              {mode === "login" ? t.auth.signIn : t.auth.signUp}
+            <h1 className="font-serif text-[28px] leading-[1.15] tracking-editorial font-normal mb-1.5">
+              {mode === "login" ? t.auth.loginTitle : t.auth.registerTitle}
             </h1>
             {mode === "login" && (
               <p className="text-[13px] text-muted-foreground">{t.auth.subtitle}</p>

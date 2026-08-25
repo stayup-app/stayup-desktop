@@ -16,9 +16,16 @@ export function ProfileModal({ open, onClose, session }: ProfileModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
-        <h2 className="text-base font-semibold mb-4">{t.profile.title}</h2>
+      <div
+        data-testid="dialog-backdrop"
+        className="absolute inset-0"
+        style={{ background: "rgba(8,10,16,0.72)", backdropFilter: "blur(10px)" }}
+        onClick={onClose}
+      />
+      <div className="aurora-pop relative z-10 w-full max-w-md rounded-2xl border border-border bg-surface p-7 shadow-modal">
+        <h2 className="font-serif text-[24px] leading-[1.15] tracking-editorial font-normal mb-4">
+          {t.profile.title}
+        </h2>
 
         <div className="space-y-5">
           <div className="space-y-2">
@@ -44,7 +51,7 @@ export function ProfileModal({ open, onClose, session }: ProfileModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-md border border-border hover:bg-muted transition-colors"
+            className="px-4 py-2 text-sm rounded-md border border-border hover:bg-surface-hi transition-colors"
           >
             {t.common.close}
           </button>
