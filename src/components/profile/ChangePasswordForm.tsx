@@ -88,7 +88,7 @@ export function ChangePasswordForm({ userId }: ChangePasswordFormProps) {
 
       {error && <p className="text-xs text-destructive">{error}</p>}
       {success && (
-        <p className="text-xs" style={{ color: "var(--teal)" }}>
+        <p className="text-xs" style={{ color: "var(--sage)" }}>
           {t.profile.passwordUpdated}
         </p>
       )}

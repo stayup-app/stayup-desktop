@@ -90,7 +90,7 @@ export function FeedContentViewer({ item, repositories }: FeedContentViewerProps
       className="sticky top-0 z-10 flex justify-end items-center gap-1 px-4 py-2 shrink-0"
       style={{
         borderBottom: "1px solid var(--border-subtle)",
-        background: "hsl(var(--background))",
+        background: "var(--bg)",
       }}
     >
       <span className="text-[13px] font-mono text-muted-foreground mr-1">A</span>
@@ -120,7 +120,14 @@ export function FeedContentViewer({ item, repositories }: FeedContentViewerProps
       <div className="flex flex-col h-full">
         {fontControls}
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-[15px] italic text-muted-foreground">{t.viewer.selectItem}</p>
+          <div className="text-center max-w-[280px]">
+            <p className="font-serif text-[20px] leading-[1.2] text-foreground mb-1.5">
+              {t.viewer.selectItem}
+            </p>
+            <p className="text-[13px] text-muted-foreground leading-relaxed">
+              {t.viewer.selectItemHint}
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -240,21 +247,21 @@ function ChangelogContent({
   return (
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-[14px] font-mono text-gray-500">{repoName}</span>
+        <span className="text-[14px] font-mono text-dim">{repoName}</span>
         <span
           className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded"
           style={{ background: dimColor, color }}
         >
           {item.version}
         </span>
-        <span className="ml-auto text-[13px] font-mono text-gray-500">
+        <span className="ml-auto text-[13px] font-mono text-dim">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
 
       {item.content && (
         <div
-          className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap"
+          className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
           style={{ fontSize: `${15 + fontSizeOffset}px` }}
         >
           {item.content
@@ -299,8 +306,8 @@ function YoutubeContent({
   return (
     <div className="p-6 max-w-2xl">
       <h2
-        className="font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2"
-        style={{ fontSize: `${18 + fontSizeOffset}px` }}
+        className="font-serif font-normal tracking-editorial text-foreground leading-[1.15] mb-2"
+        style={{ fontSize: `${26 + fontSizeOffset}px` }}
       >
         {parsed?.title ?? labels.noTitle}
       </h2>
@@ -311,7 +318,7 @@ function YoutubeContent({
             {channelName}
           </span>
         )}
-        <span className="text-[13px] font-mono text-gray-500">
+        <span className="text-[13px] font-mono text-dim">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
@@ -348,16 +355,16 @@ function YoutubeContent({
 }
 
 const getRssStyles = (color: string, fontSize: number) => `
-  .rss-body { font-size: ${fontSize}px; line-height: 1.65; color: rgb(156 163 175); }
+  .rss-body { font-size: ${fontSize}px; line-height: 1.65; color: var(--fg-soft); }
   .rss-body p { margin: 0 0 0.9em; }
   .rss-body a { color: ${color}; text-decoration: underline; }
-  .rss-body h1, .rss-body h2, .rss-body h3 { color: rgb(243 244 246); margin: 1.2em 0 0.4em; font-weight: 600; font-size: ${fontSize + 1}px; }
+  .rss-body h1, .rss-body h2, .rss-body h3 { color: var(--fg); margin: 1.2em 0 0.4em; font-weight: 600; font-size: ${fontSize + 1}px; }
   .rss-body ul, .rss-body ol { padding-left: 1.5em; margin: 0 0 0.9em; }
   .rss-body li { line-height: 1.65; }
   .rss-body img { max-width: 100%; height: auto; border-radius: 4px; margin: 0.5em 0; }
-  .rss-body code { background: var(--surface-2); padding: 1px 5px; border-radius: 3px; font-size: ${fontSize - 1}px; font-family: monospace; }
-  .rss-body pre { background: var(--surface-2); padding: 12px; border-radius: 6px; overflow-x: auto; margin: 0 0 0.9em; }
-  .rss-body blockquote { border-left: 2px solid ${color}; padding-left: 12px; margin: 0 0 0.9em; color: rgb(107 114 128); }
+  .rss-body code { background: var(--surface); color: var(--peach); padding: 1px 6px; border-radius: 4px; font-size: ${fontSize - 1}px; font-family: 'JetBrains Mono', monospace; }
+  .rss-body pre { background: var(--bg-soft); border: 1px solid var(--border-soft); padding: 12px; border-radius: 10px; overflow-x: auto; margin: 0 0 0.9em; }
+  .rss-body blockquote { border-left: 3px solid var(--peach); background: var(--peach-dim); padding: 10px 16px; margin: 0 0 0.9em; border-radius: 0 8px 8px 0; font-family: 'Instrument Serif', serif; font-style: italic; font-size: ${fontSize + 3}px; color: var(--fg); }
 `
 
 function RssContent({
@@ -385,8 +392,8 @@ function RssContent({
   return (
     <div className="p-6 max-w-2xl">
       <h2
-        className="font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-2"
-        style={{ fontSize: `${18 + fontSizeOffset}px` }}
+        className="font-serif font-normal tracking-editorial text-foreground leading-[1.1] mb-2"
+        style={{ fontSize: `${30 + fontSizeOffset}px` }}
       >
         {parsed?.title ?? labels.noTitle}
       </h2>
@@ -397,7 +404,7 @@ function RssContent({
             {source}
           </span>
         )}
-        <span className="text-[13px] font-mono text-gray-500">
+        <span className="text-[13px] font-mono text-dim">
           {formatDate(item.datetime ?? item.executed_at)}
         </span>
       </div>
@@ -453,14 +460,14 @@ function ScrapContent({
             {params.url}
           </span>
         )}
-        <span className="text-[13px] font-mono shrink-0 text-gray-500">
+        <span className="text-[13px] font-mono shrink-0 text-dim">
           {formatDate(item.executed_at)}
         </span>
       </div>
 
       {item.content && (
         <p
-          className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-wrap"
+          className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
           style={{ fontSize: `${15 + fontSizeOffset}px` }}
         >
           {item.content}

@@ -35,8 +35,15 @@ function renderDialog(open = true) {
   return { ...view, onClose, onSuccess }
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  changelog: "GitHub",
+  youtube: "YouTube",
+  rss: "RSS",
+  scrap: "Web",
+}
+
 function selectProvider(value: string) {
-  fireEvent.change(screen.getByRole("combobox"), { target: { value } })
+  fireEvent.click(screen.getByRole("button", { name: PROVIDER_LABELS[value] }))
 }
 
 beforeEach(() => {
@@ -59,8 +66,9 @@ describe("visibility", () => {
 
   it("offers exactly the four supported providers", () => {
     renderDialog()
-    const options = screen.getAllByRole("option").map((o) => (o as HTMLOptionElement).value)
-    expect(options).toEqual(["changelog", "youtube", "rss", "scrap"])
+    for (const label of Object.values(PROVIDER_LABELS)) {
+      expect(screen.getByRole("button", { name: label })).toBeInTheDocument()
+    }
   })
 
   it("closes and resets on cancel", () => {
@@ -70,8 +78,8 @@ describe("visibility", () => {
   })
 
   it("closes when the backdrop is clicked", () => {
-    const { container, onClose } = renderDialog()
-    fireEvent.click(container.querySelector(".bg-black\\/50")!)
+    const { onClose } = renderDialog()
+    fireEvent.click(screen.getByTestId("dialog-backdrop"))
     expect(onClose).toHaveBeenCalled()
   })
 })
@@ -205,7 +213,7 @@ describe("scrap provider — choose existing", () => {
     selectProvider("scrap")
     await screen.findByText("https://free.example.com")
 
-    fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() => expect(subscribeScrap).toHaveBeenCalledWith(10, "jwt", "https://api.test"))
@@ -333,7 +341,7 @@ describe("edge cases", () => {
     selectProvider("scrap")
     await screen.findByText("https://free.example.com")
 
-    fireEvent.change(screen.getAllByRole("combobox")[1], { target: { value: "10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     expect(await screen.findByText(fr.common.error)).toBeInTheDocument()

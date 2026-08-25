@@ -2,7 +2,9 @@ import type { Translations } from "./en"
 
 export const es: Translations = {
   auth: {
-    subtitle: "Inicia sesión para acceder a tus flujos",
+    subtitle: "Retoma la lectura justo donde la dejaste.",
+    loginTitle: "Qué bueno verte de nuevo.",
+    registerTitle: "Crea tu cuenta.",
     email: "Correo electrónico",
     password: "Contraseña",
     name: "Nombre",
@@ -35,10 +37,10 @@ export const es: Translations = {
     filterUnread: "No leídos",
     markAllRead: "Marcar todo como leído",
     providers: {
-      changelog: "GitHub Changelog",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "Scraping web",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -52,7 +54,8 @@ export const es: Translations = {
     close: "Cerrar",
   },
   addFlux: {
-    title: "Añadir un flujo",
+    title: "¿Qué vamos a seguir?",
+    description: "Elige una fuente, nosotros nos encargamos del resto.",
     provider: "Proveedor",
     identifierLabels: {
       changelog: "Repositorio de GitHub",
@@ -83,7 +86,8 @@ export const es: Translations = {
     requestUrlError: "La URL no es válida",
   },
   viewer: {
-    selectItem: "Selecciona un elemento.",
+    selectItem: "Elige algo para leer.",
+    selectItemHint: "La lista de la izquierda está ordenada de más reciente a más antiguo.",
     noTitle: "Sin título",
     thumbnail: "Miniatura",
     repository: "repositorio",

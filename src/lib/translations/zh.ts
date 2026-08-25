@@ -2,7 +2,9 @@ import type { Translations } from "./en"
 
 export const zh: Translations = {
   auth: {
-    subtitle: "登录以访问你的订阅源",
+    subtitle: "从你上次离开的地方继续。",
+    loginTitle: "欢迎回来。",
+    registerTitle: "创建你的账户。",
     email: "邮箱",
     password: "密码",
     name: "姓名",
@@ -35,10 +37,10 @@ export const zh: Translations = {
     filterUnread: "未读",
     markAllRead: "全部标记为已读",
     providers: {
-      changelog: "GitHub 更新日志",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "网页抓取",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -52,7 +54,8 @@ export const zh: Translations = {
     close: "关闭",
   },
   addFlux: {
-    title: "添加订阅",
+    title: "我们要关注什么？",
+    description: "选择一个来源，剩下的交给我们。",
     provider: "来源",
     identifierLabels: {
       changelog: "GitHub 仓库",
@@ -83,7 +86,8 @@ export const zh: Translations = {
     requestUrlError: "网址无效",
   },
   viewer: {
-    selectItem: "请选择一个条目。",
+    selectItem: "选择要阅读的内容。",
+    selectItemHint: "左侧列表按从新到旧排序。",
     noTitle: "无标题",
     thumbnail: "缩略图",
     repository: "仓库",

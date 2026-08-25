@@ -9,17 +9,17 @@ export function OAuthButtons({ onOAuth, loading }: OAuthButtonsProps) {
   const { t } = useLanguage()
 
   const btnStyle: React.CSSProperties = {
-    background: "var(--surface-2)",
-    border: "1px solid var(--border-subtle)",
-    color: "hsl(var(--foreground))",
+    background: "var(--surface)",
+    border: "1px solid var(--border-color)",
+    color: "var(--fg)",
   }
   const btnHoverIn = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.background = "var(--surface-3)"
-    e.currentTarget.style.borderColor = "hsl(var(--border))"
+    e.currentTarget.style.background = "var(--surface-hi)"
+    e.currentTarget.style.borderColor = "var(--peach-mid)"
   }
   const btnHoverOut = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.background = "var(--surface-2)"
-    e.currentTarget.style.borderColor = "var(--border-subtle)"
+    e.currentTarget.style.background = "var(--surface)"
+    e.currentTarget.style.borderColor = "var(--border-color)"
   }
 
   return (

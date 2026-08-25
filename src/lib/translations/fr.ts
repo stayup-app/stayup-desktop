@@ -2,7 +2,9 @@ import type { Translations } from "./en"
 
 export const fr: Translations = {
   auth: {
-    subtitle: "Connectez-vous pour accéder à vos flux",
+    subtitle: "Reprends ta lecture là où tu l'avais laissée.",
+    loginTitle: "Content de te revoir.",
+    registerTitle: "Crée ton compte.",
     email: "Email",
     password: "Mot de passe",
     name: "Nom",
@@ -11,7 +13,7 @@ export const fr: Translations = {
     signingIn: "Connexion…",
     signUp: "Créer un compte",
     signingUp: "Création…",
-    alreadyHaveAccount: "Déjà un compte ?",
+    alreadyHaveAccount: "Déjà inscrit ?",
     noAccount: "Pas encore de compte ?",
     emailInvalid: "Email invalide",
     passwordRequired: "Mot de passe requis",
@@ -35,10 +37,10 @@ export const fr: Translations = {
     filterUnread: "Non lu",
     markAllRead: "Tout marquer lu",
     providers: {
-      changelog: "GitHub Changelog",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "Scraping web",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -53,6 +55,7 @@ export const fr: Translations = {
   },
   addFlux: {
     title: "Ajouter un flux",
+    description: "Choisis une source, on s'occupe du reste.",
     provider: "Provider",
     identifierLabels: {
       changelog: "Dépôt GitHub",
@@ -84,7 +87,8 @@ export const fr: Translations = {
     requestUrlError: "L'URL n'est pas valide",
   },
   viewer: {
-    selectItem: "Sélectionnez un élément.",
+    selectItem: "Choisis un élément à lire.",
+    selectItemHint: "La liste à gauche est triée du plus récent au plus ancien.",
     noTitle: "Sans titre",
     thumbnail: "Miniature",
     repository: "dépôt",

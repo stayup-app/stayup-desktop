@@ -78,17 +78,6 @@ export function useMenu({
       const displayMenu = await Submenu.new({
         text: t.menu.display.title,
         items: [
-          await CheckMenuItem.new({
-            text: t.menu.display.lightMode,
-            checked: theme === "light",
-            action: () => setTheme("light"),
-          }),
-          await CheckMenuItem.new({
-            text: t.menu.display.darkMode,
-            checked: theme === "dark",
-            action: () => setTheme("dark"),
-          }),
-          await PredefinedMenuItem.new({ item: "Separator" }),
           await MenuItem.new({
             text: t.menu.display.fullscreen,
             accelerator: "F11",
@@ -114,7 +103,6 @@ export function useMenu({
                 copyright: "© StayUp",
                 website: "https://github.com/stayup-app/stayup-desktop",
                 websiteLabel: "GitHub",
-                authors: ["StayUp"],
                 comments: t.menu.help.aboutComment,
               },
             },

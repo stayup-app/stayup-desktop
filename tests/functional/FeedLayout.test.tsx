@@ -147,19 +147,20 @@ beforeEach(() => {
 describe("header", () => {
   it("shows the branding and the user initial", () => {
     const { container } = renderLayout()
-    expect(screen.getByText("StayUp")).toBeInTheDocument()
+    expect(screen.getByText("stayup")).toBeInTheDocument()
     expect(container.querySelector("header .rounded-full")).toHaveTextContent("A")
   })
 
-  it("falls back to '?' when there is no user id", () => {
+  it("falls back to '?' when there is no name", () => {
     const { container } = renderLayout({
-      session: { ...session, userId: undefined as unknown as string },
+      session: { ...session, name: undefined as unknown as string },
     })
     expect(container.querySelector("header .rounded-full")).toHaveTextContent("?")
   })
 
   it("signs the user out", () => {
     const { onLogout } = renderLayout()
+    fireEvent.click(screen.getByTitle(session.name))
     fireEvent.click(screen.getByText(fr.userMenu.signOut))
     expect(onLogout).toHaveBeenCalled()
   })
@@ -167,7 +168,8 @@ describe("header", () => {
   it("opens and closes the profile modal from the user menu", () => {
     renderLayout()
 
-    fireEvent.click(screen.getByText("alice@test.com"))
+    fireEvent.click(screen.getByTitle(session.name))
+    fireEvent.click(screen.getByText(fr.userMenu.profile))
     expect(screen.getByText(fr.profile.title)).toBeInTheDocument()
 
     fireEvent.click(screen.getByText(fr.common.close))

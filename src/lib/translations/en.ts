@@ -1,6 +1,8 @@
 export const en = {
   auth: {
-    subtitle: "Sign in to access your feeds",
+    subtitle: "Pick up right where you left off.",
+    loginTitle: "Good to see you again.",
+    registerTitle: "Create your account.",
     email: "Email",
     password: "Password",
     name: "Name",
@@ -33,10 +35,10 @@ export const en = {
     filterUnread: "Unread",
     markAllRead: "Mark all read",
     providers: {
-      changelog: "GitHub Changelog",
+      changelog: "GitHub",
       youtube: "YouTube",
       rss: "RSS",
-      scrap: "Web scraping",
+      scrap: "Web",
     },
   },
   importExport: {
@@ -50,7 +52,8 @@ export const en = {
     close: "Close",
   },
   addFlux: {
-    title: "Add a feed",
+    title: "What are we tracking?",
+    description: "Pick a source, we'll handle the rest.",
     provider: "Provider",
     identifierLabels: {
       changelog: "GitHub repository",
@@ -81,7 +84,8 @@ export const en = {
     requestUrlError: "The URL is not valid",
   },
   viewer: {
-    selectItem: "Select an item.",
+    selectItem: "Pick something to read.",
+    selectItemHint: "The list on the left is sorted from newest to oldest.",
     noTitle: "Untitled",
     thumbnail: "Thumbnail",
     repository: "repository",
