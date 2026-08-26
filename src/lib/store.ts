@@ -37,6 +37,16 @@ export async function readApiUrl(): Promise<string> {
   return (await store.get<string>(API_URL_KEY)) ?? DEFAULT_API_URL
 }
 
+export async function writeApiUrl(url: string): Promise<void> {
+  const store = await getStore()
+  await store.set(API_URL_KEY, url)
+}
+
+export async function resetApiUrl(): Promise<void> {
+  const store = await getStore()
+  await store.delete(API_URL_KEY)
+}
+
 export async function readLang(): Promise<Language | null> {
   const store = await getStore()
   return (await store.get<Language>(LANG_KEY)) ?? null

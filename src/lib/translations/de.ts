@@ -61,11 +61,13 @@ export const de: Translations = {
       changelog: "GitHub-Repository",
       youtube: "YouTube-Kanal",
       rss: "RSS-Feed-URL",
+      generic: "URL",
     },
     placeholders: {
       changelog: "z. B. facebook/react",
       youtube: "z. B. fireship",
       rss: "z. B. https://example.com/feed.xml",
+      generic: "https://beispiel.com",
     },
     scrapRepo: "Verfügbarer Feed",
     selectScrapRepo: "Feed auswählen",
@@ -122,6 +124,14 @@ export const de: Translations = {
     updatePassword: "Passwort ändern",
     updatingPassword: "Wird geändert…",
     passwordUpdated: "Passwort erfolgreich geändert.",
+    apiUrl: "API-URL",
+    apiUrlDescription: "Wähle, welche StayUp-API diese App verwendet.",
+    apiUrlSave: "Speichern",
+    apiUrlSaving: "Wird gespeichert…",
+    apiUrlSaved: "API-URL aktualisiert.",
+    apiUrlReset: "Auf Standard zurücksetzen",
+    apiUrlResetting: "Wird zurückgesetzt…",
+    apiUrlInvalid: "Gib eine gültige URL ein.",
   },
   menu: {
     file: {

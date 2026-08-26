@@ -61,11 +61,13 @@ export const ja: Translations = {
       changelog: "GitHubリポジトリ",
       youtube: "YouTubeチャンネル",
       rss: "RSSフィードのURL",
+      generic: "URL",
     },
     placeholders: {
       changelog: "例: facebook/react",
       youtube: "例: fireship",
       rss: "例: https://example.com/feed.xml",
+      generic: "https://example.com",
     },
     scrapRepo: "利用可能なフィード",
     selectScrapRepo: "フィードを選択",
@@ -121,6 +123,14 @@ export const ja: Translations = {
     updatePassword: "パスワードを変更",
     updatingPassword: "変更中…",
     passwordUpdated: "パスワードを変更しました。",
+    apiUrl: "API URL",
+    apiUrlDescription: "このアプリが使用するStayUp APIを選択します。",
+    apiUrlSave: "保存",
+    apiUrlSaving: "保存中…",
+    apiUrlSaved: "API URLを更新しました。",
+    apiUrlReset: "初期設定に戻す",
+    apiUrlResetting: "リセット中…",
+    apiUrlInvalid: "有効なURLを入力してください。",
   },
   menu: {
     file: {

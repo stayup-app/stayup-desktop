@@ -1,18 +1,25 @@
 import { useState, useEffect } from "react"
-import { addUserRepository, createScrapRequest, getScrapRepos, subscribeScrap } from "@/lib/api"
+import {
+  addUserRepository,
+  createScrapRequest,
+  getConnectorProviders,
+  getScrapRepos,
+  subscribeScrap,
+} from "@/lib/api"
 import { readApiUrl, readToken } from "@/lib/store"
 import { normalizeIdentifier, toRepositoryUrl } from "@/lib/utils"
 import { useLanguage } from "@/context/LanguageContext"
 import { cn } from "@/lib/utils"
-import type { Provider } from "@/types"
+import { isKnownProvider, type KnownProvider } from "@/types"
 import type { ScrapRepository } from "@/types"
 
-type FeedProvider = "changelog" | "youtube" | "rss"
-type AllProvider = FeedProvider | "scrap"
+type FeedProvider = Exclude<KnownProvider, "scrap">
 
-const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React.ReactNode }[] = [
-  {
-    id: "changelog",
+const KNOWN_TILE_STYLE: Record<
+  FeedProvider | "scrap",
+  { color: string; dim: string; icon: React.ReactNode }
+> = {
+  changelog: {
     color: "var(--peach)",
     dim: "var(--peach-dim)",
     icon: (
@@ -23,8 +30,7 @@ const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React
       </svg>
     ),
   },
-  {
-    id: "youtube",
+  youtube: {
     color: "var(--rose)",
     dim: "var(--rose-dim)",
     icon: (
@@ -34,8 +40,7 @@ const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React
       </svg>
     ),
   },
-  {
-    id: "rss",
+  rss: {
     color: "var(--sage)",
     dim: "var(--sage-dim)",
     icon: (
@@ -58,8 +63,7 @@ const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React
       </svg>
     ),
   },
-  {
-    id: "scrap",
+  scrap: {
     color: "var(--sky)",
     dim: "var(--sky-dim)",
     icon: (
@@ -70,7 +74,27 @@ const PROVIDER_TILES: { id: AllProvider; color: string; dim: string; icon: React
       </svg>
     ),
   },
-]
+}
+
+// Style neutre pour tout provider découvert dynamiquement (voir GET /connectors/providers)
+// et non connu de cette app.
+const GENERIC_TILE_STYLE = {
+  color: "var(--muted-foreground)",
+  dim: "var(--surface-2)",
+  icon: (
+    <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+    </svg>
+  ),
+}
+
+interface ProviderTile {
+  id: string
+  label: string
+  color: string
+  dim: string
+  icon: React.ReactNode
+}
 
 interface AddFluxDialogProps {
   open: boolean
@@ -81,7 +105,7 @@ interface AddFluxDialogProps {
 
 export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialogProps) {
   const { t } = useLanguage()
-  const [provider, setProvider] = useState<Provider>("changelog")
+  const [provider, setProvider] = useState<string>("changelog")
   const [identifier, setIdentifier] = useState("")
   const [scrapRepoId, setScrapRepoId] = useState("")
   // null = not yet fetched, [] = fetched (possibly empty)
@@ -91,6 +115,31 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
   const [scrapMode, setScrapMode] = useState<"select" | "request">("select")
   const [requestUrl, setRequestUrl] = useState("")
   const [requestSuccess, setRequestSuccess] = useState(false)
+  const [tiles, setTiles] = useState<ProviderTile[]>([])
+
+  // Liste des providers dynamique : vient de l'API, aucun nom n'est codé en dur ici.
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    Promise.all([readToken(), readApiUrl()])
+      .then(([token, apiUrl]) => getConnectorProviders(token ?? "", apiUrl))
+      .then((providers) => {
+        if (cancelled) return
+        setTiles(
+          providers.map(({ name, displayName }) => {
+            const known = isKnownProvider(name) ? KNOWN_TILE_STYLE[name] : GENERIC_TILE_STYLE
+            const label = name === "scrap" ? t.feed.providers.scrap : (t.feed.providers[name as KnownProvider] ?? displayName)
+            return { id: name, label, ...known }
+          }),
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setTiles([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, t])
 
   useEffect(() => {
     if (provider !== "scrap") return
@@ -123,7 +172,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     onClose()
   }
 
-  function selectProvider(next: AllProvider) {
+  function selectProvider(next: string) {
     setProvider(next)
     setIdentifier("")
     setScrapRepoId("")
@@ -181,8 +230,8 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
       if (provider === "scrap") {
         await subscribeScrap(Number(scrapRepoId), token, apiUrl)
       } else {
-        const normalized = normalizeIdentifier(identifier, provider as FeedProvider)
-        const url = toRepositoryUrl(normalized, provider as FeedProvider)
+        const normalized = normalizeIdentifier(identifier, provider)
+        const url = toRepositoryUrl(normalized, provider)
         await addUserRepository(userId, token, apiUrl, {
           provider,
           url,
@@ -203,6 +252,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
 
   const scrapLoading = provider === "scrap" && scrapRepos === null
   const availableScrapRepos = (scrapRepos ?? []).filter((r) => !r.is_subscribed)
+  const isKnownFeedProvider = provider === "changelog" || provider === "youtube" || provider === "rss"
 
   const inputClass =
     "w-full rounded-[10px] border border-border bg-[var(--bg)] text-foreground px-3.5 py-2.5 text-sm focus:outline-none focus:border-peach/70 focus:shadow-peach-ring transition-colors"
@@ -234,10 +284,8 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-fg-soft">{t.addFlux.provider}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {PROVIDER_TILES.map((tile) => {
+                  {tiles.map((tile) => {
                     const active = provider === tile.id
-                    const label =
-                      tile.id === "scrap" ? t.feed.providers.scrap : t.feed.providers[tile.id]
                     return (
                       <button
                         key={tile.id}
@@ -255,7 +303,7 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                         }
                       >
                         <span style={{ color: tile.color }}>{tile.icon}</span>
-                        {label}
+                        {tile.label}
                       </button>
                     )
                   })}
@@ -337,13 +385,19 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
               ) : (
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-medium text-fg-soft">
-                    {t.addFlux.identifierLabels[provider as FeedProvider]}
+                    {isKnownFeedProvider
+                      ? t.addFlux.identifierLabels[provider as FeedProvider]
+                      : t.addFlux.identifierLabels.generic}
                   </label>
                   <input
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder={t.addFlux.placeholders[provider as FeedProvider]}
+                    placeholder={
+                      isKnownFeedProvider
+                        ? t.addFlux.placeholders[provider as FeedProvider]
+                        : t.addFlux.placeholders.generic
+                    }
                     className={inputClass}
                   />
                 </div>

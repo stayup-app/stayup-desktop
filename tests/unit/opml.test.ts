@@ -63,14 +63,22 @@ describe("parseOpml", () => {
     expect(parseOpml(buildOpml(fluxes, "StayUp"))).toEqual(fluxes)
   })
 
-  it("ignores outlines with an unknown category", () => {
+  it("keeps outlines with a provider unknown to the app (dynamic providers are valid)", () => {
     const xml = `<?xml version="1.0"?><opml version="2.0"><body>
       <outline text="a" category="podcast" xmlUrl="https://example.com/a"/>
       <outline text="b" category="rss" xmlUrl="https://example.com/b"/>
     </body></opml>`
     expect(parseOpml(xml)).toEqual([
+      { provider: "podcast", url: "https://example.com/a", identifier: "a" },
       { provider: "rss", url: "https://example.com/b", identifier: "b" },
     ])
+  })
+
+  it("ignores outlines missing a category", () => {
+    const xml = `<?xml version="1.0"?><opml version="2.0"><body>
+      <outline text="a" xmlUrl="https://example.com/a"/>
+    </body></opml>`
+    expect(parseOpml(xml)).toEqual([])
   })
 
   it("ignores outlines missing an xmlUrl", () => {

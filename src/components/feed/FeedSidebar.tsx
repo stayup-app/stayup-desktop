@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { ChevronDown, ChevronRight, LayoutList, Plus, RefreshCw, Trash2 } from "lucide-react"
-import { cn, stripUrlScheme } from "@/lib/utils"
+import { cn, providerDisplayName, stripUrlScheme } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
@@ -74,6 +74,24 @@ const PROVIDER_META: Record<
       </svg>
     ),
   },
+}
+
+// Icône générique utilisée pour tout provider sans rendu dédié dans l'app.
+const GENERIC_ICON = (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+  </svg>
+)
+
+function getProviderMeta(provider: Provider) {
+  return (
+    PROVIDER_META[provider] ?? {
+      label: providerDisplayName(provider),
+      color: "var(--muted-foreground)",
+      dimColor: "var(--surface-2)",
+      icon: GENERIC_ICON,
+    }
+  )
 }
 
 interface FeedSidebarProps {
@@ -188,7 +206,7 @@ export function FeedSidebar({
         {/* Provider groups */}
         <nav className="space-y-0.5">
           {providers.map((provider) => {
-            const meta = PROVIDER_META[provider]
+            const meta = getProviderMeta(provider)
             const isCategoryActive =
               selection.type === "category" && selection.provider === provider
             const open = isExpanded(provider)

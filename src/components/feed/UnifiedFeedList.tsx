@@ -3,9 +3,11 @@ import type {
   YoutubeItemContent,
   RssItemContent,
   ScrapItemParams,
+  GenericItem,
   Provider,
 } from "@/types"
-import { formatDate } from "@/lib/utils"
+import { isKnownTaggedItem } from "@/types"
+import { formatDate, providerDisplayName } from "@/lib/utils"
 import { useLanguage } from "@/context/LanguageContext"
 
 function extractHostname(url: string): string {
@@ -85,6 +87,14 @@ const PROVIDER_ICONS: Record<Provider, React.ReactNode> = {
   ),
 }
 
+// Couleur et icône de repli pour tout provider sans rendu dédié dans l'app.
+const GENERIC_COLOR = "var(--muted-foreground)"
+const GENERIC_ICON_NODE = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
+  </svg>
+)
+
 interface UnifiedFeedListProps {
   items: TaggedItem[]
   selectedIndex: number | null
@@ -115,8 +125,8 @@ export function UnifiedFeedList({
   return (
     <div>
       {items.map((tagged, i) => {
-        const color = PROVIDER_COLORS[tagged.provider]
-        const icon = PROVIDER_ICONS[tagged.provider]
+        const color = PROVIDER_COLORS[tagged.provider] ?? GENERIC_COLOR
+        const icon = PROVIDER_ICONS[tagged.provider] ?? GENERIC_ICON_NODE
         const isSelected = selectedIndex === i
         const isRead = readIds?.has(`${tagged.provider}:${tagged.item.id}`) ?? false
 
@@ -137,23 +147,37 @@ export function UnifiedFeedList({
               {icon}
             </div>
             <div className="flex-1 min-w-0">
-              {tagged.provider === "changelog" && (
-                <ChangelogEntry
+              {isKnownTaggedItem(tagged) ? (
+                <>
+                  {tagged.provider === "changelog" && (
+                    <ChangelogEntry
+                      item={tagged.item}
+                      repoUrl={repoUrlMap[tagged.item.repository_id] ?? ""}
+                      color={color}
+                      dimColor={PROVIDER_DIM[tagged.provider]}
+                      repositoryLabel={t.viewer.repository}
+                    />
+                  )}
+                  {tagged.provider === "youtube" && (
+                    <YoutubeEntry item={tagged.item} color={color} noTitle={t.viewer.noTitle} />
+                  )}
+                  {tagged.provider === "rss" && (
+                    <RssEntry item={tagged.item} color={color} noTitle={t.viewer.noTitle} />
+                  )}
+                  {tagged.provider === "scrap" && (
+                    <ScrapEntry
+                      item={tagged.item}
+                      color={color}
+                      scrapLabel={t.feed.providers.scrap}
+                    />
+                  )}
+                </>
+              ) : (
+                <GenericEntry
                   item={tagged.item}
-                  repoUrl={repoUrlMap[tagged.item.repository_id] ?? ""}
                   color={color}
-                  dimColor={PROVIDER_DIM[tagged.provider]}
-                  repositoryLabel={t.viewer.repository}
+                  providerLabel={providerDisplayName(tagged.provider)}
                 />
-              )}
-              {tagged.provider === "youtube" && (
-                <YoutubeEntry item={tagged.item} color={color} noTitle={t.viewer.noTitle} />
-              )}
-              {tagged.provider === "rss" && (
-                <RssEntry item={tagged.item} color={color} noTitle={t.viewer.noTitle} />
-              )}
-              {tagged.provider === "scrap" && (
-                <ScrapEntry item={tagged.item} color={color} scrapLabel={t.feed.providers.scrap} />
               )}
             </div>
           </div>
@@ -304,6 +328,32 @@ function RssEntry({
           {source}
         </p>
       )}
+    </div>
+  )
+}
+
+function GenericEntry({
+  item,
+  color,
+  providerLabel,
+}: {
+  item: GenericItem
+  color: string
+  providerLabel: string
+}) {
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-2 mb-0.5">
+        <span className="text-[15px] font-medium line-clamp-1 text-foreground">
+          {item.content?.slice(0, 80) || providerLabel}
+        </span>
+        <span className="text-[13px] font-mono shrink-0 text-dim">
+          {formatDate(item.datetime ?? item.executed_at)}
+        </span>
+      </div>
+      <p className="text-[13px] font-mono" style={{ color }}>
+        {providerLabel}
+      </p>
     </div>
   )
 }

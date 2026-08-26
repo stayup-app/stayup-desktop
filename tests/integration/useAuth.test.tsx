@@ -160,7 +160,10 @@ describe("loginOAuth", () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(() => result.current.loginOAuth("github"))
-    expect(invoke).toHaveBeenCalledWith("open_oauth_window", { provider: "github" })
+    expect(invoke).toHaveBeenCalledWith("open_oauth_window", {
+      provider: "github",
+      apiUrl: "https://api.test",
+    })
 
     await act(async () => {
       await emit!({ payload: validToken })

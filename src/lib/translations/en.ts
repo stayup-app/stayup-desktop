@@ -59,11 +59,13 @@ export const en = {
       changelog: "GitHub repository",
       youtube: "YouTube channel",
       rss: "RSS feed URL",
+      generic: "URL",
     },
     placeholders: {
       changelog: "e.g. facebook/react",
       youtube: "e.g. fireship",
       rss: "e.g. https://example.com/feed.xml",
+      generic: "https://example.com",
     },
     scrapRepo: "Available feed",
     selectScrapRepo: "Select a feed",
@@ -119,6 +121,14 @@ export const en = {
     updatePassword: "Change password",
     updatingPassword: "Updating…",
     passwordUpdated: "Password changed successfully.",
+    apiUrl: "API URL",
+    apiUrlDescription: "Choose which StayUp API this app talks to.",
+    apiUrlSave: "Save",
+    apiUrlSaving: "Saving…",
+    apiUrlSaved: "API URL updated.",
+    apiUrlReset: "Reset to default",
+    apiUrlResetting: "Resetting…",
+    apiUrlInvalid: "Enter a valid URL.",
   },
   menu: {
     file: {

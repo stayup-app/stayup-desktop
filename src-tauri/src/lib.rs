@@ -6,11 +6,12 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-async fn open_oauth_window(app: tauri::AppHandle, provider: String) -> Result<(), String> {
-    let url_str = format!(
-        "https://stayup-api.r-sik.workers.dev/auth/oauth/{}",
-        provider
-    );
+async fn open_oauth_window(
+    app: tauri::AppHandle,
+    provider: String,
+    api_url: String,
+) -> Result<(), String> {
+    let url_str = format!("{}/auth/oauth/{}", api_url.trim_end_matches('/'), provider);
 
     let parsed_url = url_str.parse::<tauri::Url>().map_err(|e| e.to_string())?;
 

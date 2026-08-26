@@ -61,11 +61,13 @@ export const zh: Translations = {
       changelog: "GitHub 仓库",
       youtube: "YouTube 频道",
       rss: "RSS 订阅地址",
+      generic: "网址",
     },
     placeholders: {
       changelog: "例如 facebook/react",
       youtube: "例如 fireship",
       rss: "例如 https://example.com/feed.xml",
+      generic: "https://example.com",
     },
     scrapRepo: "可用订阅",
     selectScrapRepo: "选择一个订阅",
@@ -121,6 +123,14 @@ export const zh: Translations = {
     updatePassword: "修改密码",
     updatingPassword: "正在修改…",
     passwordUpdated: "密码修改成功。",
+    apiUrl: "API 地址",
+    apiUrlDescription: "选择此应用使用的 StayUp API。",
+    apiUrlSave: "保存",
+    apiUrlSaving: "保存中…",
+    apiUrlSaved: "API 地址已更新。",
+    apiUrlReset: "恢复默认",
+    apiUrlResetting: "恢复中…",
+    apiUrlInvalid: "请输入有效的网址。",
   },
   menu: {
     file: {

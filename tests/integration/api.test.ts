@@ -4,6 +4,7 @@ import {
   registerWithPassword,
   updateProfile,
   getUserFeed,
+  getConnectorProviders,
   addUserRepository,
   deleteUserRepository,
   getScrapRepos,
@@ -156,6 +157,23 @@ describe("getUserFeed", () => {
 
     await getUserFeed("user-1", TOKEN, API_URL)
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("getConnectorProviders", () => {
+  it("fetches the discovered providers and includes the bearer token", async () => {
+    const mockData = { providers: [{ name: "youtube", displayName: "YouTube" }] }
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => mockData })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const providers = await getConnectorProviders(TOKEN, API_URL)
+    expect(providers).toEqual(mockData.providers)
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API_URL}/connectors/providers`,
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: `Bearer ${TOKEN}` }),
+      }),
+    )
   })
 })
 

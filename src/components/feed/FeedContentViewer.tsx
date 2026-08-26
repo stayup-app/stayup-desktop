@@ -4,9 +4,11 @@ import type {
   YoutubeItemContent,
   RssItemContent,
   ScrapItemParams,
+  GenericItem,
   Provider,
 } from "@/types"
-import { formatDate, openUrl } from "@/lib/utils"
+import { isKnownTaggedItem } from "@/types"
+import { formatDate, openUrl, providerDisplayName } from "@/lib/utils"
 import { useLanguage } from "@/context/LanguageContext"
 
 const LS_FONT_KEY = "STAYUP_FONT_SIZE_OFFSET"
@@ -56,6 +58,10 @@ const PROVIDER_DIM: Record<Provider, string> = {
   rss: "var(--amber-dim)",
   scrap: "var(--green-dim)",
 }
+
+// Couleurs de repli pour tout provider sans rendu dédié dans l'app.
+const GENERIC_COLOR = "var(--muted-foreground)"
+const GENERIC_DIM = "var(--surface-2)"
 
 interface FeedContentViewerProps {
   item: TaggedItem | null
@@ -134,46 +140,58 @@ export function FeedContentViewer({ item, repositories }: FeedContentViewerProps
   }
 
   const repoUrlMap = Object.fromEntries(repositories.map((r) => [r.repository_id, r.url]))
-  const color = PROVIDER_COLORS[item.provider]
-  const dimColor = PROVIDER_DIM[item.provider]
+  const color = PROVIDER_COLORS[item.provider] ?? GENERIC_COLOR
+  const dimColor = PROVIDER_DIM[item.provider] ?? GENERIC_DIM
 
   return (
     <>
       {fontControls}
-      {item.provider === "changelog" && (
-        <ChangelogContent
+      {isKnownTaggedItem(item) ? (
+        <>
+          {item.provider === "changelog" && (
+            <ChangelogContent
+              item={item.item}
+              repoUrl={repoUrlMap[item.item.repository_id] ?? ""}
+              color={color}
+              dimColor={dimColor}
+              labels={t.viewer}
+              fontSizeOffset={fontSizeOffset}
+            />
+          )}
+          {item.provider === "youtube" && (
+            <YoutubeContent
+              item={item.item}
+              color={color}
+              dimColor={dimColor}
+              labels={t.viewer}
+              fontSizeOffset={fontSizeOffset}
+            />
+          )}
+          {item.provider === "rss" && (
+            <RssContent
+              item={item.item}
+              color={color}
+              dimColor={dimColor}
+              labels={t.viewer}
+              fontSizeOffset={fontSizeOffset}
+            />
+          )}
+          {item.provider === "scrap" && (
+            <ScrapContent
+              item={item.item}
+              color={color}
+              dimColor={dimColor}
+              labels={t.viewer}
+              fontSizeOffset={fontSizeOffset}
+            />
+          )}
+        </>
+      ) : (
+        <GenericContent
           item={item.item}
-          repoUrl={repoUrlMap[item.item.repository_id] ?? ""}
           color={color}
           dimColor={dimColor}
-          labels={t.viewer}
-          fontSizeOffset={fontSizeOffset}
-        />
-      )}
-      {item.provider === "youtube" && (
-        <YoutubeContent
-          item={item.item}
-          color={color}
-          dimColor={dimColor}
-          labels={t.viewer}
-          fontSizeOffset={fontSizeOffset}
-        />
-      )}
-      {item.provider === "rss" && (
-        <RssContent
-          item={item.item}
-          color={color}
-          dimColor={dimColor}
-          labels={t.viewer}
-          fontSizeOffset={fontSizeOffset}
-        />
-      )}
-      {item.provider === "scrap" && (
-        <ScrapContent
-          item={item.item}
-          color={color}
-          dimColor={dimColor}
-          labels={t.viewer}
+          providerLabel={providerDisplayName(item.provider)}
           fontSizeOffset={fontSizeOffset}
         />
       )}
@@ -481,6 +499,46 @@ function ScrapContent({
           color={color}
           dimColor={dimColor}
         />
+      )}
+    </div>
+  )
+}
+
+function GenericContent({
+  item,
+  color,
+  dimColor,
+  providerLabel,
+  fontSizeOffset,
+}: {
+  item: GenericItem
+  color: string
+  dimColor: string
+  providerLabel: string
+  fontSizeOffset: number
+}) {
+  return (
+    <div className="p-6 max-w-2xl">
+      <div className="flex items-center gap-2 mb-5">
+        <span
+          className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded"
+          style={{ background: dimColor, color }}
+        >
+          {providerLabel}
+        </span>
+        {item.version && <span className="text-[14px] font-mono text-dim">{item.version}</span>}
+        <span className="ml-auto text-[13px] font-mono text-dim">
+          {formatDate(item.datetime ?? item.executed_at)}
+        </span>
+      </div>
+
+      {item.content && (
+        <div
+          className="text-muted-foreground leading-relaxed whitespace-pre-wrap"
+          style={{ fontSize: `${15 + fontSizeOffset}px` }}
+        >
+          {item.content}
+        </div>
       )}
     </div>
   )

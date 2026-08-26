@@ -1,5 +1,6 @@
 import { ChangeEmailForm } from "./ChangeEmailForm"
 import { ChangePasswordForm } from "./ChangePasswordForm"
+import { ApiUrlForm } from "./ApiUrlForm"
 import { useLanguage } from "@/context/LanguageContext"
 import type { AppSession } from "@/lib/session"
 
@@ -44,6 +45,16 @@ export function ProfileModal({ open, onClose, session }: ProfileModalProps) {
               <p className="text-xs text-muted-foreground">{t.profile.passwordDescription}</p>
             </div>
             <ChangePasswordForm userId={session.userId} />
+          </div>
+
+          <div className="h-px bg-border" />
+
+          <div className="space-y-2">
+            <div>
+              <h3 className="text-sm font-medium">{t.profile.apiUrl}</h3>
+              <p className="text-xs text-muted-foreground">{t.profile.apiUrlDescription}</p>
+            </div>
+            <ApiUrlForm />
           </div>
         </div>
 

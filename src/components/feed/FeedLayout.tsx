@@ -15,7 +15,9 @@ import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import type { AppSession } from "@/lib/session"
-import type { TaggedItem, Provider } from "@/types"
+import type { UserFeedResponse } from "@/lib/api"
+import type { TaggedItem } from "@/types"
+import { isKnownTaggedItem } from "@/types"
 
 interface FeedLayoutProps {
   session: AppSession
@@ -31,7 +33,16 @@ function getItemDate(tagged: TaggedItem): string {
   return item.executed_at
 }
 
+/** Aplati les connecteurs découverts dynamiquement en une seule liste taguée. */
+function flattenConnectors(connectors: UserFeedResponse["connectors"]): TaggedItem[] {
+  return Object.entries(connectors).flatMap(([provider, items]) =>
+    items.map((item) => ({ provider, item }) as TaggedItem),
+  )
+}
+
 function getItemExternalUrl(tagged: TaggedItem, repoUrlMap: Record<number, string>): string | null {
+  // Provider inconnu de l'app : pas de règle d'extraction de lien connue.
+  if (!isKnownTaggedItem(tagged)) return null
   if (tagged.provider === "changelog") {
     const repoUrl = repoUrlMap[tagged.item.repository_id]
     return repoUrl ? `${repoUrl}/releases/tag/${tagged.item.version}` : null
@@ -176,37 +187,18 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
     let raw: TaggedItem[] = []
 
     if (selection.type === "all") {
-      raw = [
-        ...(connectors.changelog ?? []).map((item) => ({ provider: "changelog" as const, item })),
-        ...(connectors.youtube ?? []).map((item) => ({ provider: "youtube" as const, item })),
-        ...(connectors.rss ?? []).map((item) => ({ provider: "rss" as const, item })),
-        ...(connectors.scrap ?? []).map((item) => ({ provider: "scrap" as const, item })),
-      ]
+      raw = flattenConnectors(connectors)
     } else if (selection.type === "category") {
       const { provider } = selection
-      const items =
-        provider === "changelog"
-          ? (connectors.changelog ?? [])
-          : provider === "youtube"
-            ? (connectors.youtube ?? [])
-            : provider === "rss"
-              ? (connectors.rss ?? [])
-              : (connectors.scrap ?? [])
-      raw = items.map((item) => ({ provider: provider as Provider, item }) as TaggedItem)
+      const items = connectors[provider] ?? []
+      raw = items.map((item) => ({ provider, item }) as TaggedItem)
     } else if (selection.type === "flux") {
       const { fluxId, provider } = selection
       const flux = fluxes.find((f) => f.id === fluxId)
       const repoId = flux?.repository_id
-      const allItems =
-        provider === "changelog"
-          ? (connectors.changelog ?? [])
-          : provider === "youtube"
-            ? (connectors.youtube ?? [])
-            : provider === "rss"
-              ? (connectors.rss ?? [])
-              : (connectors.scrap ?? [])
+      const allItems = connectors[provider] ?? []
       const filtered = repoId ? allItems.filter((i) => i.repository_id === repoId) : allItems
-      raw = filtered.map((item) => ({ provider: provider as Provider, item }) as TaggedItem)
+      raw = filtered.map((item) => ({ provider, item }) as TaggedItem)
     }
 
     return raw.sort(
@@ -265,12 +257,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   // Unread counts per repository (for sidebar badges)
   const allConnectorItems = useMemo((): TaggedItem[] => {
     if (!connectors) return []
-    return [
-      ...(connectors.changelog ?? []).map((item) => ({ provider: "changelog" as const, item })),
-      ...(connectors.youtube ?? []).map((item) => ({ provider: "youtube" as const, item })),
-      ...(connectors.rss ?? []).map((item) => ({ provider: "rss" as const, item })),
-      ...(connectors.scrap ?? []).map((item) => ({ provider: "scrap" as const, item })),
-    ]
+    return flattenConnectors(connectors)
   }, [connectors])
 
   const unreadCountByRepoId = useMemo(() => {
@@ -299,14 +286,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   // Cleanup read items that are no longer in the feed
   useEffect(() => {
     if (!connectors || !initialized) return
-    const allIds = new Set<string>([
-      ...(connectors.changelog ?? []).map((item) =>
-        getTaggedItemId({ provider: "changelog", item }),
-      ),
-      ...(connectors.youtube ?? []).map((item) => getTaggedItemId({ provider: "youtube", item })),
-      ...(connectors.rss ?? []).map((item) => getTaggedItemId({ provider: "rss", item })),
-      ...(connectors.scrap ?? []).map((item) => getTaggedItemId({ provider: "scrap", item })),
-    ])
+    const allIds = new Set(flattenConnectors(connectors).map(getTaggedItemId))
     void cleanup(allIds)
   }, [connectors, initialized, cleanup])
 

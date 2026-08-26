@@ -61,11 +61,13 @@ export const es: Translations = {
       changelog: "Repositorio de GitHub",
       youtube: "Canal de YouTube",
       rss: "URL del flujo RSS",
+      generic: "URL",
     },
     placeholders: {
       changelog: "p. ej. facebook/react",
       youtube: "p. ej. fireship",
       rss: "p. ej. https://example.com/feed.xml",
+      generic: "https://ejemplo.com",
     },
     scrapRepo: "Flujo disponible",
     selectScrapRepo: "Seleccionar un flujo",
@@ -121,6 +123,14 @@ export const es: Translations = {
     updatePassword: "Cambiar contraseña",
     updatingPassword: "Modificando…",
     passwordUpdated: "Contraseña cambiada correctamente.",
+    apiUrl: "URL de la API",
+    apiUrlDescription: "Elige qué API de StayUp usa esta aplicación.",
+    apiUrlSave: "Guardar",
+    apiUrlSaving: "Guardando…",
+    apiUrlSaved: "URL de la API actualizada.",
+    apiUrlReset: "Restablecer por defecto",
+    apiUrlResetting: "Restableciendo…",
+    apiUrlInvalid: "Introduce una URL válida.",
   },
   menu: {
     file: {

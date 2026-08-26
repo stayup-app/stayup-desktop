@@ -73,3 +73,9 @@ export function toRepositoryUrl(identifier: string, provider: Provider): string 
 export async function openUrl(url: string): Promise<void> {
   await open(url)
 }
+
+/** Libellé de repli pour un provider sans traduction connue de l'app (mêmes règles que
+ *  le fallback de displayName côté API — voir stayup-api/src/db/providerRegistry.ts). */
+export function providerDisplayName(provider: string): string {
+  return provider.charAt(0).toUpperCase() + provider.slice(1)
+}

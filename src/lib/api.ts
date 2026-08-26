@@ -1,4 +1,4 @@
-import type { Provider, ScrapRepository } from "@/types"
+import type { ConnectorItem, Provider, ScrapRepository } from "@/types"
 
 export interface UserRepositoryItem {
   id: string
@@ -11,12 +11,12 @@ export interface UserRepositoryItem {
 
 export interface UserFeedResponse {
   repositories: UserRepositoryItem[]
-  connectors: {
-    changelog: import("@/types").ChangelogItem[]
-    youtube: import("@/types").YoutubeItem[]
-    rss: import("@/types").RssItem[]
-    scrap: import("@/types").ScrapItem[]
-  }
+  connectors: Record<string, ConnectorItem[]>
+}
+
+export interface ConnectorProvider {
+  name: string
+  displayName: string
 }
 
 async function apiFetch<T>(
@@ -108,6 +108,18 @@ export async function getUserFeed(
   apiUrl: string,
 ): Promise<UserFeedResponse> {
   return apiFetch<UserFeedResponse>(`/ui/users/${userId}/feed`, token, apiUrl)
+}
+
+export async function getConnectorProviders(
+  token: string,
+  apiUrl: string,
+): Promise<ConnectorProvider[]> {
+  const data = await apiFetch<{ providers: ConnectorProvider[] }>(
+    "/connectors/providers",
+    token,
+    apiUrl,
+  )
+  return data.providers
 }
 
 export async function addUserRepository(

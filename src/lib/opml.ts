@@ -6,8 +6,6 @@ export interface OpmlFlux {
   identifier: string
 }
 
-const KNOWN_PROVIDERS: Provider[] = ["changelog", "youtube", "rss", "scrap"]
-
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -50,9 +48,11 @@ export function parseOpml(xml: string): OpmlFlux[] {
 
   return Array.from(doc.querySelectorAll("outline"))
     .map((el) => ({
-      provider: el.getAttribute("category") as Provider,
+      provider: el.getAttribute("category") ?? "",
       url: el.getAttribute("xmlUrl") ?? "",
       identifier: el.getAttribute("text") ?? el.getAttribute("title") ?? "",
     }))
-    .filter((f): f is OpmlFlux => KNOWN_PROVIDERS.includes(f.provider) && f.url.length > 0)
+    // Le provider n'a pas besoin d'être un des 4 connus de l'app : n'importe quel
+    // provider déclaré côté API (voir GET /connectors/providers) est accepté ici.
+    .filter((f): f is OpmlFlux => f.provider.length > 0 && f.url.length > 0)
 }

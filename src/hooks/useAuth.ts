@@ -88,7 +88,8 @@ export function useAuth(): UseAuth {
           await applyToken(event.payload)
         })
 
-        await invoke("open_oauth_window", { provider })
+        const apiUrl = await readApiUrl()
+        await invoke("open_oauth_window", { provider, apiUrl })
       } catch (err) {
         setState((s) => ({
           ...s,
