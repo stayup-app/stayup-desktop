@@ -18,7 +18,7 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 ![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
 
-[**Download**](https://github.com/stayup-app/stayup-desktop/releases/latest) · [**Landing page**](https://stayup-app.github.io/stayup-desktop)
+[**Download**](https://github.com/stayup-app/stayup-desktop/releases/latest) · [**Website**](https://stayup-ui.vercel.app)
 
 </div>
 

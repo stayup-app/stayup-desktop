@@ -86,7 +86,7 @@ install_linux() {
 case "$(uname -s)" in
   Darwin) install_macos ;;
   Linux)  install_linux ;;
-  *)      die "unsupported OS '$(uname -s)'. See https://stayup-app.github.io/stayup-desktop for manual downloads." ;;
+  *)      die "unsupported OS '$(uname -s)'. See https://stayup-ui.vercel.app/#download for manual downloads." ;;
 esac
 
 log "StayUp installed 🎉"
