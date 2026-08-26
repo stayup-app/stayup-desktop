@@ -17,6 +17,8 @@ const {
   writeToken,
   clearToken,
   readApiUrl,
+  writeApiUrl,
+  resetApiUrl,
   readLang,
   writeLang,
   readReadItems,
@@ -64,6 +66,16 @@ describe("readApiUrl", () => {
   it("falls back to the default API URL", async () => {
     get.mockResolvedValue(null)
     await expect(readApiUrl()).resolves.toBe(DEFAULT_API_URL)
+  })
+
+  it("writes the API URL", async () => {
+    await writeApiUrl("https://api.custom.dev")
+    expect(set).toHaveBeenCalledWith("api_url", "https://api.custom.dev")
+  })
+
+  it("drops the override so the default applies again", async () => {
+    await resetApiUrl()
+    expect(del).toHaveBeenCalledWith("api_url")
   })
 })
 

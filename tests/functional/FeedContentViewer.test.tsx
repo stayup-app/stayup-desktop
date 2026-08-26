@@ -72,6 +72,18 @@ const scrapItem: TaggedItem = {
   },
 }
 
+const genericItem: TaggedItem = {
+  provider: "podcast",
+  item: {
+    id: 5,
+    repository_id: 5,
+    content: "Un épisode sur les flux RSS",
+    version: "s02e04",
+    datetime: "2024-06-11T07:00:00Z",
+    executed_at: "2024-06-11T07:30:00Z",
+  },
+}
+
 function renderViewer(item: TaggedItem | null, repos = repositories) {
   return render(
     <LanguageProvider initialLang="fr">
@@ -408,5 +420,29 @@ describe("unparsable URLs", () => {
     } as TaggedItem
     renderViewer(item)
     expect(screen.getByText("not-a-url")).toBeInTheDocument()
+  })
+})
+
+describe("provider inconnu", () => {
+  it("renders the generic content with the capitalized provider label", () => {
+    renderViewer(genericItem)
+    expect(screen.getByText("Podcast")).toBeInTheDocument()
+    expect(screen.getByText("s02e04")).toBeInTheDocument()
+    expect(screen.getByText("Un épisode sur les flux RSS")).toBeInTheDocument()
+  })
+
+  it("omits the version and the body when the item carries neither", () => {
+    renderViewer({
+      ...genericItem,
+      item: { ...genericItem.item, content: "", version: null },
+    })
+    expect(screen.getByText("Podcast")).toBeInTheDocument()
+    expect(screen.queryByText("s02e04")).not.toBeInTheDocument()
+    expect(screen.queryByText("Un épisode sur les flux RSS")).not.toBeInTheDocument()
+  })
+
+  it("falls back to executed_at when the item has no datetime", () => {
+    renderViewer({ ...genericItem, item: { ...genericItem.item, datetime: null } })
+    expect(screen.getByText("Podcast")).toBeInTheDocument()
   })
 })

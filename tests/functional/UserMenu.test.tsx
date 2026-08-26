@@ -52,6 +52,29 @@ describe("UserMenu", () => {
     expect(onLogout).toHaveBeenCalled()
   })
 
+  it("tints the sign-out row on hover and restores it on leave", () => {
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    fireEvent.click(screen.getByTitle("Alice"))
+    const signOut = screen.getByText(fr.userMenu.signOut).closest("button")!
+
+    fireEvent.mouseEnter(signOut)
+    expect(signOut.style.color).toBe("var(--rose)")
+    expect(signOut.style.background).toBe("var(--rose-dim)")
+
+    fireEvent.mouseLeave(signOut)
+    expect(signOut.style.color).toBe("var(--fg-soft)")
+    expect(signOut.style.background).toBe("transparent")
+  })
+
+  it("stays open on a mousedown inside the menu", () => {
+    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    fireEvent.click(screen.getByTitle("Alice"))
+
+    fireEvent.mouseDown(screen.getByText(fr.userMenu.profile))
+
+    expect(screen.getByText(fr.userMenu.profile)).toBeInTheDocument()
+  })
+
   it("closes when clicking outside", () => {
     renderWithLang(
       <div>

@@ -72,6 +72,18 @@ const scrapItem: TaggedItem = {
   },
 }
 
+const genericItem: TaggedItem = {
+  provider: "podcast",
+  item: {
+    id: 5,
+    repository_id: 5,
+    content: "Un épisode sur les flux RSS",
+    version: "s02e04",
+    datetime: "2024-06-11T07:00:00Z",
+    executed_at: "2024-06-11T07:30:00Z",
+  },
+}
+
 function renderList(props: Partial<React.ComponentProps<typeof UnifiedFeedList>> = {}) {
   const onSelect = vi.fn()
   const view = render(
@@ -304,5 +316,26 @@ describe("channel name fallbacks", () => {
     } as TaggedItem
     const { container } = renderList({ items: [item] })
     expect(container.querySelector("img")).toHaveAttribute("alt", "")
+  })
+})
+
+// Provider découvert côté API et inconnu de l'app : rendu générique + couleur/icône neutres.
+describe("UnifiedFeedList — provider inconnu", () => {
+  it("renders a generic row with the capitalized provider label", () => {
+    renderList({ items: [genericItem] })
+    expect(screen.getByText("Un épisode sur les flux RSS")).toBeInTheDocument()
+    expect(screen.getByText("Podcast")).toBeInTheDocument()
+  })
+
+  it("falls back to the provider label when the item has no content", () => {
+    renderList({ items: [{ ...genericItem, item: { ...genericItem.item, content: "" } }] })
+    expect(screen.getAllByText("Podcast")).toHaveLength(2)
+  })
+
+  it("falls back to executed_at when the item has no datetime", () => {
+    renderList({
+      items: [{ ...genericItem, item: { ...genericItem.item, datetime: null } }],
+    })
+    expect(screen.getByText("Podcast")).toBeInTheDocument()
   })
 })
