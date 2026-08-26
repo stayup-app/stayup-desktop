@@ -41,9 +41,7 @@ describe("ApiUrlForm", () => {
     await userEvent.type(input, "https://other-api.example.com")
     fireEvent.submit(screen.getByRole("button", { name: "Enregistrer" }))
 
-    await waitFor(() =>
-      expect(writeApiUrl).toHaveBeenCalledWith("https://other-api.example.com"),
-    )
+    await waitFor(() => expect(writeApiUrl).toHaveBeenCalledWith("https://other-api.example.com"))
     expect(await screen.findByText("URL de l'API mise à jour.")).toBeInTheDocument()
   })
 

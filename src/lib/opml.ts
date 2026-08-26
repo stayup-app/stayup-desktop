@@ -46,13 +46,15 @@ export function parseOpml(xml: string): OpmlFlux[] {
   }
   if (doc.querySelector("parsererror")) return []
 
-  return Array.from(doc.querySelectorAll("outline"))
-    .map((el) => ({
-      provider: el.getAttribute("category") ?? "",
-      url: el.getAttribute("xmlUrl") ?? "",
-      identifier: el.getAttribute("text") ?? el.getAttribute("title") ?? "",
-    }))
-    // Le provider n'a pas besoin d'être un des 4 connus de l'app : n'importe quel
-    // provider déclaré côté API (voir GET /connectors/providers) est accepté ici.
-    .filter((f): f is OpmlFlux => f.provider.length > 0 && f.url.length > 0)
+  return (
+    Array.from(doc.querySelectorAll("outline"))
+      .map((el) => ({
+        provider: el.getAttribute("category") ?? "",
+        url: el.getAttribute("xmlUrl") ?? "",
+        identifier: el.getAttribute("text") ?? el.getAttribute("title") ?? "",
+      }))
+      // Le provider n'a pas besoin d'être un des 4 connus de l'app : n'importe quel
+      // provider déclaré côté API (voir GET /connectors/providers) est accepté ici.
+      .filter((f): f is OpmlFlux => f.provider.length > 0 && f.url.length > 0)
+  )
 }

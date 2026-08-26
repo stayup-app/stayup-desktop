@@ -128,7 +128,10 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
         setTiles(
           providers.map(({ name, displayName }) => {
             const known = isKnownProvider(name) ? KNOWN_TILE_STYLE[name] : GENERIC_TILE_STYLE
-            const label = name === "scrap" ? t.feed.providers.scrap : (t.feed.providers[name as KnownProvider] ?? displayName)
+            const label =
+              name === "scrap"
+                ? t.feed.providers.scrap
+                : (t.feed.providers[name as KnownProvider] ?? displayName)
             return { id: name, label, ...known }
           }),
         )
@@ -252,7 +255,8 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
 
   const scrapLoading = provider === "scrap" && scrapRepos === null
   const availableScrapRepos = (scrapRepos ?? []).filter((r) => !r.is_subscribed)
-  const isKnownFeedProvider = provider === "changelog" || provider === "youtube" || provider === "rss"
+  const isKnownFeedProvider =
+    provider === "changelog" || provider === "youtube" || provider === "rss"
 
   const inputClass =
     "w-full rounded-[10px] border border-border bg-[var(--bg)] text-foreground px-3.5 py-2.5 text-sm focus:outline-none focus:border-peach/70 focus:shadow-peach-ring transition-colors"
