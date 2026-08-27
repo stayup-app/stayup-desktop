@@ -110,6 +110,11 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           tagName: ${{ github.ref_name }}
           args: ${{ matrix.args }}
+          # Les 4 jobs de la matrice tournent en parallèle sur la même release :
+          # les laisser écrire latest.json chacun de leur côté fait que la dernière
+          # écriture écrase les autres. La v0.14.0 est ainsi sortie avec 5
+          # plateformes sur 11. La manifeste est construite une seule fois plus bas.
+          includeUpdaterJson: false
 
   publish-release:
     needs: [create-release, build]
@@ -117,6 +122,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      # Après tous les builds : une seule écriture, et un échec si une plateforme
+      # manque plutôt qu'une release muette pour les utilisateurs concernés.
+      - name: Build the updater manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/build-updater-manifest.py "${{ github.ref_name }}" /tmp/latest.json
+          gh release upload "${{ github.ref_name }}" /tmp/latest.json --clobber
 
       - name: Publish release
         env:
