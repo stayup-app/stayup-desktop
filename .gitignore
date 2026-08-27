@@ -30,3 +30,7 @@ src-tauri/target/
 coverage/
 playwright-report/
 test-results/
+
+# Artefacts Python (scripts/build-updater-manifest.py)
+__pycache__/
+*.pyc
