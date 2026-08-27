@@ -96,6 +96,15 @@ export const en = {
     readArticle: "Read article",
     visitWebsite: "Visit website",
   },
+  // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
+  errors: {
+    serverError: "Something went wrong, try again.",
+    invalidCredentials: "Wrong e-mail or password.",
+    emailTaken: "That e-mail address is already in use.",
+    wrongCurrentPassword: "Your current password is not correct.",
+    alreadySubscribed: "You are already following this feed.",
+    urlOtherProvider: "This URL is already tracked under another provider.",
+  },
   common: {
     cancel: "Cancel",
     delete: "Delete",
@@ -116,6 +125,8 @@ export const en = {
     updateEmail: "Update email",
     updatingEmail: "Updating…",
     emailUpdated: "Email address updated.",
+    currentPassword: "Current password",
+    currentPasswordRequired: "Enter your current password",
     newPassword: "New password",
     confirmNewPassword: "Confirm new password",
     updatePassword: "Change password",

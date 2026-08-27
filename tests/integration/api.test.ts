@@ -34,18 +34,20 @@ describe("loginWithPassword", () => {
     expect(token).toBe("jwt-abc-123")
   })
 
-  it("throws 'Identifiants invalides.' on 401", async () => {
+  // Le message affiché est traduit par useAuth à partir du statut : ici on vérifie
+  // seulement que le statut est bien porté par l'erreur.
+  it("throws an ApiError carrying the 401", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401 }))
-    await expect(loginWithPassword("bad@test.com", "wrong", API_URL)).rejects.toThrow(
-      "Identifiants invalides.",
-    )
+    await expect(loginWithPassword("bad@test.com", "wrong", API_URL)).rejects.toMatchObject({
+      status: 401,
+    })
   })
 
-  it("throws 'Erreur serveur' on 5xx", async () => {
+  it("throws an ApiError carrying the 5xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
-    await expect(loginWithPassword("u@test.com", "pass", API_URL)).rejects.toThrow(
-      "Erreur serveur, réessayez.",
-    )
+    await expect(loginWithPassword("u@test.com", "pass", API_URL)).rejects.toMatchObject({
+      status: 500,
+    })
   })
 
   it("strips trailing slash from apiUrl before calling the endpoint", async () => {
@@ -73,18 +75,18 @@ describe("registerWithPassword", () => {
     expect(token).toBe("jwt-new-1")
   })
 
-  it("throws 'Un compte existe déjà avec cet email.' on 409", async () => {
+  it("throws an ApiError carrying the 409", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409 }))
     await expect(
       registerWithPassword("Alice", "taken@test.com", "pass1234", API_URL),
-    ).rejects.toThrow("Un compte existe déjà avec cet email.")
+    ).rejects.toMatchObject({ status: 409 })
   })
 
-  it("throws 'Erreur serveur' on 5xx", async () => {
+  it("throws an ApiError carrying the 5xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
-    await expect(registerWithPassword("Alice", "a@test.com", "pass1234", API_URL)).rejects.toThrow(
-      "Erreur serveur, réessayez.",
-    )
+    await expect(
+      registerWithPassword("Alice", "a@test.com", "pass1234", API_URL),
+    ).rejects.toMatchObject({ status: 500 })
   })
 })
 
@@ -140,7 +142,10 @@ describe("getUserFeed", () => {
   })
 
   it("throws after the second 5xx (no more retries)", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) }),
+    )
     await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("StayUp API error 500")
   })
 
@@ -264,10 +269,36 @@ describe("scrap endpoints", () => {
 
 describe("apiFetch error handling", () => {
   it("does not retry on a 4xx error", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 })
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
     await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("StayUp API error 404")
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // Un POST peut avoir été traité avant la coupure : le rejouer créerait un doublon.
+  it("does not replay a write that failed with a 5xx", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(
+      addUserRepository("user-1", TOKEN, API_URL, {
+        provider: "rss",
+        url: "https://x.dev/feed",
+        config: {},
+      }),
+    ).rejects.toThrow()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("surfaces the API error body instead of the raw status line", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: "Already subscribed" }),
+      }),
+    )
+    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("Already subscribed")
   })
 
   it("does not retry on a non-network error", async () => {

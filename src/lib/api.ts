@@ -19,6 +19,19 @@ export interface ConnectorProvider {
   displayName: string
 }
 
+/** Erreur d'appel API porteuse du statut HTTP. Le message de l'API est en anglais
+ *  quelle que soit la langue de l'app : c'est au point d'affichage de traduire à
+ *  partir du statut, pas de montrer `StayUp API error 409: /ui/...` à l'utilisateur. */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = "ApiError"
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   token: string,
@@ -27,6 +40,9 @@ async function apiFetch<T>(
   attempt = 0,
 ): Promise<T> {
   const base = apiUrl.replace(/\/$/, "")
+  // Un POST/DELETE peut avoir été traité avant la coupure : le rejouer créerait un
+  // doublon. Seules les lectures sont réessayées.
+  const isGet = !init?.method || init.method === "GET"
   try {
     const res = await fetch(`${base}${path}`, {
       ...init,
@@ -38,15 +54,16 @@ async function apiFetch<T>(
     })
 
     if (!res.ok) {
-      if (attempt === 0 && res.status >= 500) {
+      if (isGet && attempt === 0 && res.status >= 500) {
         return apiFetch(path, token, apiUrl, init, 1)
       }
-      throw new Error(`StayUp API error ${res.status}: ${path}`)
+      const body = (await res.json().catch(() => ({}))) as { error?: string }
+      throw new ApiError(res.status, body.error ?? `StayUp API error ${res.status}: ${path}`)
     }
 
     return res.json() as Promise<T>
   } catch (err) {
-    if (attempt === 0 && err instanceof TypeError) {
+    if (isGet && attempt === 0 && err instanceof TypeError) {
       return apiFetch(path, token, apiUrl, init, 1)
     }
     throw err
@@ -64,8 +81,7 @@ export async function loginWithPassword(
     body: JSON.stringify({ email, password }),
   })
 
-  if (res.status === 401) throw new Error("Identifiants invalides.")
-  if (!res.ok) throw new Error("Erreur serveur, réessayez.")
+  if (!res.ok) throw new ApiError(res.status, `Login failed: ${res.status}`)
 
   const { token } = (await res.json()) as { token: string }
   return token
@@ -83,8 +99,7 @@ export async function registerWithPassword(
     body: JSON.stringify({ name, email, password }),
   })
 
-  if (res.status === 409) throw new Error("Un compte existe déjà avec cet email.")
-  if (!res.ok) throw new Error("Erreur serveur, réessayez.")
+  if (!res.ok) throw new ApiError(res.status, `Register failed: ${res.status}`)
 
   const { token } = (await res.json()) as { token: string }
   return token
@@ -94,7 +109,7 @@ export async function updateProfile(
   userId: string,
   token: string,
   apiUrl: string,
-  data: { name?: string; email?: string; password?: string },
+  data: { name?: string; email?: string; password?: string; currentPassword?: string },
 ): Promise<void> {
   await apiFetch(`/ui/users/${userId}`, token, apiUrl, {
     method: "PATCH",

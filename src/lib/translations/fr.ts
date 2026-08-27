@@ -99,6 +99,15 @@ export const fr: Translations = {
     readArticle: "Lire l'article",
     visitWebsite: "Visiter le site",
   },
+  // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
+  errors: {
+    serverError: "Erreur serveur, réessayez.",
+    invalidCredentials: "E-mail ou mot de passe incorrect.",
+    emailTaken: "Cette adresse e-mail est déjà utilisée.",
+    wrongCurrentPassword: "Ton mot de passe actuel n'est pas correct.",
+    alreadySubscribed: "Tu suis déjà ce flux.",
+    urlOtherProvider: "Cette URL est déjà suivie sous un autre provider.",
+  },
   common: {
     cancel: "Annuler",
     delete: "Supprimer",
@@ -119,6 +128,8 @@ export const fr: Translations = {
     updateEmail: "Mettre à jour l'e-mail",
     updatingEmail: "Mise à jour…",
     emailUpdated: "Adresse e-mail mise à jour.",
+    currentPassword: "Mot de passe actuel",
+    currentPasswordRequired: "Saisis ton mot de passe actuel",
     newPassword: "Nouveau mot de passe",
     confirmNewPassword: "Confirmer le nouveau mot de passe",
     updatePassword: "Changer le mot de passe",

@@ -98,6 +98,15 @@ export const zh: Translations = {
     readArticle: "阅读文章",
     visitWebsite: "访问网站",
   },
+  // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
+  errors: {
+    serverError: "出了点问题，请重试。",
+    invalidCredentials: "邮箱或密码不正确。",
+    emailTaken: "该邮箱地址已被使用。",
+    wrongCurrentPassword: "当前密码不正确。",
+    alreadySubscribed: "你已经关注了这个订阅源。",
+    urlOtherProvider: "该 URL 已在其他提供方下被跟踪。",
+  },
   common: {
     cancel: "取消",
     delete: "删除",
@@ -118,6 +127,8 @@ export const zh: Translations = {
     updateEmail: "更新邮箱",
     updatingEmail: "正在更新…",
     emailUpdated: "邮箱地址已更新。",
+    currentPassword: "当前密码",
+    currentPasswordRequired: "请输入当前密码",
     newPassword: "新密码",
     confirmNewPassword: "确认新密码",
     updatePassword: "修改密码",

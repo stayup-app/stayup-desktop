@@ -98,6 +98,15 @@ export const ja: Translations = {
     readArticle: "記事を読む",
     visitWebsite: "サイトを見る",
   },
+  // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
+  errors: {
+    serverError: "問題が発生しました。もう一度お試しください。",
+    invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
+    emailTaken: "このメールアドレスはすでに使用されています。",
+    wrongCurrentPassword: "現在のパスワードが正しくありません。",
+    alreadySubscribed: "このフィードはすでにフォローしています。",
+    urlOtherProvider: "このURLは別のプロバイダーですでに追跡されています。",
+  },
   common: {
     cancel: "キャンセル",
     delete: "削除",
@@ -118,6 +127,8 @@ export const ja: Translations = {
     updateEmail: "メールアドレスを更新",
     updatingEmail: "更新中…",
     emailUpdated: "メールアドレスを更新しました。",
+    currentPassword: "現在のパスワード",
+    currentPasswordRequired: "現在のパスワードを入力してください",
     newPassword: "新しいパスワード",
     confirmNewPassword: "新しいパスワード(確認)",
     updatePassword: "パスワードを変更",

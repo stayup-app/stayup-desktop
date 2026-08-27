@@ -99,6 +99,15 @@ export const it: Translations = {
     readArticle: "Leggi l'articolo",
     visitWebsite: "Visita il sito web",
   },
+  // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
+  errors: {
+    serverError: "Qualcosa è andato storto, riprova.",
+    invalidCredentials: "E-mail o password non corretti.",
+    emailTaken: "Questo indirizzo e-mail è già in uso.",
+    wrongCurrentPassword: "La tua password attuale non è corretta.",
+    alreadySubscribed: "Segui già questo feed.",
+    urlOtherProvider: "Questo URL è già seguito con un altro provider.",
+  },
   common: {
     cancel: "Annulla",
     delete: "Elimina",
@@ -119,6 +128,8 @@ export const it: Translations = {
     updateEmail: "Aggiorna email",
     updatingEmail: "Aggiornamento…",
     emailUpdated: "Indirizzo email aggiornato.",
+    currentPassword: "Password attuale",
+    currentPasswordRequired: "Inserisci la tua password attuale",
     newPassword: "Nuova password",
     confirmNewPassword: "Conferma la nuova password",
     updatePassword: "Cambia password",

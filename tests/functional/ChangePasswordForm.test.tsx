@@ -3,10 +3,22 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm"
 import { LanguageProvider } from "@/context/LanguageContext"
-import { updateProfile } from "@/lib/api"
+import { ApiError, updateProfile } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
 
-vi.mock("@/lib/api", () => ({ updateProfile: vi.fn() }))
+// Le formulaire lit le statut porté par ApiError pour choisir le message traduit.
+vi.mock("@/lib/api", () => ({
+  ApiError: class ApiError extends Error {
+    constructor(
+      readonly status: number,
+      message: string,
+    ) {
+      super(message)
+      this.name = "ApiError"
+    }
+  },
+  updateProfile: vi.fn(),
+}))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("token-1"),
   readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
@@ -32,6 +44,7 @@ beforeEach(() => {
 describe("ChangePasswordForm", () => {
   it("submits the new password and shows a success message", async () => {
     renderForm()
+    await userEvent.type(screen.getByLabelText("Mot de passe actuel"), "oldpassword1")
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
     await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
@@ -39,6 +52,7 @@ describe("ChangePasswordForm", () => {
     await waitFor(() => {
       expect(updateProfile).toHaveBeenCalledWith("user-1", "token-1", "https://api.test", {
         password: "newpassword1",
+        currentPassword: "oldpassword1",
       })
     })
     expect(await screen.findByText("Mot de passe modifié avec succès.")).toBeInTheDocument()
@@ -46,6 +60,7 @@ describe("ChangePasswordForm", () => {
 
   it("shows a validation error when passwords do not match", async () => {
     renderForm()
+    await userEvent.type(screen.getByLabelText("Mot de passe actuel"), "oldpassword1")
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
     await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "different1")
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
@@ -62,18 +77,30 @@ describe("ChangePasswordForm", () => {
     expect(updateProfile).not.toHaveBeenCalled()
   })
 
-  it("surfaces the API error message", async () => {
-    vi.mocked(updateProfile).mockRejectedValue(new Error("Erreur serveur."))
+  it("translates a 401 into a wrong-current-password message", async () => {
+    vi.mocked(updateProfile).mockRejectedValue(new ApiError(401, "Invalid credentials"))
+    renderForm()
+    await userEvent.type(screen.getByLabelText("Mot de passe actuel"), "oldpassword1")
+    await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
+    await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")
+    fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
+    await screen.findByText("Ton mot de passe actuel n'est pas correct.")
+  })
+
+  // Sans mot de passe actuel, l'API refuserait : le formulaire s'arrête avant.
+  it("refuses to submit without the current password", async () => {
     renderForm()
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
     await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
-    await screen.findByText("Erreur serveur.")
+    await screen.findByText("Saisis ton mot de passe actuel")
+    expect(updateProfile).not.toHaveBeenCalled()
   })
 
   it("shows an error when the token is missing", async () => {
     vi.mocked(readToken).mockResolvedValue(null)
     renderForm()
+    await userEvent.type(screen.getByLabelText("Mot de passe actuel"), "oldpassword1")
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
     await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))

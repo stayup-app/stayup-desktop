@@ -2,7 +2,7 @@ import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { updateProfile } from "@/lib/api"
+import { ApiError, updateProfile } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
 import { useLanguage } from "@/context/LanguageContext"
 import type { Translations } from "@/lib/translations"
@@ -10,6 +10,9 @@ import type { Translations } from "@/lib/translations"
 function makeSchema(t: Translations) {
   return z
     .object({
+      // L'API exige le mot de passe actuel : un token seul ne doit pas suffire à
+      // verrouiller le compte de son propriétaire.
+      currentPassword: z.string().min(1, t.profile.currentPasswordRequired),
       newPassword: z.string().min(8, t.auth.passwordTooShort),
       confirmPassword: z.string(),
     })
@@ -19,7 +22,7 @@ function makeSchema(t: Translations) {
     })
 }
 
-type FormValues = { newPassword: string; confirmPassword: string }
+type FormValues = { currentPassword: string; newPassword: string; confirmPassword: string }
 
 interface ChangePasswordFormProps {
   userId: string
@@ -44,16 +47,44 @@ export function ChangePasswordForm({ userId }: ChangePasswordFormProps) {
     try {
       const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
       if (!token) throw new Error(t.feed.tokenMissing)
-      await updateProfile(userId, token, apiUrl, { password: data.newPassword })
+      await updateProfile(userId, token, apiUrl, {
+        password: data.newPassword,
+        currentPassword: data.currentPassword,
+      })
       setSuccess(true)
       reset()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.common.error)
+      // Le message de l'API est en anglais : on traduit depuis le statut.
+      if (err instanceof ApiError && err.status === 401) {
+        setError(t.errors.wrongCurrentPassword)
+      } else if (err instanceof ApiError && err.status === 409) {
+        setError(t.errors.emailTaken)
+      } else {
+        // Les erreurs de l'API sont toutes des ApiError : ce qui reste vient de
+        // l'app elle-même (token manquant) et porte déjà un message traduit.
+        setError(err instanceof Error ? err.message : t.common.error)
+      }
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="current-password" className="text-sm font-medium">
+          {t.profile.currentPassword}
+        </label>
+        <input
+          id="current-password"
+          type="password"
+          autoComplete="current-password"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          {...register("currentPassword")}
+        />
+        {errors.currentPassword && (
+          <p className="text-xs text-destructive">{errors.currentPassword.message}</p>
+        )}
+      </div>
+
       <div className="flex flex-col gap-1">
         <label htmlFor="new-password" className="text-sm font-medium">
           {t.profile.newPassword}
