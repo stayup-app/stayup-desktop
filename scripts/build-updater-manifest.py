@@ -96,7 +96,13 @@ def gh_api(path: str, *, binary: bool = False):
 
 
 def find_release(tag: str) -> dict:
-    """La release portant ce tag, brouillon compris."""
+    """La release portant ce tag, brouillon compris.
+
+    Un run de release échoué laisse son brouillon derrière lui — il en traîne
+    plusieurs sur ce dépôt. Relancer le même tag crée donc une seconde release
+    portant le même nom. L'API liste du plus récent au plus ancien : on prend la
+    première correspondance, c'est-à-dire celle du run en cours.
+    """
     for page in range(1, 6):
         releases = gh_api(f"repos/{REPO}/releases?per_page=100&page={page}")
         if not releases:
