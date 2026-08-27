@@ -140,6 +140,14 @@ jobs:
             --method PATCH \
             --field draft=false
 
+      # Dernier filet : on relit la manifeste par l'URL que l'app interroge. Les
+      # contrôles précédents portent sur ce qu'on a produit, celui-ci sur ce qui
+      # est servi — c'est la seule chose que voit l'utilisateur.
+      - name: Verify the served updater manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/build-updater-manifest.py --verify "${{ github.ref_name }}"
+
       - name: Update Homebrew cask
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

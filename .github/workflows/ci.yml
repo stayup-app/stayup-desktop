@@ -30,5 +30,8 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      - name: Updater manifest guards
+        run: python3 scripts/build-updater-manifest.py --self-test
+
       - name: Unit & integration & functional tests
         run: npm run test:coverage
