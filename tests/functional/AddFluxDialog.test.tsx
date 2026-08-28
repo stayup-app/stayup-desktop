@@ -181,4 +181,141 @@ describe("subscribe to an existing flux", () => {
     expect(await screen.findByText(fr.addFlux.selectError)).toBeInTheDocument()
     expect(subscribeFlux).not.toHaveBeenCalled()
   })
+
+  it("surfaces an error raised while subscribing", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      { id: 10, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
+    ])
+    vi.mocked(subscribeFlux).mockRejectedValue(new Error("subscribe failed"))
+    renderDialog()
+    await selectProvider("rss")
+    await screen.findByText("https://free.example.com")
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText("subscribe failed")).toBeInTheDocument()
+  })
+
+  it("fails closed when the auth token is missing (existing flux)", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      { id: 10, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
+    ])
+    const { onSuccess } = renderDialog()
+    await selectProvider("rss")
+    await screen.findByText("https://free.example.com")
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
+
+    vi.mocked(readToken).mockResolvedValue(null)
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText(fr.feed.tokenMissing)).toBeInTheDocument()
+    expect(subscribeFlux).not.toHaveBeenCalled()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+})
+
+describe("pick mode & guards", () => {
+  it("toggles between the existing-flux list and the new-flux form", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      { id: 10, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
+    ])
+    renderDialog()
+    await screen.findByText("https://free.example.com")
+
+    fireEvent.click(screen.getByText(fr.addFlux.makeRequest))
+    expect(screen.getByRole("textbox")).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(fr.addFlux.chooseExisting))
+    expect(screen.getByRole("combobox")).toBeInTheDocument()
+  })
+
+  it("rejects an identifier that does not match the connector pattern", async () => {
+    renderDialog()
+    await selectProvider("rss") // pattern: ^https?://.+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "not-a-url" } })
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText(fr.addFlux.requiredError)).toBeInTheDocument()
+    expect(addUserRepository).not.toHaveBeenCalled()
+  })
+
+  it("fails closed when the auth token is missing (new flux)", async () => {
+    renderDialog()
+    await screen.findByRole("button", { name: "Changelog" })
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
+
+    vi.mocked(readToken).mockResolvedValue(null)
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText(fr.feed.tokenMissing)).toBeInTheDocument()
+    expect(addUserRepository).not.toHaveBeenCalled()
+  })
+
+  it("loads no fluxes when there is no token", async () => {
+    vi.mocked(readToken).mockResolvedValue(null)
+    renderDialog()
+    await screen.findByRole("button", { name: "Changelog" })
+    expect(getProviderFluxes).not.toHaveBeenCalled()
+  })
+
+  it("shows no provider tiles when the connector list fails to load", async () => {
+    vi.mocked(getConnectorProviders).mockRejectedValue(new Error("offline"))
+    renderDialog()
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Changelog" })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByText(fr.addFlux.title)).toBeInTheDocument()
+  })
+
+  it("treats a failed flux fetch as an empty list on the new-flux form", async () => {
+    vi.mocked(getProviderFluxes).mockRejectedValue(new Error("boom"))
+    renderDialog()
+    await screen.findByRole("button", { name: "Changelog" })
+    expect(await screen.findByRole("textbox")).toBeInTheDocument()
+  })
+
+  it("tolerates a flux endpoint that resolves nothing", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue(undefined as never)
+    renderDialog()
+    expect(await screen.findByRole("textbox")).toBeInTheDocument()
+  })
+
+  it("disables the picker when every flux of the provider is already followed", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      { id: 1, url: "https://taken.example.com", config: {}, created_at: "", is_subscribed: true },
+    ])
+    renderDialog()
+    await selectProvider("rss")
+    // Every flux is already followed → the dialog opens on the new-flux form.
+    await screen.findByRole("textbox")
+    fireEvent.click(screen.getByText(fr.addFlux.chooseExisting))
+    const select = (await screen.findByRole("combobox")) as HTMLSelectElement
+    const disabled = select.querySelector("option[disabled]")
+    expect(disabled?.textContent).toBe(fr.addFlux.noScrapRepos)
+  })
+
+  it("falls back to a plain error message when a non-Error is thrown", async () => {
+    vi.mocked(addUserRepository).mockRejectedValue("nope")
+    renderDialog()
+    await screen.findByRole("button", { name: "Changelog" })
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText(fr.common.error)).toBeInTheDocument()
+  })
+
+  it("falls back to a plain error message when subscribing throws a non-Error", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      { id: 9, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
+    ])
+    vi.mocked(subscribeFlux).mockRejectedValue("boom")
+    renderDialog()
+    await selectProvider("rss")
+    await screen.findByText("https://free.example.com")
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "9" } })
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+    expect(await screen.findByText(fr.common.error)).toBeInTheDocument()
+  })
+
+  it("renders a provider with no template, displayName or approval flag", async () => {
+    vi.mocked(getConnectorProviders).mockResolvedValue([{ name: "bare", template: null } as never])
+    renderDialog()
+    expect(await screen.findByRole("button", { name: "bare" })).toBeInTheDocument()
+  })
 })
