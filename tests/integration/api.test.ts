@@ -7,10 +7,9 @@ import {
   getConnectorProviders,
   addUserRepository,
   deleteUserRepository,
-  getScrapRepos,
-  subscribeScrap,
-  unsubscribeScrap,
-  createScrapRequest,
+  getProviderFluxes,
+  subscribeFlux,
+  unsubscribeFlux,
 } from "@/lib/api"
 
 const API_URL = "https://api.example.com"
@@ -221,48 +220,32 @@ describe("deleteUserRepository", () => {
   })
 })
 
-describe("scrap endpoints", () => {
-  it("getScrapRepos unwraps the repos array", async () => {
-    const repos = [
+describe("provider flux endpoints", () => {
+  it("getProviderFluxes unwraps the fluxes array", async () => {
+    const fluxes = [
       { id: 1, url: "https://example.com", config: {}, created_at: "", is_subscribed: false },
     ]
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ repos }) }))
-    await expect(getScrapRepos(TOKEN, API_URL)).resolves.toEqual(repos)
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ fluxes }) }))
+    await expect(getProviderFluxes("rss", TOKEN, API_URL)).resolves.toEqual(fluxes)
   })
 
-  it("subscribeScrap POSTs to the subscribe endpoint", async () => {
+  it("subscribeFlux POSTs to the provider subscribe endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) })
     vi.stubGlobal("fetch", fetchMock)
-    await subscribeScrap(3, TOKEN, API_URL)
+    await subscribeFlux("rss", 3, TOKEN, API_URL)
     expect(fetchMock).toHaveBeenCalledWith(
-      `${API_URL}/scrap/3/subscribe`,
+      `${API_URL}/providers/rss/fluxes/3/subscribe`,
       expect.objectContaining({ method: "POST" }),
     )
   })
 
-  it("unsubscribeScrap DELETEs the subscribe endpoint", async () => {
+  it("unsubscribeFlux DELETEs the provider subscribe endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) })
     vi.stubGlobal("fetch", fetchMock)
-    await unsubscribeScrap(3, TOKEN, API_URL)
+    await unsubscribeFlux("rss", 3, TOKEN, API_URL)
     expect(fetchMock).toHaveBeenCalledWith(
-      `${API_URL}/scrap/3/subscribe`,
+      `${API_URL}/providers/rss/fluxes/3/subscribe`,
       expect.objectContaining({ method: "DELETE" }),
-    )
-  })
-
-  it("createScrapRequest POSTs the url and returns the created id", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ id: "req-1" }) })
-    vi.stubGlobal("fetch", fetchMock)
-
-    await expect(createScrapRequest({ url: "https://blog.dev" }, TOKEN, API_URL)).resolves.toEqual({
-      id: "req-1",
-    })
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_URL}/scrap/requests`,
-      expect.objectContaining({
-        method: "POST",
-        body: JSON.stringify({ url: "https://blog.dev" }),
-      }),
     )
   })
 })

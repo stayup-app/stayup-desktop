@@ -77,7 +77,7 @@ export const en = {
     requiredError: "This field is required",
     selectError: "Select a feed",
     loading: "Loading…",
-    makeRequest: "Make a request",
+    makeRequest: "Add a new one",
     chooseExisting: "Choose an existing feed",
     requestUrl: "URL to scrape",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -95,6 +95,7 @@ export const en = {
     watchOnYoutube: "Watch on YouTube",
     readArticle: "Read article",
     visitWebsite: "Visit website",
+    openLink: "Open link",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

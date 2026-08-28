@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { ImportExportButtons } from "@/components/feed/ImportExportButtons"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { buildOpml } from "@/lib/opml"
-import { addUserRepository, getScrapRepos, subscribeScrap } from "@/lib/api"
+import { addUserRepository, getProviderFluxes, subscribeFlux } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
 import { save, open } from "@tauri-apps/plugin-dialog"
 import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs"
@@ -13,8 +13,8 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({ save: vi.fn(), open: vi.fn() }))
 vi.mock("@tauri-apps/plugin-fs", () => ({ writeTextFile: vi.fn(), readTextFile: vi.fn() }))
 vi.mock("@/lib/api", () => ({
   addUserRepository: vi.fn().mockResolvedValue(undefined),
-  getScrapRepos: vi.fn().mockResolvedValue([]),
-  subscribeScrap: vi.fn().mockResolvedValue(undefined),
+  getProviderFluxes: vi.fn().mockResolvedValue([]),
+  subscribeFlux: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("token-1"),
@@ -142,13 +142,13 @@ describe("import", () => {
         "StayUp",
       ),
     )
-    vi.mocked(getScrapRepos).mockResolvedValue([])
+    vi.mocked(getProviderFluxes).mockResolvedValue([])
     renderButtons([])
 
     fireEvent.click(screen.getByLabelText("Importer des flux"))
 
     await screen.findByText(/1 indisponible/)
-    expect(subscribeScrap).not.toHaveBeenCalled()
+    expect(subscribeFlux).not.toHaveBeenCalled()
   })
 
   it("subscribes to a matching scrap repository", async () => {
@@ -165,7 +165,7 @@ describe("import", () => {
         "StayUp",
       ),
     )
-    vi.mocked(getScrapRepos).mockResolvedValue([
+    vi.mocked(getProviderFluxes).mockResolvedValue([
       {
         id: 7,
         url: "https://news.ycombinator.com",
@@ -179,7 +179,7 @@ describe("import", () => {
     fireEvent.click(screen.getByLabelText("Importer des flux"))
 
     await screen.findByText(/1 ajouté/)
-    expect(subscribeScrap).toHaveBeenCalledWith(7, "token-1", "https://api.test")
+    expect(subscribeFlux).toHaveBeenCalledWith("scrap", 7, "token-1", "https://api.test")
   })
 
   it("shows an error for a file with no valid entries", async () => {
@@ -255,7 +255,7 @@ describe("import", () => {
         "StayUp",
       ),
     )
-    vi.mocked(getScrapRepos).mockRejectedValue(new Error("boom"))
+    vi.mocked(getProviderFluxes).mockRejectedValue(new Error("boom"))
     renderButtons([])
 
     fireEvent.click(screen.getByLabelText("Importer des flux"))

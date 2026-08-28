@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { renderHook, act, waitFor } from "@testing-library/react"
 import { useFeed } from "@/hooks/useFeed"
-import { getUserFeed } from "@/lib/api"
+import { getUserFeed, getConnectorProviders } from "@/lib/api"
+import { RAW_PROVIDERS } from "../functional/_templates"
 import { readToken, readApiUrl } from "@/lib/store"
 
-vi.mock("@/lib/api", () => ({ getUserFeed: vi.fn() }))
+vi.mock("@/lib/api", () => ({ getUserFeed: vi.fn(), getConnectorProviders: vi.fn() }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn(),
   readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
@@ -37,6 +38,7 @@ beforeEach(() => {
   vi.mocked(readToken).mockResolvedValue("jwt")
   vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
   vi.mocked(getUserFeed).mockResolvedValue(feedResponse)
+  vi.mocked(getConnectorProviders).mockResolvedValue(RAW_PROVIDERS as never)
 })
 
 describe("useFeed", () => {
@@ -51,7 +53,7 @@ describe("useFeed", () => {
         repository_id: 1,
         provider: "changelog",
         url: "https://github.com/facebook/react",
-        identifier: "facebook/react",
+        identifier: "facebook/react", // display.feedLabel: urlSlug($source.url)
       },
       {
         id: "link-2",
@@ -62,6 +64,7 @@ describe("useFeed", () => {
       },
     ])
     expect(result.current.connectors).toEqual(feedResponse.connectors)
+    expect(result.current.templates.changelog?.template?.display?.name).toBe("Changelog")
     expect(result.current.error).toBeNull()
   })
 

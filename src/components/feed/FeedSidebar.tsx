@@ -7,95 +7,26 @@ import { AddFluxDialog } from "./AddFluxDialog"
 import { ImportExportButtons } from "./ImportExportButtons"
 import { deleteUserRepository } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
+import { providerIcon, providerAccent } from "./providerIcons"
+import type { ProviderMeta } from "@/lib/providerTemplate"
 import type { FeedFlux } from "@/hooks/useFeed"
 import type { Provider } from "@/types"
 
-const PROVIDER_META: Record<
-  Provider,
-  { label: string; color: string; dimColor: string; icon: React.ReactNode }
-> = {
-  changelog: {
-    label: "GitHub",
-    color: "var(--teal)",
-    dimColor: "var(--teal-dim)",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-        <path d="M7 1L9.5 4H11.5L7 1ZM7 1L4.5 4H2.5L7 1Z" fill="currentColor" opacity="0.8" />
-        <rect x="2" y="4" width="10" height="1" rx="0.5" fill="currentColor" />
-        <rect x="3" y="6.5" width="8" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
-        <rect x="3" y="8.5" width="6" height="1" rx="0.5" fill="currentColor" opacity="0.5" />
-      </svg>
-    ),
-  },
-  youtube: {
-    label: "YouTube",
-    color: "var(--rose)",
-    dimColor: "var(--rose-dim)",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-        <rect x="1" y="3" width="12" height="8" rx="2" fill="currentColor" />
-        <path d="M5.5 5.5L9 7L5.5 8.5V5.5Z" fill="white" />
-      </svg>
-    ),
-  },
-  rss: {
-    label: "RSS",
-    color: "var(--amber)",
-    dimColor: "var(--amber-dim)",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-        <circle cx="3" cy="11" r="1.5" fill="currentColor" />
-        <path
-          d="M2 7.5C5 7.5 6.5 9 6.5 11.5"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M2 4C7 4 10 7 10 12"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          fill="none"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
-  scrap: {
-    label: "Web",
-    color: "var(--green)",
-    dimColor: "var(--green-dim)",
-    icon: (
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-        <ellipse cx="7" cy="7" rx="2" ry="5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-        <line x1="2" y1="7" x2="12" y2="7" stroke="currentColor" strokeWidth="1.2" />
-      </svg>
-    ),
-  },
-}
-
-// Icône générique utilisée pour tout provider sans rendu dédié dans l'app.
-const GENERIC_ICON = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-    <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none" />
-  </svg>
-)
-
-function getProviderMeta(provider: Provider) {
-  return (
-    PROVIDER_META[provider] ?? {
-      label: providerDisplayName(provider),
-      color: "var(--muted-foreground)",
-      dimColor: "var(--surface-2)",
-      icon: GENERIC_ICON,
-    }
-  )
+/** Métadonnées d'un provider pour la sidebar, dérivées de son template. */
+function getProviderMeta(provider: Provider, templates: Record<string, ProviderMeta>) {
+  const meta = templates[provider]
+  const color = providerAccent(meta)
+  return {
+    label: meta?.template?.display?.name || meta?.displayName || providerDisplayName(provider),
+    color,
+    dimColor: meta?.template?.display?.accent ? `${color}22` : "var(--surface-2)",
+    icon: providerIcon(meta?.template?.display),
+  }
 }
 
 interface FeedSidebarProps {
   fluxes: FeedFlux[]
+  templates: Record<string, ProviderMeta>
   userId: string
   onRefresh: () => void
   loading?: boolean
@@ -105,6 +36,7 @@ interface FeedSidebarProps {
 
 export function FeedSidebar({
   fluxes,
+  templates,
   userId,
   onRefresh,
   loading = false,
@@ -206,7 +138,7 @@ export function FeedSidebar({
         {/* Provider groups */}
         <nav className="space-y-0.5">
           {providers.map((provider) => {
-            const meta = getProviderMeta(provider)
+            const meta = getProviderMeta(provider, templates)
             const isCategoryActive =
               selection.type === "category" && selection.provider === provider
             const open = isExpanded(provider)

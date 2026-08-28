@@ -79,7 +79,7 @@ export const fr: Translations = {
     requiredError: "Ce champ est requis",
     selectError: "Sélectionnez un flux",
     loading: "Chargement…",
-    makeRequest: "Faire une demande",
+    makeRequest: "Ajouter un nouveau",
     chooseExisting: "Choisir un flux existant",
     requestUrl: "URL de la page à scraper",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -98,6 +98,7 @@ export const fr: Translations = {
     watchOnYoutube: "Voir sur YouTube",
     readArticle: "Lire l'article",
     visitWebsite: "Visiter le site",
+    openLink: "Ouvrir le lien",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

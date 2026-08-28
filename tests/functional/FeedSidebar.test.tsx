@@ -6,6 +6,7 @@ import { useNavigationStore } from "@/store/navigation"
 import { deleteUserRepository } from "@/lib/api"
 import { readToken } from "@/lib/store"
 import { fr } from "@/lib/translations/fr"
+import { TEMPLATES } from "./_templates"
 import type { FeedFlux } from "@/hooks/useFeed"
 
 vi.mock("@/lib/api", () => ({
@@ -69,25 +70,33 @@ beforeEach(() => {
 
 describe("FeedSidebar", () => {
   it("renders the 'Tous les flux' button", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     expect(screen.getByText("Tous les flux")).toBeInTheDocument()
   })
 
   it("renders one entry per provider group", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
-    expect(screen.getByText("GitHub")).toBeInTheDocument()
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
+    expect(screen.getByText("Changelog")).toBeInTheDocument()
     expect(screen.getByText("YouTube")).toBeInTheDocument()
   })
 
   it("shows flux identifiers when a category is expanded (default)", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     expect(screen.getByText("facebook/react")).toBeInTheDocument()
     expect(screen.getByText("@fireship")).toBeInTheDocument()
     expect(screen.getByText("@theo")).toBeInTheDocument()
   })
 
   it("collapses a category when its chevron is clicked", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
 
     const chevronButtons = screen
       .getAllByRole("button")
@@ -102,13 +111,17 @@ describe("FeedSidebar", () => {
 
   it("dispatches 'all' selection on 'Tous les flux' click", () => {
     useNavigationStore.setState({ selection: { type: "category", provider: "youtube" } })
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     fireEvent.click(screen.getByText("Tous les flux"))
     expect(useNavigationStore.getState().selection).toEqual({ type: "all" })
   })
 
   it("dispatches a category selection when clicking a provider label", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     fireEvent.click(screen.getByText("YouTube"))
     expect(useNavigationStore.getState().selection).toEqual({
       type: "category",
@@ -117,7 +130,9 @@ describe("FeedSidebar", () => {
   })
 
   it("dispatches a flux selection when clicking a specific flux", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     fireEvent.click(screen.getByText("facebook/react"))
     expect(useNavigationStore.getState().selection).toEqual({
       type: "flux",
@@ -127,9 +142,11 @@ describe("FeedSidebar", () => {
   })
 
   it("renders an empty sidebar without errors when there are no fluxes", () => {
-    renderWithLang(<FeedSidebar fluxes={[]} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={[]} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     expect(screen.getByText("Tous les flux")).toBeInTheDocument()
-    expect(screen.queryByText("GitHub")).not.toBeInTheDocument()
+    expect(screen.queryByText("Changelog")).not.toBeInTheDocument()
   })
 })
 
@@ -137,6 +154,7 @@ describe("unread badges", () => {
   it("shows a per-flux count and the provider total", () => {
     renderWithLang(
       <FeedSidebar
+        templates={TEMPLATES}
         fluxes={fluxes}
         userId="user-1"
         onRefresh={() => {}}
@@ -150,7 +168,13 @@ describe("unread badges", () => {
 
   it("shows no badge when everything is read", () => {
     renderWithLang(
-      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} unreadCountByRepoId={{}} />,
+      <FeedSidebar
+        fluxes={fluxes}
+        templates={TEMPLATES}
+        userId="user-1"
+        onRefresh={() => {}}
+        unreadCountByRepoId={{}}
+      />,
     )
     expect(screen.queryByText("0")).not.toBeInTheDocument()
   })
@@ -159,7 +183,13 @@ describe("unread badges", () => {
 describe("layout", () => {
   it("applies the requested width", () => {
     const { container } = renderWithLang(
-      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} width={300} />,
+      <FeedSidebar
+        fluxes={fluxes}
+        templates={TEMPLATES}
+        userId="user-1"
+        onRefresh={() => {}}
+        width={300}
+      />,
     )
     expect(container.querySelector("aside")).toHaveStyle({ width: "300px" })
   })
@@ -169,7 +199,7 @@ describe("layout", () => {
       selection: { type: "flux", fluxId: "1", provider: "changelog" },
     })
     const { container } = renderWithLang(
-      <FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />,
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
     )
     expect(container.querySelector(".w-0\\.5")).not.toBeNull()
   })
@@ -178,14 +208,24 @@ describe("layout", () => {
 describe("refreshing feeds", () => {
   it("calls onRefresh when the refresh button is clicked", () => {
     const onRefresh = vi.fn()
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={onRefresh} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={onRefresh} />,
+    )
 
     fireEvent.click(screen.getByLabelText(fr.menu.file.refresh))
     expect(onRefresh).toHaveBeenCalled()
   })
 
   it("disables the refresh button and spins its icon while loading", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} loading />)
+    renderWithLang(
+      <FeedSidebar
+        fluxes={fluxes}
+        templates={TEMPLATES}
+        userId="user-1"
+        onRefresh={() => {}}
+        loading
+      />,
+    )
 
     const button = screen.getByLabelText(fr.menu.file.refresh)
     expect(button).toBeDisabled()
@@ -195,7 +235,9 @@ describe("refreshing feeds", () => {
 
 describe("adding a feed", () => {
   it("opens the add-flux dialog", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     fireEvent.click(screen.getByLabelText(fr.addFlux.title))
     expect(screen.getByText(fr.addFlux.provider)).toBeInTheDocument()
   })
@@ -203,7 +245,9 @@ describe("adding a feed", () => {
 
 describe("deleting a feed", () => {
   it("asks for confirmation before deleting", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
 
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
 
@@ -215,7 +259,9 @@ describe("deleting a feed", () => {
 
   it("deletes and refreshes on confirmation", async () => {
     const onRefresh = vi.fn()
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={onRefresh} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={onRefresh} />,
+    )
 
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
     fireEvent.click(screen.getByText(fr.common.delete))
@@ -227,7 +273,9 @@ describe("deleting a feed", () => {
   })
 
   it("aborts on cancel", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
 
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
     fireEvent.click(screen.getByText(fr.common.cancel))
@@ -237,7 +285,9 @@ describe("deleting a feed", () => {
   })
 
   it("aborts when the backdrop is clicked", () => {
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
 
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
     fireEvent.click(screen.getByTestId("dialog-backdrop"))
@@ -252,7 +302,9 @@ describe("deleting a feed", () => {
     nodeProcess.on("unhandledRejection", swallow)
     vi.mocked(readToken).mockResolvedValue(null)
 
-    renderWithLang(<FeedSidebar fluxes={fluxes} userId="user-1" onRefresh={() => {}} />)
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
     fireEvent.click(screen.getByText(fr.common.delete))
 

@@ -14,10 +14,10 @@ import { ProfileModal } from "@/components/profile/ProfileModal"
 import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
+import { resolveOpenUrl, type ProviderMeta } from "@/lib/providerTemplate"
 import type { AppSession } from "@/lib/session"
 import type { UserFeedResponse } from "@/lib/api"
 import type { TaggedItem } from "@/types"
-import { isKnownTaggedItem } from "@/types"
 
 interface FeedLayoutProps {
   session: AppSession
@@ -40,50 +40,26 @@ function flattenConnectors(connectors: UserFeedResponse["connectors"]): TaggedIt
   )
 }
 
-function getItemExternalUrl(tagged: TaggedItem, repoUrlMap: Record<number, string>): string | null {
-  // Provider inconnu de l'app : pas de règle d'extraction de lien connue.
-  if (!isKnownTaggedItem(tagged)) return null
-  if (tagged.provider === "changelog") {
-    const repoUrl = repoUrlMap[tagged.item.repository_id]
-    return repoUrl ? `${repoUrl}/releases/tag/${tagged.item.version}` : null
-  }
-  if (tagged.provider === "youtube") {
-    try {
-      const p = JSON.parse(tagged.item.content) as { link?: string; url?: string }
-      return p.link ?? p.url ?? null
-    } catch {
-      return null
-    }
-  }
-  if (tagged.provider === "rss") {
-    try {
-      const p = JSON.parse(tagged.item.content) as { link?: string }
-      return p.link ?? null
-    } catch {
-      return null
-    }
-  }
-  if (tagged.provider === "scrap") {
-    const raw = tagged.item.params
-    const params =
-      typeof raw === "string"
-        ? (() => {
-            try {
-              return JSON.parse(raw)
-            } catch {
-              return null
-            }
-          })()
-        : raw
-    return (params as { url?: string } | null)?.url ?? null
-  }
-  return null
+/** Lien externe d'une ligne pour la touche Entrée : résolu depuis le template du
+ *  connecteur (aucune règle par-provider ici). */
+function getItemExternalUrl(
+  tagged: TaggedItem,
+  templates: Record<string, ProviderMeta>,
+  sourceMap: Record<number, Record<string, unknown>>,
+): string | null {
+  const tpl = templates[tagged.provider]?.template
+  if (!tpl) return null
+  return resolveOpenUrl(
+    tpl,
+    tagged.item as Record<string, unknown>,
+    sourceMap[tagged.item.repository_id],
+  )
 }
 
 export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProps) {
   const { selection } = useNavigationStore()
   const { readIds, initialized, init, markRead, markAllRead, cleanup } = useReadItemsStore()
-  const { fluxes, connectors, loading, error, refresh } = useFeed(session.userId)
+  const { fluxes, connectors, templates, loading, error, refresh } = useFeed(session.userId)
   const { lang, t, setLang } = useLanguage()
   const { theme, setTheme } = useTheme()
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -153,12 +129,15 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   })
 
   const repositories = useMemo(
-    () => fluxes.map((f) => ({ repository_id: f.repository_id, url: f.url })),
+    () => fluxes.map((f) => ({ repository_id: f.repository_id, url: f.url, provider: f.provider })),
     [fluxes],
   )
 
-  const repoUrlMap = useMemo(
-    () => Object.fromEntries(fluxes.map((f) => [f.repository_id, f.url])),
+  const sourceMap = useMemo(
+    () =>
+      Object.fromEntries(
+        fluxes.map((f) => [f.repository_id, { url: f.url, type: f.provider, config: {} }]),
+      ),
     [fluxes],
   )
 
@@ -316,7 +295,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
       } else if (e.key === "Enter" && currentId !== null) {
         const item = current.find((i) => getTaggedItemId(i) === currentId)
         if (item) {
-          const url = getItemExternalUrl(item, repoUrlMap)
+          const url = getItemExternalUrl(item, templates, sourceMap)
           if (url) void openUrl(url)
         }
       }
@@ -324,7 +303,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
 
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [selectionId, repoUrlMap])
+  }, [selectionId, templates, sourceMap])
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" style={{ background: "var(--bg)" }}>
@@ -351,6 +330,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
       <div className="flex flex-1 overflow-hidden">
         <FeedSidebar
           fluxes={fluxes}
+          templates={templates}
           userId={session.userId}
           onRefresh={stableRefresh}
           loading={loading}
@@ -442,6 +422,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 selectedIndex={selectedIndex}
                 onSelect={handleSelect}
                 repositories={repositories}
+                templates={templates}
                 readIds={readIds}
               />
             )}
@@ -463,6 +444,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
                 : null
             }
             repositories={repositories}
+            templates={templates}
           />
         </div>
       </div>

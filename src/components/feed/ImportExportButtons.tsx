@@ -3,7 +3,7 @@ import { save, open } from "@tauri-apps/plugin-dialog"
 import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs"
 import { Download, Upload } from "lucide-react"
 import { buildOpml, parseOpml, type OpmlFlux } from "@/lib/opml"
-import { addUserRepository, getScrapRepos, subscribeScrap } from "@/lib/api"
+import { addUserRepository, getProviderFluxes, subscribeFlux } from "@/lib/api"
 import { readToken, readApiUrl } from "@/lib/store"
 import { useLanguage } from "@/context/LanguageContext"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -34,14 +34,17 @@ export function ImportExportButtons({ fluxes, userId, onSuccess }: ImportExportB
     await writeTextFile(path, opml)
   }
 
-  async function resolveScrapRepoId(
+  // `scrap` (et tout provider `manual`) : on ne crée pas de flux à l'import, on
+  // s'abonne à un flux déjà validé s'il en existe un pour cette URL.
+  async function resolveFluxId(
+    provider: string,
     url: string,
     token: string,
     apiUrl: string,
   ): Promise<number | null> {
     try {
-      const repos = await getScrapRepos(token, apiUrl)
-      return repos.find((r) => r.url === url)?.id ?? null
+      const fluxes = await getProviderFluxes(provider, token, apiUrl)
+      return fluxes.find((f) => f.url === url)?.id ?? null
     } catch {
       return null
     }
@@ -54,9 +57,9 @@ export function ImportExportButtons({ fluxes, userId, onSuccess }: ImportExportB
   ): Promise<"added" | "unavailable" | "failed"> {
     try {
       if (entry.provider === "scrap") {
-        const scrapRepoId = await resolveScrapRepoId(entry.url, token, apiUrl)
-        if (scrapRepoId === null) return "unavailable"
-        await subscribeScrap(scrapRepoId, token, apiUrl)
+        const id = await resolveFluxId("scrap", entry.url, token, apiUrl)
+        if (id === null) return "unavailable"
+        await subscribeFlux("scrap", id, token, apiUrl)
         return "added"
       }
 

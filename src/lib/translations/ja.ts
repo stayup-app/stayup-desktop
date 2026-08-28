@@ -79,7 +79,7 @@ export const ja: Translations = {
     requiredError: "この項目は必須です",
     selectError: "フィードを選択してください",
     loading: "読み込み中…",
-    makeRequest: "リクエストを送信",
+    makeRequest: "新規追加",
     chooseExisting: "既存のフィードを選ぶ",
     requestUrl: "取得対象のURL",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -97,6 +97,7 @@ export const ja: Translations = {
     watchOnYoutube: "YouTubeで見る",
     readArticle: "記事を読む",
     visitWebsite: "サイトを見る",
+    openLink: "リンクを開く",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

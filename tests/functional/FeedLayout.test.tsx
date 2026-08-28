@@ -9,6 +9,7 @@ import { useReadItemsStore } from "@/store/readItems"
 import { fr } from "@/lib/translations/fr"
 import { useFeed } from "@/hooks/useFeed"
 import type { AppSession } from "@/lib/session"
+import { TEMPLATES } from "./_templates"
 
 vi.mock("@/hooks/useFeed", () => ({ useFeed: vi.fn() }))
 vi.mock("@/hooks/useMenu", () => ({ useMenu: vi.fn() }))
@@ -108,6 +109,7 @@ function mockFeed(overrides: Partial<FeedState> = {}) {
   vi.mocked(useFeed).mockReturnValue({
     fluxes,
     connectors,
+    templates: TEMPLATES,
     loading: false,
     error: null,
     refresh: vi.fn(),
@@ -254,7 +256,7 @@ describe("read state", () => {
 
     fireEvent.click(container.querySelector('[data-index="0"]')!)
 
-    expect(await screen.findByText(fr.viewer.watchOnYoutube)).toBeInTheDocument()
+    expect(await screen.findByText("Watch on YouTube")).toBeInTheDocument()
   })
 
   it("counts unread items and hides read ones in unread mode", async () => {

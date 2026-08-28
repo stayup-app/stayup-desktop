@@ -79,7 +79,7 @@ export const it: Translations = {
     requiredError: "Questo campo è obbligatorio",
     selectError: "Seleziona un feed",
     loading: "Caricamento…",
-    makeRequest: "Invia una richiesta",
+    makeRequest: "Aggiungine uno nuovo",
     chooseExisting: "Scegli un feed esistente",
     requestUrl: "URL da analizzare",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -98,6 +98,7 @@ export const it: Translations = {
     watchOnYoutube: "Guarda su YouTube",
     readArticle: "Leggi l'articolo",
     visitWebsite: "Visita il sito web",
+    openLink: "Apri link",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

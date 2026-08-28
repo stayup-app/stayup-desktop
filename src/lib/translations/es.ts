@@ -79,7 +79,7 @@ export const es: Translations = {
     requiredError: "Este campo es obligatorio",
     selectError: "Selecciona un flujo",
     loading: "Cargando…",
-    makeRequest: "Enviar una solicitud",
+    makeRequest: "Añadir uno nuevo",
     chooseExisting: "Elegir un flujo existente",
     requestUrl: "URL a extraer",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -97,6 +97,7 @@ export const es: Translations = {
     watchOnYoutube: "Ver en YouTube",
     readArticle: "Leer el artículo",
     visitWebsite: "Visitar el sitio web",
+    openLink: "Abrir el enlace",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

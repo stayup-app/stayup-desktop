@@ -5,12 +5,9 @@ import {
   formatDate,
   extractIdentifier,
   stripUrlScheme,
-  normalizeIdentifier,
-  toRepositoryUrl,
   openUrl,
   providerDisplayName,
 } from "@/lib/utils"
-import type { Provider } from "@/types"
 
 describe("cn", () => {
   it("merges class names", () => {
@@ -74,109 +71,20 @@ describe("formatDate", () => {
 })
 
 describe("extractIdentifier", () => {
-  it("extracts owner/repo from a changelog GitHub URL", () => {
-    expect(extractIdentifier("https://github.com/facebook/react", "changelog")).toBe(
-      "facebook/react",
-    )
-  })
-
-  it("extracts the channel path from a YouTube URL", () => {
-    expect(extractIdentifier("https://www.youtube.com/@fireship", "youtube")).toBe("@fireship")
-  })
-
-  it("extracts hostname + path from an RSS URL", () => {
-    expect(extractIdentifier("https://blog.example.com/feed.xml", "rss")).toBe(
+  // Le libellé riche par provider vient de `display.feedLabel` (resolveFeedLabel) ;
+  // extractIdentifier n'est plus qu'un repli générique : schéma et `www.` retirés.
+  it("strips the scheme and www.", () => {
+    expect(extractIdentifier("https://www.blog.example.com/feed.xml")).toBe(
       "blog.example.com/feed.xml",
     )
   })
 
-  it("extracts only the hostname from a scrap URL", () => {
-    expect(extractIdentifier("https://news.ycombinator.com/newest", "scrap")).toBe(
-      "news.ycombinator.com",
-    )
+  it("keeps the path otherwise", () => {
+    expect(extractIdentifier("https://github.com/facebook/react")).toBe("github.com/facebook/react")
   })
 
-  it("returns the original string when the URL is invalid", () => {
-    expect(extractIdentifier("not-a-url", "changelog")).toBe("not-a-url")
-  })
-
-  it("handles deeply nested changelog paths and only takes the first two segments", () => {
-    expect(extractIdentifier("https://github.com/vercel/next.js/releases", "changelog")).toBe(
-      "vercel/next.js",
-    )
-  })
-
-  it("returns the raw URL for an unknown provider", () => {
-    expect(extractIdentifier("https://example.com/x", "unknown" as Provider)).toBe(
-      "https://example.com/x",
-    )
-  })
-})
-
-describe("normalizeIdentifier", () => {
-  it("extracts owner/repo from a full GitHub URL", () => {
-    expect(normalizeIdentifier("https://github.com/facebook/react", "changelog")).toBe(
-      "facebook/react",
-    )
-  })
-
-  it("strips a .git suffix from a GitHub URL", () => {
-    expect(normalizeIdentifier("https://github.com/facebook/react.git", "changelog")).toBe(
-      "facebook/react",
-    )
-  })
-
-  it("strips a trailing slash from a GitHub URL", () => {
-    expect(normalizeIdentifier("github.com/facebook/react/", "changelog")).toBe("facebook/react")
-  })
-
-  it("keeps an already-normalized owner/repo", () => {
-    expect(normalizeIdentifier("  facebook/react  ", "changelog")).toBe("facebook/react")
-  })
-
-  it("strips scheme, .git and trailing slash when the regex does not match", () => {
-    expect(normalizeIdentifier("https://github.com/single/", "changelog")).toBe("single")
-  })
-
-  it("extracts a YouTube handle from an @ URL", () => {
-    expect(normalizeIdentifier("https://youtube.com/@fireship", "youtube")).toBe("fireship")
-  })
-
-  it("extracts a YouTube handle from a /channel/ URL", () => {
-    expect(normalizeIdentifier("https://youtube.com/channel/UC123", "youtube")).toBe("UC123")
-  })
-
-  it("extracts a YouTube handle from a /user/ URL", () => {
-    expect(normalizeIdentifier("https://youtube.com/user/someone", "youtube")).toBe("someone")
-  })
-
-  it("strips a leading @ from a bare YouTube handle", () => {
-    expect(normalizeIdentifier("@fireship", "youtube")).toBe("fireship")
-  })
-
-  it("returns the trimmed value for other providers", () => {
-    expect(normalizeIdentifier("  https://example.com/feed.xml  ", "rss")).toBe(
-      "https://example.com/feed.xml",
-    )
-  })
-})
-
-describe("toRepositoryUrl", () => {
-  it("builds a GitHub repository URL", () => {
-    expect(toRepositoryUrl("facebook/react", "changelog")).toBe(
-      "https://github.com/facebook/react/",
-    )
-  })
-
-  it("builds a YouTube channel URL", () => {
-    expect(toRepositoryUrl("fireship", "youtube")).toBe("https://www.youtube.com/@fireship")
-  })
-
-  it("returns the identifier unchanged for other providers", () => {
-    expect(toRepositoryUrl("https://example.com/feed.xml", "rss")).toBe(
-      "https://example.com/feed.xml",
-    )
-    expect(toRepositoryUrl("https://example.com", "scrap")).toBe("https://example.com")
+  it("leaves a non-URL string untouched", () => {
+    expect(extractIdentifier("not-a-url")).toBe("not-a-url")
   })
 })
 

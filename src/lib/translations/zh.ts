@@ -79,7 +79,7 @@ export const zh: Translations = {
     requiredError: "此字段为必填项",
     selectError: "请选择一个订阅",
     loading: "加载中…",
-    makeRequest: "提交请求",
+    makeRequest: "新增",
     chooseExisting: "选择已有订阅",
     requestUrl: "要抓取的网址",
     requestUrlPlaceholder: "https://example.com/blog",
@@ -97,6 +97,7 @@ export const zh: Translations = {
     watchOnYoutube: "在 YouTube 上观看",
     readArticle: "阅读文章",
     visitWebsite: "访问网站",
+    openLink: "打开链接",
   },
   // Messages d'erreur réseau/API, traduits comme le reste de l'interface.
   errors: {

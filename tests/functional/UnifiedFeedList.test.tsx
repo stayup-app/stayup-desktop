@@ -4,10 +4,11 @@ import { UnifiedFeedList } from "@/components/feed/UnifiedFeedList"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { fr } from "@/lib/translations/fr"
 import type { TaggedItem } from "@/types"
+import { TEMPLATES } from "./_templates"
 
 const repositories = [
-  { repository_id: 1, url: "https://github.com/facebook/react" },
-  { repository_id: 2, url: "https://www.youtube.com/@fireship" },
+  { repository_id: 1, url: "https://github.com/facebook/react", provider: "changelog" },
+  { repository_id: 2, url: "https://www.youtube.com/@fireship", provider: "youtube" },
 ]
 
 const changelogItem: TaggedItem = {
@@ -91,6 +92,7 @@ function renderList(props: Partial<React.ComponentProps<typeof UnifiedFeedList>>
         selectedIndex={null}
         onSelect={onSelect}
         repositories={repositories}
+        templates={TEMPLATES}
         {...props}
       />
     </LanguageProvider>,
@@ -134,36 +136,36 @@ describe("UnifiedFeedList", () => {
   })
 })
 
-describe("changelog entries", () => {
-  it("shows the shortened repo path, the version and stripped content", () => {
+describe("changelog entries (template: row)", () => {
+  it("shows the repo slug, the version and the stripped snippet", () => {
     renderList({ items: [changelogItem] })
     expect(screen.getByText("facebook/react")).toBeInTheDocument()
     expect(screen.getByText("v19.0.0")).toBeInTheDocument()
     expect(screen.getByText("Heading Some release notes")).toBeInTheDocument()
   })
 
-  it("falls back to the translated repository label when the repository is unknown", () => {
+  it("shows a dash title when the source repository is unknown", () => {
     renderList({ items: [changelogItem], repositories: [] })
     expect(screen.getByText("v19.0.0")).toBeInTheDocument()
-    expect(screen.getByText("dépôt")).toBeInTheDocument()
+    expect(screen.getByText("—")).toBeInTheDocument()
   })
 
-  it("omits the content paragraph when the release has no body", () => {
+  it("omits the snippet when the release has no body", () => {
     const item = { ...changelogItem, item: { ...changelogItem.item, content: "" } } as TaggedItem
     const { container } = renderList({ items: [item] })
-    expect(container.querySelector(".line-clamp-1")).toBeNull()
+    expect(container.querySelector("p.line-clamp-1")).toBeNull()
   })
 })
 
-describe("youtube entries", () => {
-  it("shows the thumbnail, title and channel", () => {
+describe("youtube entries (template: media)", () => {
+  it("shows the thumbnail, title and channel handle", () => {
     renderList({ items: [youtubeItem] })
     expect(screen.getByRole("img", { name: "Ten React tricks" })).toBeInTheDocument()
     expect(screen.getByText("Ten React tricks")).toBeInTheDocument()
     expect(screen.getByText("@fireship")).toBeInTheDocument()
   })
 
-  it("falls back to a placeholder icon when there is no thumbnail", () => {
+  it("shows a placeholder when there is no thumbnail", () => {
     const item = {
       ...youtubeItem,
       item: {
@@ -173,36 +175,39 @@ describe("youtube entries", () => {
     } as TaggedItem
     renderList({ items: [item] })
     expect(screen.queryByRole("img")).not.toBeInTheDocument()
-    expect(screen.getByText("legacy")).toBeInTheDocument()
+    expect(screen.getByText("c/legacy")).toBeInTheDocument()
   })
 
-  it("falls back to the no-title label when the payload is unparsable", () => {
+  it("renders a dash when the payload is unparsable", () => {
     const item = { ...youtubeItem, item: { ...youtubeItem.item, content: "{oops" } } as TaggedItem
     renderList({ items: [item] })
-    expect(screen.getByText(fr.viewer.noTitle)).toBeInTheDocument()
+    expect(screen.getByText("—")).toBeInTheDocument()
   })
 
-  it("falls back to the raw channel URL when it cannot be parsed", () => {
+  it("keeps the channel path for a /channel/ URL", () => {
     const item = {
       ...youtubeItem,
-      item: { ...youtubeItem.item, content: JSON.stringify({ title: "T", url: "not-a-url" }) },
+      item: {
+        ...youtubeItem.item,
+        content: JSON.stringify({ title: "T", url: "https://youtube.com/channel/UC42" }),
+      },
     } as TaggedItem
     renderList({ items: [item] })
-    expect(screen.getByText("not-a-url")).toBeInTheDocument()
+    expect(screen.getByText("channel/UC42")).toBeInTheDocument()
   })
 })
 
-describe("rss entries", () => {
+describe("rss entries (template: row)", () => {
   it("shows the title and the source hostname without www", () => {
     renderList({ items: [rssItem] })
     expect(screen.getByText("A blog post")).toBeInTheDocument()
     expect(screen.getByText("blog.example.com")).toBeInTheDocument()
   })
 
-  it("falls back to the no-title label when the payload is unparsable", () => {
+  it("renders a dash when the payload is unparsable", () => {
     const item = { ...rssItem, item: { ...rssItem.item, content: "nope" } } as TaggedItem
     renderList({ items: [item] })
-    expect(screen.getByText(fr.viewer.noTitle)).toBeInTheDocument()
+    expect(screen.getByText("—")).toBeInTheDocument()
   })
 
   it("omits the source line when the entry has no link", () => {
@@ -225,7 +230,7 @@ describe("rss entries", () => {
   })
 })
 
-describe("scrap entries", () => {
+describe("scrap entries (template: row)", () => {
   it("shows the scraped excerpt and the source hostname", () => {
     renderList({ items: [scrapItem] })
     expect(screen.getByText("Scraped headline text")).toBeInTheDocument()
@@ -248,29 +253,19 @@ describe("scrap entries", () => {
     expect(screen.queryByText("news.example.com")).not.toBeInTheDocument()
   })
 
-  it("falls back to the params URL when there is no content", () => {
+  it("falls back to the source hostname as the title when there is no content", () => {
     const item = {
       ...scrapItem,
       item: { ...scrapItem.item, content: null },
     } as unknown as TaggedItem
     renderList({ items: [item] })
-    expect(screen.getAllByText("https://news.example.com").length).toBeGreaterThan(0)
-  })
-
-  it("falls back to the provider label when there is neither content nor params", () => {
-    const item = {
-      ...scrapItem,
-      item: { ...scrapItem.item, content: null, params: {} },
-    } as unknown as TaggedItem
-    renderList({ items: [item] })
-    expect(screen.getByText(fr.feed.providers.scrap)).toBeInTheDocument()
+    expect(screen.getAllByText("news.example.com").length).toBeGreaterThan(0)
   })
 })
 
 describe("date fallbacks", () => {
   it.each([
     ["changelog", changelogItem],
-    ["youtube", youtubeItem],
     ["rss", rssItem],
   ] as const)("falls back to executed_at when the %s item has no datetime", (_provider, base) => {
     const item = { ...base, item: { ...base.item, datetime: null } } as TaggedItem
@@ -279,46 +274,7 @@ describe("date fallbacks", () => {
   })
 })
 
-describe("channel name fallbacks", () => {
-  it("uses the last path segment for a non-@ channel URL", () => {
-    const item = {
-      ...youtubeItem,
-      item: {
-        ...youtubeItem.item,
-        content: JSON.stringify({ title: "T", url: "https://youtube.com/channel/UC42" }),
-      },
-    } as TaggedItem
-    renderList({ items: [item] })
-    expect(screen.getByText("UC42")).toBeInTheDocument()
-  })
-
-  it("falls back to the raw URL when the path has no segments", () => {
-    const item = {
-      ...youtubeItem,
-      item: {
-        ...youtubeItem.item,
-        content: JSON.stringify({ title: "T", url: "https://youtube.com/" }),
-      },
-    } as TaggedItem
-    renderList({ items: [item] })
-    expect(screen.getByText("https://youtube.com/")).toBeInTheDocument()
-  })
-
-  it("uses an empty alt when the video has a thumbnail but no title", () => {
-    const item = {
-      ...youtubeItem,
-      item: {
-        ...youtubeItem.item,
-        content: JSON.stringify({ thumbnail: "https://img.example.com/t.jpg" }),
-      },
-    } as TaggedItem
-    const { container } = renderList({ items: [item] })
-    expect(container.querySelector("img")).toHaveAttribute("alt", "")
-  })
-})
-
-// Provider découvert côté API et inconnu de l'app : rendu générique + couleur/icône neutres.
-describe("UnifiedFeedList — provider inconnu", () => {
+describe("provider without a template", () => {
   it("renders a generic row with the capitalized provider label", () => {
     renderList({ items: [genericItem] })
     expect(screen.getByText("Un épisode sur les flux RSS")).toBeInTheDocument()
@@ -328,12 +284,5 @@ describe("UnifiedFeedList — provider inconnu", () => {
   it("falls back to the provider label when the item has no content", () => {
     renderList({ items: [{ ...genericItem, item: { ...genericItem.item, content: "" } }] })
     expect(screen.getAllByText("Podcast")).toHaveLength(2)
-  })
-
-  it("falls back to executed_at when the item has no datetime", () => {
-    renderList({
-      items: [{ ...genericItem, item: { ...genericItem.item, datetime: null } }],
-    })
-    expect(screen.getByText("Podcast")).toBeInTheDocument()
   })
 })
