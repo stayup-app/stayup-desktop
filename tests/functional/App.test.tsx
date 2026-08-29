@@ -33,6 +33,7 @@ vi.mock("@/lib/api", () => ({
   createScrapRequest: vi.fn(),
   getScrapRepos: vi.fn().mockResolvedValue([]),
   subscribeScrap: vi.fn(),
+  fetchAuthConfig: vi.fn().mockResolvedValue(null),
 }))
 
 const session = { userId: "alice", name: "Alice", email: "alice@test.com", role: "user" }

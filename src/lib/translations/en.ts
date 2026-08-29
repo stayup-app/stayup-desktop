@@ -21,6 +21,9 @@ export const en = {
     continueWithGitHub: "Continue with GitHub",
     continueWithGoogle: "Continue with Google",
     or: "or",
+    server: "Server",
+    pendingApprovalHint:
+      "Your account will need an administrator to approve it before you can sign in.",
   },
   feed: {
     myFeeds: "My feeds",

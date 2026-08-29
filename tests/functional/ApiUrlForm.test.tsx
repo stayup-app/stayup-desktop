@@ -63,4 +63,21 @@ describe("ApiUrlForm", () => {
 
     await waitFor(() => expect(resetApiUrl).toHaveBeenCalled())
   })
+
+  it("notifies the parent after a save and after a reset", async () => {
+    const onChanged = vi.fn()
+    render(
+      <LanguageProvider initialLang="fr">
+        <ApiUrlForm onChanged={onChanged} />
+      </LanguageProvider>,
+    )
+    const input = await screen.findByLabelText("URL de l'API")
+    await userEvent.clear(input)
+    await userEvent.type(input, "https://mine.example.com")
+    fireEvent.submit(screen.getByRole("button", { name: "Enregistrer" }))
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(1))
+
+    fireEvent.click(screen.getByRole("button", { name: "Réinitialiser par défaut" }))
+    await waitFor(() => expect(onChanged).toHaveBeenCalledTimes(2))
+  })
 })

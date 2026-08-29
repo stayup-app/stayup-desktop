@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { readApiUrl, resetApiUrl, writeApiUrl } from "@/lib/store"
 import { useLanguage } from "@/context/LanguageContext"
 
-export function ApiUrlForm() {
+export function ApiUrlForm({ onChanged }: { onChanged?: () => void } = {}) {
   const { t } = useLanguage()
   const [value, setValue] = useState("")
   const [pending, setPending] = useState<"save" | "reset" | null>(null)
@@ -29,6 +29,7 @@ export function ApiUrlForm() {
     setValue(trimmed)
     setPending(null)
     setSuccess(true)
+    onChanged?.()
   }
 
   async function handleReset() {
@@ -38,6 +39,7 @@ export function ApiUrlForm() {
     await resetApiUrl()
     setValue(await readApiUrl())
     setPending(null)
+    onChanged?.()
   }
 
   return (

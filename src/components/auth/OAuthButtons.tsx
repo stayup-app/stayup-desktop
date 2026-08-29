@@ -3,9 +3,16 @@ import { useLanguage } from "@/context/LanguageContext"
 interface OAuthButtonsProps {
   onOAuth: (provider: "github" | "google") => Promise<void>
   loading: boolean
+  /** Quels boutons afficher — d'après `GET /auth/config` de l'instance visée.
+   *  Par défaut les deux, pour une API trop ancienne pour exposer la config. */
+  providers?: { github: boolean; google: boolean }
 }
 
-export function OAuthButtons({ onOAuth, loading }: OAuthButtonsProps) {
+export function OAuthButtons({
+  onOAuth,
+  loading,
+  providers = { github: true, google: true },
+}: OAuthButtonsProps) {
   const { t } = useLanguage()
 
   const btnStyle: React.CSSProperties = {
@@ -22,32 +29,38 @@ export function OAuthButtons({ onOAuth, loading }: OAuthButtonsProps) {
     e.currentTarget.style.borderColor = "var(--border-color)"
   }
 
+  if (!providers.github && !providers.google) return null
+
   return (
     <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        disabled={loading}
-        onClick={() => onOAuth("github")}
-        className="flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13.5px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-        style={btnStyle}
-        onMouseEnter={btnHoverIn}
-        onMouseLeave={btnHoverOut}
-      >
-        <GithubIcon />
-        {t.auth.continueWithGitHub}
-      </button>
-      <button
-        type="button"
-        disabled={loading}
-        onClick={() => onOAuth("google")}
-        className="flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13.5px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-        style={btnStyle}
-        onMouseEnter={btnHoverIn}
-        onMouseLeave={btnHoverOut}
-      >
-        <GoogleIcon />
-        {t.auth.continueWithGoogle}
-      </button>
+      {providers.github && (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => onOAuth("github")}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13.5px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+          style={btnStyle}
+          onMouseEnter={btnHoverIn}
+          onMouseLeave={btnHoverOut}
+        >
+          <GithubIcon />
+          {t.auth.continueWithGitHub}
+        </button>
+      )}
+      {providers.google && (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => onOAuth("google")}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-md text-[13.5px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+          style={btnStyle}
+          onMouseEnter={btnHoverIn}
+          onMouseLeave={btnHoverOut}
+        >
+          <GoogleIcon />
+          {t.auth.continueWithGoogle}
+        </button>
+      )}
     </div>
   )
 }

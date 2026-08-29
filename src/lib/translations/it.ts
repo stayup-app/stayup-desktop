@@ -23,6 +23,9 @@ export const it: Translations = {
     continueWithGitHub: "Continua con GitHub",
     continueWithGoogle: "Continua con Google",
     or: "oppure",
+    server: "Server",
+    pendingApprovalHint:
+      "Il tuo account dovrà essere approvato da un amministratore prima che tu possa accedere.",
   },
   feed: {
     myFeeds: "I miei feed",

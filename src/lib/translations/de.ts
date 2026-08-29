@@ -23,6 +23,9 @@ export const de: Translations = {
     continueWithGitHub: "Mit GitHub fortfahren",
     continueWithGoogle: "Mit Google fortfahren",
     or: "oder",
+    server: "Server",
+    pendingApprovalHint:
+      "Dein Konto muss von einem Administrator freigegeben werden, bevor du dich anmelden kannst.",
   },
   feed: {
     myFeeds: "Meine Feeds",
