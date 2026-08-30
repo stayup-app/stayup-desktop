@@ -22,6 +22,8 @@ vi.mock("@/hooks/useFeed", () => ({
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("jwt"),
   readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
+  readInstances: vi.fn().mockResolvedValue([]),
+  hostOf: (u: string) => u,
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
   readReadItems: vi.fn().mockResolvedValue([]),
@@ -36,7 +38,16 @@ vi.mock("@/lib/api", () => ({
   fetchAuthConfig: vi.fn().mockResolvedValue(null),
 }))
 
-const session = { userId: "alice", name: "Alice", email: "alice@test.com", role: "user" }
+const session = {
+  userId: "alice",
+  name: "Alice",
+  email: "alice@test.com",
+  role: "user",
+  instanceId: "i1",
+  instanceName: "api.test",
+  instanceUrl: "https://api.test",
+  expired: false,
+}
 
 type AuthState = ReturnType<typeof useAuth>
 type UpdaterState = ReturnType<typeof useUpdater>
@@ -44,11 +55,19 @@ type UpdaterState = ReturnType<typeof useUpdater>
 function mockAuth(overrides: Partial<AuthState> = {}) {
   vi.mocked(useAuth).mockReturnValue({
     session: null,
+    sessions: [],
+    instances: [],
     loading: false,
     error: null,
     login: vi.fn(),
+    register: vi.fn(),
     loginOAuth: vi.fn(),
     logout: vi.fn(),
+    addInstance: vi.fn(),
+    reconnectInstance: vi.fn(),
+    removeInstance: vi.fn(),
+    renameInstance: vi.fn(),
+    setPrimary: vi.fn(),
     ...overrides,
   } as AuthState)
 }

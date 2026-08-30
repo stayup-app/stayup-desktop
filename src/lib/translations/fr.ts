@@ -1,6 +1,25 @@
 import type { Translations } from "./en"
 
 export const fr: Translations = {
+  instances: {
+    title: "Serveurs",
+    subtitle: "Ajoute des instances d'API et suis les flux de toutes en même temps.",
+    primary: "Primaire",
+    add: "Ajouter un serveur",
+    urlLabel: "URL du serveur",
+    urlPlaceholder: "https://ton-api.example.com",
+    cancel: "Annuler",
+    makePrimary: "Définir comme primaire",
+    reconnect: "Reconnecter",
+    remove: "Retirer",
+    rename: "Renommer",
+    save: "Enregistrer",
+    expired: "Session expirée",
+    removePrimaryWarning: "Retirer ton serveur primaire te déconnecte de tout.",
+    nameLabel: "Nom",
+    unreachable: "Injoignable",
+  },
+
   auth: {
     subtitle: "Reprends ta lecture là où tu l'avais laissée.",
     loginTitle: "Content de te revoir.",
@@ -119,6 +138,7 @@ export const fr: Translations = {
     error: "Une erreur est survenue.",
   },
   userMenu: {
+    instances: "Serveurs",
     profile: "Profil",
     signOut: "Déconnexion",
   },

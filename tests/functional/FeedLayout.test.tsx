@@ -16,6 +16,14 @@ vi.mock("@/hooks/useMenu", () => ({ useMenu: vi.fn() }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("jwt"),
   readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
+  readInstances: vi.fn().mockResolvedValue([]),
+  hostOf: (u: string) => {
+    try {
+      return new URL(u).host
+    } catch {
+      return u
+    }
+  },
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
   readReadItems: vi.fn().mockResolvedValue([]),
@@ -28,6 +36,7 @@ vi.mock("@/lib/api", () => ({
   getScrapRepos: vi.fn().mockResolvedValue([]),
   subscribeScrap: vi.fn().mockResolvedValue(undefined),
   updateProfile: vi.fn().mockResolvedValue(undefined),
+  fetchAuthConfig: vi.fn().mockResolvedValue(null),
 }))
 
 const session: AppSession = {
@@ -35,6 +44,43 @@ const session: AppSession = {
   name: "Alice",
   email: "alice@test.com",
   role: "user",
+}
+
+type AuthState = React.ComponentProps<typeof FeedLayout>["auth"]
+
+function makeAuth(sess: AppSession | null = session): {
+  auth: AuthState
+  logout: ReturnType<typeof vi.fn>
+} {
+  const logout = vi.fn()
+  const instanceSession = sess
+    ? {
+        ...sess,
+        instanceId: "i1",
+        instanceName: "api.test",
+        instanceUrl: "https://api.test",
+        expired: false,
+      }
+    : null
+  const auth = {
+    session: instanceSession,
+    sessions: instanceSession ? [instanceSession] : [],
+    instances: instanceSession
+      ? [{ id: "i1", url: "https://api.test", name: "api.test", token: "jwt" }]
+      : [],
+    loading: false,
+    error: null,
+    login: vi.fn(),
+    register: vi.fn(),
+    loginOAuth: vi.fn(),
+    logout,
+    addInstance: vi.fn(),
+    reconnectInstance: vi.fn(),
+    removeInstance: vi.fn(),
+    renameInstance: vi.fn(),
+    setPrimary: vi.fn(),
+  } as unknown as AuthState
+  return { auth, logout }
 }
 
 const fluxes = [
@@ -117,18 +163,15 @@ function mockFeed(overrides: Partial<FeedState> = {}) {
   } as FeedState)
 }
 
-function renderLayout(props: Partial<React.ComponentProps<typeof FeedLayout>> = {}) {
-  const onLogout = vi.fn()
-  const onCheckUpdates = vi.fn()
+function renderLayout(props: { session?: AppSession | null; onCheckUpdates?: () => void } = {}) {
+  const { auth, logout: onLogout } = makeAuth(
+    "session" in props ? (props.session ?? null) : session,
+  )
+  const onCheckUpdates = props.onCheckUpdates ?? vi.fn()
   const view = render(
     <LanguageProvider initialLang="fr">
       <ThemeProvider>
-        <FeedLayout
-          session={session}
-          onLogout={onLogout}
-          onCheckUpdates={onCheckUpdates}
-          {...props}
-        />
+        <FeedLayout auth={auth} onCheckUpdates={onCheckUpdates} />
       </ThemeProvider>
     </LanguageProvider>,
   )
@@ -174,6 +217,17 @@ describe("header", () => {
 
     fireEvent.click(screen.getByText(fr.common.close))
     expect(screen.queryByText(fr.profile.title)).not.toBeInTheDocument()
+  })
+
+  it("opens and closes the instances manager from the user menu", () => {
+    renderLayout()
+
+    fireEvent.click(screen.getByTitle(session.name))
+    fireEvent.click(screen.getByText(fr.userMenu.instances))
+    expect(screen.getByText(fr.instances.subtitle)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByText(fr.common.close))
+    expect(screen.queryByText(fr.instances.subtitle)).not.toBeInTheDocument()
   })
 })
 

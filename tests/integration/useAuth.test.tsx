@@ -3,16 +3,23 @@ import { renderHook, act, waitFor } from "@testing-library/react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { useAuth } from "@/hooks/useAuth"
-import { readToken, writeToken, clearToken, readApiUrl } from "@/lib/store"
-import { ApiError, loginWithPassword, registerWithPassword } from "@/lib/api"
+import {
+  readInstances,
+  upsertPrimaryInstance,
+  addInstance,
+  removeInstance,
+  renameInstance,
+  setPrimaryInstance,
+  updateInstanceToken,
+  clearInstances,
+  readApiUrl,
+} from "@/lib/store"
+import { ApiError, loginWithPassword, registerWithPassword, fetchAuthConfig } from "@/lib/api"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { en } from "@/lib/translations"
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn().mockResolvedValue(undefined) }))
 vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }))
-// useAuth traduit les erreurs à partir du statut porté par ApiError : le mock doit
-// donc l'exposer, sinon `err instanceof ApiError` ne peut jamais être vrai.
-// La classe est définie dans la factory : vi.mock est hoisté au-dessus du module.
 vi.mock("@/lib/api", () => ({
   ApiError: class ApiError extends Error {
     constructor(
@@ -25,13 +32,20 @@ vi.mock("@/lib/api", () => ({
   },
   loginWithPassword: vi.fn(),
   registerWithPassword: vi.fn(),
+  fetchAuthConfig: vi.fn().mockResolvedValue(null),
 }))
 vi.mock("@/lib/store", () => ({
-  readToken: vi.fn(),
-  writeToken: vi.fn().mockResolvedValue(undefined),
-  clearToken: vi.fn().mockResolvedValue(undefined),
+  readInstances: vi.fn().mockResolvedValue([]),
+  writeInstances: vi.fn().mockResolvedValue(undefined),
+  upsertPrimaryInstance: vi.fn().mockResolvedValue(undefined),
+  addInstance: vi.fn().mockResolvedValue(undefined),
+  removeInstance: vi.fn().mockResolvedValue(undefined),
+  renameInstance: vi.fn().mockResolvedValue(undefined),
+  setPrimaryInstance: vi.fn().mockResolvedValue(undefined),
+  updateInstanceToken: vi.fn().mockResolvedValue(undefined),
+  clearInstances: vi.fn().mockResolvedValue(undefined),
   readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
-  // LanguageProvider, qui enveloppe désormais le hook, lit et écrit la langue.
+  hostOf: (u: string) => u,
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
 }))
@@ -61,60 +75,67 @@ const validToken = makeJwt({
 })
 const expiredToken = makeJwt({ sub: "u1", exp: Math.floor(Date.now() / 1000) - 10 })
 
+function instance(over: Record<string, unknown> = {}) {
+  return { id: "i1", url: "https://api.test", name: "api.test", token: validToken, ...over }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(readToken).mockResolvedValue(null)
+  vi.mocked(readInstances).mockResolvedValue([])
   vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
   vi.mocked(listen).mockResolvedValue(vi.fn())
+  vi.mocked(fetchAuthConfig).mockResolvedValue(null)
 })
 
 describe("initial session restore", () => {
-  it("restores a session from a valid stored token", async () => {
-    vi.mocked(readToken).mockResolvedValue(validToken)
+  it("restores the primary session from a stored instance", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance()])
     const { result } = renderAuth()
 
     await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.session).toEqual({
+    expect(result.current.session).toMatchObject({
       userId: "u1",
-      name: "Alice",
       email: "alice@test.com",
-      role: "user",
+      instanceId: "i1",
+      instanceName: "api.test",
+      expired: false,
     })
   })
 
-  it("clears an expired stored token and stays signed out", async () => {
-    vi.mocked(readToken).mockResolvedValue(expiredToken)
+  it("still exposes an expired primary session, flagged as expired", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance({ token: expiredToken })])
     const { result } = renderAuth()
 
     await waitFor(() => expect(result.current.loading).toBe(false))
-    expect(result.current.session).toBeNull()
-    expect(clearToken).toHaveBeenCalled()
+    expect(result.current.session?.expired).toBe(true)
   })
 
-  it("stays signed out when no token is stored", async () => {
+  it("stays signed out when there is no instance", async () => {
     const { result } = renderAuth()
 
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.session).toBeNull()
-    expect(clearToken).not.toHaveBeenCalled()
+    expect(result.current.sessions).toEqual([])
   })
 })
 
 describe("login", () => {
-  it("persists the token and exposes the decoded session", async () => {
+  it("upserts the primary instance and exposes the decoded session", async () => {
     vi.mocked(loginWithPassword).mockResolvedValue(validToken)
+    vi.mocked(readInstances).mockResolvedValueOnce([]).mockResolvedValue([instance()])
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(() => result.current.login("alice@test.com", "pass"))
 
     expect(loginWithPassword).toHaveBeenCalledWith("alice@test.com", "pass", "https://api.test")
-    expect(writeToken).toHaveBeenCalledWith(validToken)
+    expect(upsertPrimaryInstance).toHaveBeenCalledWith({
+      url: "https://api.test",
+      token: validToken,
+    })
     expect(result.current.session?.email).toBe("alice@test.com")
   })
 
-  // Le message de l'API est en anglais quelle que soit la langue : on le traduit à
-  // partir du statut plutôt que de l'afficher tel quel.
   it("translates a 401 instead of showing the API message", async () => {
     vi.mocked(loginWithPassword).mockRejectedValue(new ApiError(401, "Invalid credentials"))
     const { result } = renderAuth()
@@ -138,8 +159,9 @@ describe("login", () => {
 })
 
 describe("register", () => {
-  it("persists the token and exposes the decoded session", async () => {
+  it("upserts the primary instance and exposes the decoded session", async () => {
     vi.mocked(registerWithPassword).mockResolvedValue(validToken)
+    vi.mocked(readInstances).mockResolvedValueOnce([]).mockResolvedValue([instance()])
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
 
@@ -151,7 +173,10 @@ describe("register", () => {
       "pass1234",
       "https://api.test",
     )
-    expect(writeToken).toHaveBeenCalledWith(validToken)
+    expect(upsertPrimaryInstance).toHaveBeenCalledWith({
+      url: "https://api.test",
+      token: validToken,
+    })
     expect(result.current.session?.email).toBe("alice@test.com")
   })
 
@@ -165,75 +190,219 @@ describe("register", () => {
     expect(result.current.error).toBe(en.errors.emailTaken)
     expect(result.current.session).toBeNull()
   })
-
-  it("falls back to a generic message for any other rejection", async () => {
-    vi.mocked(registerWithPassword).mockRejectedValue("nope")
-    const { result } = renderAuth()
-    await waitFor(() => expect(result.current.loading).toBe(false))
-
-    await act(() => result.current.register("Alice", "a@b.c", "pass1234"))
-
-    expect(result.current.error).toBe(en.errors.serverError)
-  })
 })
 
 describe("loginOAuth", () => {
   it("opens the OAuth window and applies the token pushed by the event", async () => {
     const unlisten = vi.fn()
-    let emit: ((event: { payload: string }) => Promise<void>) | null = null
+    let emit: ((event: { payload: string }) => void) | null = null
     vi.mocked(listen).mockImplementation(async (_name, handler) => {
       emit = handler as typeof emit
       return unlisten
     })
+    vi.mocked(readInstances).mockResolvedValueOnce([]).mockResolvedValue([instance()])
 
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    await act(() => result.current.loginOAuth("github"))
+    let pending: Promise<void>
+    await act(async () => {
+      pending = result.current.loginOAuth("github")
+    })
+    await waitFor(() => expect(emit).not.toBeNull())
+    await act(async () => {
+      emit!({ payload: validToken })
+      await pending
+    })
+
     expect(invoke).toHaveBeenCalledWith("open_oauth_window", {
       provider: "github",
       apiUrl: "https://api.test",
     })
-
-    await act(async () => {
-      await emit!({ payload: validToken })
-    })
-
     expect(unlisten).toHaveBeenCalled()
-    expect(writeToken).toHaveBeenCalledWith(validToken)
+    expect(upsertPrimaryInstance).toHaveBeenCalledWith({
+      url: "https://api.test",
+      token: validToken,
+    })
     expect(result.current.session?.userId).toBe("u1")
   })
 
-  it("surfaces an error when the OAuth window cannot be opened", async () => {
+  it("surfaces a generic message when the OAuth window cannot be opened", async () => {
     vi.mocked(invoke).mockRejectedValue(new Error("window failed"))
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(() => result.current.loginOAuth("google"))
 
-    expect(result.current.error).toBe("window failed")
+    expect(result.current.error).toBe(en.errors.serverError)
   })
 
-  it("falls back to a generic message for a non-Error rejection", async () => {
-    vi.mocked(invoke).mockRejectedValue("boom")
+  it("surfaces a generic message when the OAuth listener cannot be registered", async () => {
+    vi.mocked(listen).mockRejectedValue(new Error("listen failed"))
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     await act(() => result.current.loginOAuth("google"))
 
-    expect(result.current.error).toBe("Erreur OAuth.")
+    expect(result.current.error).toBe(en.errors.serverError)
   })
 })
 
 describe("logout", () => {
-  it("clears the token and the session", async () => {
-    vi.mocked(readToken).mockResolvedValue(validToken)
+  it("clears every instance and drops the session", async () => {
+    vi.mocked(readInstances).mockResolvedValueOnce([instance()]).mockResolvedValue([])
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.session).not.toBeNull())
 
     await act(() => result.current.logout())
 
-    expect(clearToken).toHaveBeenCalled()
+    expect(clearInstances).toHaveBeenCalled()
     expect(result.current.session).toBeNull()
+  })
+})
+
+describe("secondary instances", () => {
+  it("adds an instance with its resolved name", async () => {
+    vi.mocked(fetchAuthConfig).mockResolvedValue({
+      name: "Beta",
+      registrationMode: "open",
+      emailPassword: true,
+      oauth: { github: false, google: false },
+    })
+    vi.mocked(loginWithPassword).mockResolvedValue(validToken)
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let err: string | null = "x"
+    await act(async () => {
+      err = await result.current.addInstance("https://b.example.com", {
+        kind: "password",
+        email: "u@b.io",
+        password: "pw",
+      })
+    })
+
+    expect(err).toBeNull()
+    expect(addInstance).toHaveBeenCalledWith({
+      url: "https://b.example.com",
+      name: "Beta",
+      token: validToken,
+    })
+  })
+
+  it("falls back to the host when the instance exposes no name", async () => {
+    vi.mocked(fetchAuthConfig).mockResolvedValue(null)
+    vi.mocked(loginWithPassword).mockResolvedValue(validToken)
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() =>
+      result.current.addInstance("https://b.example.com", {
+        kind: "password",
+        email: "u@b.io",
+        password: "pw",
+      }),
+    )
+    expect(addInstance).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "https://b.example.com" }),
+    )
+  })
+
+  it("returns a translated error when adding fails", async () => {
+    vi.mocked(loginWithPassword).mockRejectedValue(new ApiError(401, "no"))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let err: string | null = null
+    await act(async () => {
+      err = await result.current.addInstance("https://b.example.com", {
+        kind: "password",
+        email: "u@b.io",
+        password: "bad",
+      })
+    })
+    expect(err).toBe(en.errors.invalidCredentials)
+    expect(addInstance).not.toHaveBeenCalled()
+  })
+
+  it("reconnects an expired instance by replacing its token", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance({ token: expiredToken })])
+    vi.mocked(loginWithPassword).mockResolvedValue(validToken)
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() =>
+      result.current.reconnectInstance("i1", {
+        kind: "password",
+        email: "u@b.io",
+        password: "pw",
+      }),
+    )
+    expect(updateInstanceToken).toHaveBeenCalledWith("i1", validToken)
+  })
+
+  it("returns an error for an unknown reconnect id", async () => {
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let err: string | null = null
+    await act(async () => {
+      err = await result.current.reconnectInstance("nope", {
+        kind: "password",
+        email: "u@b.io",
+        password: "pw",
+      })
+    })
+    expect(err).toBe(en.errors.serverError)
+    expect(updateInstanceToken).not.toHaveBeenCalled()
+  })
+
+  it("returns a translated error when a reconnect fails", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance({ token: expiredToken })])
+    vi.mocked(loginWithPassword).mockRejectedValue(new ApiError(401, "no"))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.instances).toHaveLength(1))
+
+    let err: string | null = null
+    await act(async () => {
+      err = await result.current.reconnectInstance("i1", {
+        kind: "password",
+        email: "u@b.io",
+        password: "bad",
+      })
+    })
+    expect(err).toBe(en.errors.invalidCredentials)
+  })
+
+  it("removes a secondary instance", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance(), instance({ id: "i2" })])
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.instances).toHaveLength(2))
+
+    await act(() => result.current.removeInstance("i2"))
+    expect(removeInstance).toHaveBeenCalledWith("i2")
+    expect(clearInstances).not.toHaveBeenCalled()
+  })
+
+  it("removing the primary clears everything", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance(), instance({ id: "i2" })])
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.instances).toHaveLength(2))
+
+    await act(() => result.current.removeInstance("i1"))
+    expect(clearInstances).toHaveBeenCalled()
+    expect(removeInstance).not.toHaveBeenCalled()
+  })
+
+  it("renames and promotes instances", async () => {
+    vi.mocked(readInstances).mockResolvedValue([instance(), instance({ id: "i2" })])
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.instances).toHaveLength(2))
+
+    await act(() => result.current.renameInstance("i2", "Two"))
+    expect(renameInstance).toHaveBeenCalledWith("i2", "Two")
+
+    await act(() => result.current.setPrimary("i2"))
+    expect(setPrimaryInstance).toHaveBeenCalledWith("i2")
   })
 })

@@ -1,6 +1,25 @@
 import type { Translations } from "./en"
 
 export const ja: Translations = {
+  instances: {
+    title: "サーバー",
+    subtitle: "API インスタンスを追加し、すべてのフィードをまとめて購読します。",
+    primary: "プライマリー",
+    add: "サーバーを追加",
+    urlLabel: "サーバー URL",
+    urlPlaceholder: "https://your-api.example.com",
+    cancel: "キャンセル",
+    makePrimary: "プライマリーにする",
+    reconnect: "再接続",
+    remove: "削除",
+    rename: "名前を変更",
+    save: "保存",
+    expired: "セッションの期限切れ",
+    removePrimaryWarning: "プライマリーサーバーを削除すると、すべてからサインアウトします。",
+    nameLabel: "名前",
+    unreachable: "到達不能",
+  },
+
   auth: {
     subtitle: "前回の続きから始めよう。",
     loginTitle: "おかえりなさい。",
@@ -117,6 +136,7 @@ export const ja: Translations = {
     error: "エラーが発生しました。",
   },
   userMenu: {
+    instances: "サーバー",
     profile: "プロフィール",
     signOut: "サインアウト",
   },

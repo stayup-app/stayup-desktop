@@ -1,30 +1,90 @@
 import { useState, useEffect, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
-import { readToken, writeToken, clearToken, readApiUrl } from "@/lib/store"
+import {
+  type Instance,
+  readInstances,
+  upsertPrimaryInstance,
+  addInstance as storeAddInstance,
+  removeInstance as storeRemoveInstance,
+  renameInstance as storeRenameInstance,
+  setPrimaryInstance as storeSetPrimary,
+  updateInstanceToken,
+  clearInstances,
+  readApiUrl,
+  hostOf,
+} from "@/lib/store"
 import { decodeToken, isTokenExpired } from "@/lib/session"
-import { ApiError, loginWithPassword, registerWithPassword } from "@/lib/api"
+import { ApiError, fetchAuthConfig, loginWithPassword, registerWithPassword } from "@/lib/api"
 import { useLanguage } from "@/context/LanguageContext"
 import type { AppSession } from "@/lib/session"
 
-interface AuthState {
-  session: AppSession | null
-  loading: boolean
-  error: string | null
+/** Une session, rattachée à son instance. `session` (compat) = la primaire. */
+export interface InstanceSession extends AppSession {
+  instanceId: string
+  instanceName: string
+  instanceUrl: string
+  expired: boolean
 }
 
-interface UseAuth extends AuthState {
+/** Comment authentifier une instance qu'on ajoute (ou reconnecte). On se
+ *  connecte à un compte existant sur l'instance ; créer un compte s'y fait
+ *  depuis l'écran de connexion principal, pas ici. */
+export type AuthMethod =
+  | { kind: "password"; email: string; password: string }
+  | { kind: "oauth"; provider: "github" | "google" }
+
+interface UseAuth {
+  session: InstanceSession | null
+  sessions: InstanceSession[]
+  instances: Instance[]
+  loading: boolean
+  error: string | null
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   loginOAuth: (provider: "github" | "google") => Promise<void>
   logout: () => Promise<void>
+  addInstance: (url: string, method: AuthMethod) => Promise<string | null>
+  reconnectInstance: (id: string, method: AuthMethod) => Promise<string | null>
+  removeInstance: (id: string) => Promise<void>
+  renameInstance: (id: string, name: string) => Promise<void>
+  setPrimary: (id: string) => Promise<void>
+}
+
+function toSession(inst: Instance): InstanceSession {
+  return {
+    ...decodeToken(inst.token),
+    instanceId: inst.id,
+    instanceName: inst.name,
+    instanceUrl: inst.url,
+    expired: isTokenExpired(inst.token),
+  }
+}
+
+/** Récupère un token pour `url` selon la méthode choisie. Pour OAuth desktop,
+ *  la fenêtre système émet `oauth-token` : le closure capture déjà l'instance
+ *  visée, donc pas besoin de router par `state`. */
+async function tokenFor(url: string, method: AuthMethod): Promise<string> {
+  if (method.kind === "password") {
+    return loginWithPassword(method.email, method.password, url)
+  }
+  const { provider } = method
+  let unlisten: (() => void) | undefined
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      listen<string>("oauth-token", (event) => resolve(event.payload)).then((un) => {
+        unlisten = un
+      }, reject)
+      invoke("open_oauth_window", { provider, apiUrl: url }).catch(reject)
+    })
+  } finally {
+    unlisten?.()
+  }
 }
 
 export function useAuth(): UseAuth {
   const { t } = useLanguage()
 
-  // Le message porté par une ApiError vient de l'API, en anglais : on ne le montre
-  // pas, on traduit à partir du statut HTTP — seul contrat stable.
   const authErrorMessage = useCallback(
     (err: unknown, taken: string): string => {
       if (err instanceof ApiError) {
@@ -36,91 +96,144 @@ export function useAuth(): UseAuth {
     [t],
   )
 
-  const [state, setState] = useState<AuthState>({
-    session: null,
-    loading: true,
-    error: null,
-  })
+  const [instances, setInstances] = useState<Instance[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    setInstances(await readInstances())
+  }, [])
 
   useEffect(() => {
     ;(async () => {
-      const token = await readToken()
-      if (token && !isTokenExpired(token)) {
-        setState({ session: decodeToken(token), loading: false, error: null })
-      } else {
-        if (token) await clearToken()
-        setState({ session: null, loading: false, error: null })
-      }
+      await reload()
+      setLoading(false)
     })()
-  }, [])
+  }, [reload])
 
-  const applyToken = useCallback(async (token: string) => {
-    await writeToken(token)
-    setState({ session: decodeToken(token), loading: false, error: null })
-  }, [])
+  const sessions = instances.filter((i) => i.token).map(toSession)
+  const session = sessions[0] ?? null
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      setState((s) => ({ ...s, loading: true, error: null }))
+  const primaryLogin = useCallback(
+    async (run: () => Promise<string>) => {
+      setLoading(true)
+      setError(null)
       try {
-        const apiUrl = await readApiUrl()
-        const token = await loginWithPassword(email, password, apiUrl)
-        await applyToken(token)
+        const url = await readApiUrl()
+        const token = await run()
+        await upsertPrimaryInstance({ url, token })
+        await reload()
       } catch (err) {
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: authErrorMessage(err, t.errors.emailTaken),
-        }))
+        setError(authErrorMessage(err, t.errors.emailTaken))
+      } finally {
+        setLoading(false)
       }
     },
-    [applyToken, authErrorMessage, t],
+    [authErrorMessage, reload, t],
+  )
+
+  const login = useCallback(
+    (email: string, password: string) =>
+      primaryLogin(async () => loginWithPassword(email, password, await readApiUrl())),
+    [primaryLogin],
   )
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
-      setState((s) => ({ ...s, loading: true, error: null }))
-      try {
-        const apiUrl = await readApiUrl()
-        const token = await registerWithPassword(name, email, password, apiUrl)
-        await applyToken(token)
-      } catch (err) {
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: authErrorMessage(err, t.errors.emailTaken),
-        }))
-      }
-    },
-    [applyToken, authErrorMessage, t],
+    (name: string, email: string, password: string) =>
+      primaryLogin(async () => registerWithPassword(name, email, password, await readApiUrl())),
+    [primaryLogin],
   )
 
   const loginOAuth = useCallback(
-    async (provider: "github" | "google") => {
-      setState((s) => ({ ...s, loading: true, error: null }))
-      try {
-        const unlisten = await listen<string>("oauth-token", async (event) => {
-          unlisten()
-          await applyToken(event.payload)
-        })
-
-        const apiUrl = await readApiUrl()
-        await invoke("open_oauth_window", { provider, apiUrl })
-      } catch (err) {
-        setState((s) => ({
-          ...s,
-          loading: false,
-          error: err instanceof Error ? err.message : "Erreur OAuth.",
-        }))
-      }
-    },
-    [applyToken],
+    (provider: "github" | "google") =>
+      primaryLogin(async () => tokenFor(await readApiUrl(), { kind: "oauth", provider })),
+    [primaryLogin],
   )
 
   const logout = useCallback(async () => {
-    await clearToken()
-    setState({ session: null, loading: false, error: null })
+    await clearInstances()
+    await reload()
+  }, [reload])
+
+  /** Nom d'affichage : `INSTANCE_NAME` s'il existe, sinon l'hôte de l'URL. */
+  const resolveName = useCallback(async (url: string): Promise<string> => {
+    const config = await fetchAuthConfig(url).catch(() => null)
+    return config?.name?.trim() || hostOf(url)
   }, [])
 
-  return { ...state, login, register, loginOAuth, logout }
+  const addInstance = useCallback(
+    async (url: string, method: AuthMethod): Promise<string | null> => {
+      try {
+        const token = await tokenFor(url, method)
+        await storeAddInstance({ url, name: await resolveName(url), token })
+        await reload()
+        return null
+      } catch (err) {
+        return authErrorMessage(err, t.errors.emailTaken)
+      }
+    },
+    [authErrorMessage, reload, resolveName, t],
+  )
+
+  const reconnectInstance = useCallback(
+    async (id: string, method: AuthMethod): Promise<string | null> => {
+      const target = instances.find((i) => i.id === id)
+      if (!target) return t.errors.serverError
+      try {
+        const token = await tokenFor(target.url, method)
+        await updateInstanceToken(id, token)
+        await reload()
+        return null
+      } catch (err) {
+        return authErrorMessage(err, t.errors.emailTaken)
+      }
+    },
+    [authErrorMessage, instances, reload, t],
+  )
+
+  const removeInstance = useCallback(
+    async (id: string) => {
+      // Retirer la primaire = déconnexion complète.
+      if (instances[0]?.id === id) {
+        await clearInstances()
+      } else {
+        await storeRemoveInstance(id)
+      }
+      await reload()
+    },
+    [instances, reload],
+  )
+
+  const renameInstance = useCallback(
+    async (id: string, name: string) => {
+      await storeRenameInstance(id, name)
+      await reload()
+    },
+    [reload],
+  )
+
+  const setPrimary = useCallback(
+    async (id: string) => {
+      await storeSetPrimary(id)
+      await reload()
+    },
+    [reload],
+  )
+
+  return {
+    session,
+    sessions,
+    instances,
+    loading,
+    error,
+    login,
+    register,
+    loginOAuth,
+    logout,
+    addInstance,
+    reconnectInstance,
+    removeInstance,
+    renameInstance,
+    setPrimary,
+  }
 }

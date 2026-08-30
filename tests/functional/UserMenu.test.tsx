@@ -12,19 +12,32 @@ const session: AppSession = {
   role: "user",
 }
 
-function renderWithLang(ui: React.ReactElement) {
-  return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
+type Props = Partial<React.ComponentProps<typeof UserMenu>>
+
+function renderMenu(props: Props = {}) {
+  return render(
+    <LanguageProvider initialLang="fr">
+      <UserMenu
+        session={session}
+        instanceCount={1}
+        onLogout={() => {}}
+        onOpenProfile={() => {}}
+        onOpenInstances={() => {}}
+        {...props}
+      />
+    </LanguageProvider>,
+  )
 }
 
 describe("UserMenu", () => {
   it("shows the avatar initial from the user's name, not the email", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    renderMenu()
     expect(screen.getByText("A")).toBeInTheDocument()
     expect(screen.queryByText("alice@test.com")).not.toBeInTheDocument()
   })
 
   it("keeps the menu closed until the avatar is clicked", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    renderMenu()
     expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTitle("Alice"))
@@ -33,7 +46,7 @@ describe("UserMenu", () => {
 
   it("calls onOpenProfile and closes when Profil is clicked", () => {
     const onOpenProfile = vi.fn()
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={onOpenProfile} />)
+    renderMenu({ onOpenProfile })
 
     fireEvent.click(screen.getByTitle("Alice"))
     fireEvent.click(screen.getByText(fr.userMenu.profile))
@@ -42,9 +55,33 @@ describe("UserMenu", () => {
     expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
   })
 
+  it("opens the instances manager from the menu", () => {
+    const onOpenInstances = vi.fn()
+    renderMenu({ onOpenInstances })
+
+    fireEvent.click(screen.getByTitle("Alice"))
+    fireEvent.click(screen.getByText(fr.userMenu.instances))
+
+    expect(onOpenInstances).toHaveBeenCalled()
+  })
+
+  it("badges the instances row with the count when more than one is connected", () => {
+    renderMenu({ instanceCount: 3 })
+    fireEvent.click(screen.getByTitle("Alice"))
+    const row = screen.getByText(fr.userMenu.instances).closest("button")!
+    expect(row.textContent).toContain("3")
+  })
+
+  it("hides the count badge with a single instance", () => {
+    renderMenu({ instanceCount: 1 })
+    fireEvent.click(screen.getByTitle("Alice"))
+    const row = screen.getByText(fr.userMenu.instances).closest("button")!
+    expect(row.textContent).not.toMatch(/\d/)
+  })
+
   it("calls onLogout when sign-out is clicked", () => {
     const onLogout = vi.fn()
-    renderWithLang(<UserMenu session={session} onLogout={onLogout} onOpenProfile={() => {}} />)
+    renderMenu({ onLogout })
 
     fireEvent.click(screen.getByTitle("Alice"))
     fireEvent.click(screen.getByText(fr.userMenu.signOut))
@@ -53,7 +90,7 @@ describe("UserMenu", () => {
   })
 
   it("tints the sign-out row on hover and restores it on leave", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    renderMenu()
     fireEvent.click(screen.getByTitle("Alice"))
     const signOut = screen.getByText(fr.userMenu.signOut).closest("button")!
 
@@ -67,7 +104,7 @@ describe("UserMenu", () => {
   })
 
   it("stays open on a mousedown inside the menu", () => {
-    renderWithLang(<UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />)
+    renderMenu()
     fireEvent.click(screen.getByTitle("Alice"))
 
     fireEvent.mouseDown(screen.getByText(fr.userMenu.profile))
@@ -76,11 +113,19 @@ describe("UserMenu", () => {
   })
 
   it("closes when clicking outside", () => {
-    renderWithLang(
-      <div>
-        <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
-        <button>outside</button>
-      </div>,
+    render(
+      <LanguageProvider initialLang="fr">
+        <div>
+          <UserMenu
+            session={session}
+            instanceCount={1}
+            onLogout={() => {}}
+            onOpenProfile={() => {}}
+            onOpenInstances={() => {}}
+          />
+          <button>outside</button>
+        </div>
+      </LanguageProvider>,
     )
 
     fireEvent.click(screen.getByTitle("Alice"))

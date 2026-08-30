@@ -1,6 +1,25 @@
 import type { Translations } from "./en"
 
 export const zh: Translations = {
+  instances: {
+    title: "服务器",
+    subtitle: "添加 API 实例，一次性关注所有实例的订阅源。",
+    primary: "主",
+    add: "添加服务器",
+    urlLabel: "服务器 URL",
+    urlPlaceholder: "https://your-api.example.com",
+    cancel: "取消",
+    makePrimary: "设为主服务器",
+    reconnect: "重新连接",
+    remove: "移除",
+    rename: "重命名",
+    save: "保存",
+    expired: "会话已过期",
+    removePrimaryWarning: "移除主服务器会让你退出所有登录。",
+    nameLabel: "名称",
+    unreachable: "无法访问",
+  },
+
   auth: {
     subtitle: "从你上次离开的地方继续。",
     loginTitle: "欢迎回来。",
@@ -117,6 +136,7 @@ export const zh: Translations = {
     error: "发生错误。",
   },
   userMenu: {
+    instances: "服务器",
     profile: "个人资料",
     signOut: "退出登录",
   },

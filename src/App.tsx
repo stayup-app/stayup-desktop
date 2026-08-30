@@ -7,7 +7,8 @@ import { UpdateBanner } from "@/components/ui/UpdateBanner"
 import { AuroraMark } from "@/components/ui/AuroraMark"
 
 export default function App() {
-  const { session, loading, error, login, register, loginOAuth, logout } = useAuth()
+  const auth = useAuth()
+  const { session, loading, error, login, register, loginOAuth } = auth
   const {
     status: updateStatus,
     downloadProgress,
@@ -50,7 +51,7 @@ export default function App() {
         t={t}
         onDismiss={dismissUpdate}
       />
-      <FeedLayout session={session} onLogout={logout} onCheckUpdates={checkForUpdates} />
+      <FeedLayout auth={auth} onCheckUpdates={checkForUpdates} />
     </div>
   )
 }

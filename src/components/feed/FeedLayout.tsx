@@ -11,17 +11,17 @@ import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
 import { ProfileModal } from "@/components/profile/ProfileModal"
+import { InstancesModal } from "@/components/instances/InstancesModal"
 import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import { resolveOpenUrl, type ProviderMeta } from "@/lib/providerTemplate"
-import type { AppSession } from "@/lib/session"
 import type { UserFeedResponse } from "@/lib/api"
+import type { useAuth } from "@/hooks/useAuth"
 import type { TaggedItem } from "@/types"
 
 interface FeedLayoutProps {
-  session: AppSession
-  onLogout: () => void
+  auth: ReturnType<typeof useAuth>
   onCheckUpdates: () => void
 }
 
@@ -56,7 +56,10 @@ function getItemExternalUrl(
   )
 }
 
-export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProps) {
+export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
+  // App ne rend FeedLayout qu'une fois `session` non nulle.
+  const session = auth.session as NonNullable<typeof auth.session>
+  const onLogout = auth.logout
   const { selection } = useNavigationStore()
   const { readIds, initialized, init, markRead, markAllRead, cleanup } = useReadItemsStore()
   const { fluxes, connectors, templates, loading, error, refresh } = useFeed(session.userId)
@@ -67,6 +70,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [listWidth, setListWidth] = useState(380)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [instancesOpen, setInstancesOpen] = useState(false)
 
   const handleSidebarDrag = useCallback(
     (e: React.MouseEvent) => {
@@ -320,8 +324,10 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
         <div className="flex items-center gap-2">
           <UserMenu
             session={session}
+            instanceCount={auth.instances.length}
             onLogout={onLogout}
             onOpenProfile={() => setProfileOpen(true)}
+            onOpenInstances={() => setInstancesOpen(true)}
           />
         </div>
       </header>
@@ -450,6 +456,7 @@ export function FeedLayout({ session, onLogout, onCheckUpdates }: FeedLayoutProp
       </div>
 
       <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} session={session} />
+      <InstancesModal open={instancesOpen} onClose={() => setInstancesOpen(false)} auth={auth} />
     </div>
   )
 }

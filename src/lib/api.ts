@@ -75,6 +75,8 @@ async function apiFetch<T>(
 }
 
 export interface AuthConfig {
+  /** `INSTANCE_NAME` de l'API, ou `null`. Sert de libellé par défaut d'instance. */
+  name?: string | null
   registrationMode: "open" | "approval"
   emailPassword: boolean
   oauth: { google: boolean; github: boolean }

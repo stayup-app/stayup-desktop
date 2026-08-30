@@ -1,6 +1,25 @@
 import type { Translations } from "./en"
 
 export const es: Translations = {
+  instances: {
+    title: "Servidores",
+    subtitle: "Añade instancias de API y sigue los feeds de todas a la vez.",
+    primary: "Principal",
+    add: "Añadir un servidor",
+    urlLabel: "URL del servidor",
+    urlPlaceholder: "https://tu-api.example.com",
+    cancel: "Cancelar",
+    makePrimary: "Hacer principal",
+    reconnect: "Reconectar",
+    remove: "Quitar",
+    rename: "Renombrar",
+    save: "Guardar",
+    expired: "Sesión caducada",
+    removePrimaryWarning: "Quitar tu servidor principal te cierra la sesión en todo.",
+    nameLabel: "Nombre",
+    unreachable: "Inaccesible",
+  },
+
   auth: {
     subtitle: "Retoma la lectura justo donde la dejaste.",
     loginTitle: "Qué bueno verte de nuevo.",
@@ -118,6 +137,7 @@ export const es: Translations = {
     error: "Se ha producido un error.",
   },
   userMenu: {
+    instances: "Servidores",
     profile: "Perfil",
     signOut: "Cerrar sesión",
   },

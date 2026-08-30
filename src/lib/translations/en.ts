@@ -1,4 +1,23 @@
 export const en = {
+  instances: {
+    title: "Servers",
+    subtitle: "Add API instances and follow feeds from all of them at once.",
+    primary: "Primary",
+    add: "Add a server",
+    urlLabel: "Server URL",
+    urlPlaceholder: "https://your-api.example.com",
+    cancel: "Cancel",
+    makePrimary: "Make primary",
+    reconnect: "Reconnect",
+    remove: "Remove",
+    rename: "Rename",
+    save: "Save",
+    expired: "Session expired",
+    removePrimaryWarning: "Removing your primary server signs you out of everything.",
+    nameLabel: "Name",
+    unreachable: "Unreachable",
+  },
+
   auth: {
     subtitle: "Pick up right where you left off.",
     loginTitle: "Good to see you again.",
@@ -116,6 +135,7 @@ export const en = {
     error: "An error occurred.",
   },
   userMenu: {
+    instances: "Servers",
     profile: "Profile",
     signOut: "Sign out",
   },
