@@ -5,7 +5,8 @@ import {
   getProviderFluxes,
   subscribeFlux,
 } from "@/lib/api"
-import { readApiUrl, readToken } from "@/lib/store"
+import type { Instance } from "@/lib/store"
+import { decodeToken } from "@/lib/session"
 import { useLanguage } from "@/context/LanguageContext"
 import { cn } from "@/lib/utils"
 import {
@@ -28,12 +29,14 @@ interface ProviderTile {
 interface AddFluxDialogProps {
   open: boolean
   onClose: () => void
-  userId: string
+  instances: Instance[]
   onSuccess: () => void
 }
 
-export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialogProps) {
+export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDialogProps) {
   const { t } = useLanguage()
+  const [instanceId, setInstanceId] = useState(instances[0]?.id ?? "")
+  const active = instances.find((i) => i.id === instanceId) ?? instances[0]
   const [provider, setProvider] = useState<string>("changelog")
   const [identifier, setIdentifier] = useState("")
   const [pickMode, setPickMode] = useState<"existing" | "new">("existing")
@@ -48,10 +51,9 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
   const [approvals, setApprovals] = useState<Record<string, "auto" | "manual">>({})
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !active) return
     let cancelled = false
-    Promise.all([readToken(), readApiUrl()])
-      .then(([token, apiUrl]) => getConnectorProviders(token ?? "", apiUrl))
+    getConnectorProviders(active.token, active.url)
       .then((providers) => {
         if (cancelled) return
         const parsed = providers.map((p) => ({ ...p, tpl: normalizeTemplate(p.template) }))
@@ -88,17 +90,13 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     return () => {
       cancelled = true
     }
-  }, [open, t])
+  }, [open, t, active])
 
-  // Flux existants du provider sélectionné.
+  // Flux existants du provider sélectionné, sur l'instance choisie.
   useEffect(() => {
-    if (!open) return
+    if (!open || !active) return
     let cancelled = false
-    Promise.all([readToken(), readApiUrl()])
-      .then(([token, apiUrl]) => {
-        if (cancelled || !token) return []
-        return getProviderFluxes(provider, token, apiUrl)
-      })
+    getProviderFluxes(provider, active.token, active.url)
       .then((list) => {
         if (cancelled) return
         setFluxes(list ?? [])
@@ -113,9 +111,10 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     return () => {
       cancelled = true
     }
-  }, [open, provider])
+  }, [open, provider, active])
 
   function handleClose() {
+    setInstanceId(instances[0]?.id ?? "")
     setProvider("changelog")
     setIdentifier("")
     setSelectedFluxId("")
@@ -124,6 +123,15 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
     setPickMode("existing")
     setPending(false)
     onClose()
+  }
+
+  function selectInstance(next: string) {
+    setInstanceId(next)
+    setProvider("changelog")
+    setIdentifier("")
+    setSelectedFluxId("")
+    setFluxes(null)
+    setError(null)
   }
 
   function selectProvider(next: string) {
@@ -147,15 +155,14 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
       }
       setSubmitting(true)
       try {
-        const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-        if (!token) throw new Error(t.feed.tokenMissing)
-        // value = "<dataSourceId>:<id>" ("" pour la base principale).
+        if (!active) throw new Error(t.feed.tokenMissing)
+        // value = "<dataSourceId>:<id>" ("" pour la base principale de l'instance).
         const [dsPart, idPart] = selectedFluxId.split(":")
         await subscribeFlux(
           provider,
           Number(idPart),
-          token,
-          apiUrl,
+          active.token,
+          active.url,
           dsPart ? Number(dsPart) : undefined,
         )
         onSuccess()
@@ -179,11 +186,11 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
 
     setSubmitting(true)
     try {
-      const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-      if (!token) throw new Error(t.feed.tokenMissing)
+      if (!active) throw new Error(t.feed.tokenMissing)
+      const targetUserId = decodeToken(active.token).userId
 
       const url = currentForm ? buildFluxUrl(currentForm, identifier) : identifier
-      const result = await addUserRepository(userId, token, apiUrl, {
+      const result = await addUserRepository(targetUserId, active.token, active.url, {
         provider,
         url,
         config: { max_scraps: 5, retention_days: 15 },
@@ -245,6 +252,24 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
             </div>
           ) : (
             <>
+              {instances.length > 1 && (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-fg-soft">
+                    {t.instances.title}
+                  </label>
+                  <select
+                    value={instanceId}
+                    onChange={(e) => selectInstance(e.target.value)}
+                    className={inputClass}
+                  >
+                    {instances.map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-fg-soft">{t.addFlux.provider}</label>
                 <div className="grid grid-cols-2 gap-2">

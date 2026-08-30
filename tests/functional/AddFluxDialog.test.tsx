@@ -10,7 +10,7 @@ import {
   getProviderFluxes,
   subscribeFlux,
 } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
+import type { Instance } from "@/lib/store"
 
 vi.mock("@/lib/api", () => ({
   addUserRepository: vi.fn().mockResolvedValue({ repository: { id: "r1" } }),
@@ -18,19 +18,17 @@ vi.mock("@/lib/api", () => ({
   subscribeFlux: vi.fn().mockResolvedValue(undefined),
   getConnectorProviders: vi.fn(),
 }))
-vi.mock("@/lib/store", () => ({
-  readToken: vi.fn(),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
-  readLang: vi.fn().mockResolvedValue(null),
-  writeLang: vi.fn().mockResolvedValue(undefined),
-}))
 
-function renderDialog(open = true) {
+// Un JWT dont le `sub` est "user-1", pour que le dialogue en dérive l'userId.
+const TOKEN = `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify({ sub: "user-1" })).replace(/=/g, "")}.sig`
+const INSTANCES: Instance[] = [{ id: "i1", url: "https://api.test", name: "Primary", token: TOKEN }]
+
+function renderDialog(open = true, instances: Instance[] = INSTANCES) {
   const onClose = vi.fn()
   const onSuccess = vi.fn()
   const view = render(
     <LanguageProvider initialLang="fr">
-      <AddFluxDialog open={open} onClose={onClose} userId="user-1" onSuccess={onSuccess} />
+      <AddFluxDialog open={open} onClose={onClose} instances={instances} onSuccess={onSuccess} />
     </LanguageProvider>,
   )
   return { ...view, onClose, onSuccess }
@@ -49,8 +47,6 @@ async function selectProvider(value: string) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(readToken).mockResolvedValue("jwt")
-  vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
   vi.mocked(getProviderFluxes).mockResolvedValue([])
   vi.mocked(getConnectorProviders).mockResolvedValue(
     Object.entries(PROVIDER_LABELS).map(([name, displayName]) => ({
@@ -98,7 +94,7 @@ describe("add a new flux (form input)", () => {
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() =>
-      expect(addUserRepository).toHaveBeenCalledWith("user-1", "jwt", "https://api.test", {
+      expect(addUserRepository).toHaveBeenCalledWith("user-1", TOKEN, "https://api.test", {
         provider: "changelog",
         url: "https://github.com/facebook/react/",
         config: { max_scraps: 5, retention_days: 15 },
@@ -164,7 +160,7 @@ describe("subscribe to an existing flux", () => {
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() =>
-      expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, "jwt", "https://api.test", undefined),
+      expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, TOKEN, "https://api.test", undefined),
     )
     expect(onSuccess).toHaveBeenCalled()
   })
@@ -189,7 +185,7 @@ describe("subscribe to an existing flux", () => {
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() =>
-      expect(subscribeFlux).toHaveBeenCalledWith("rss", 4, "jwt", "https://api.test", 7),
+      expect(subscribeFlux).toHaveBeenCalledWith("rss", 4, TOKEN, "https://api.test", 7),
     )
   })
 
@@ -220,20 +216,14 @@ describe("subscribe to an existing flux", () => {
     expect(await screen.findByText("subscribe failed")).toBeInTheDocument()
   })
 
-  it("fails closed when the auth token is missing (existing flux)", async () => {
-    vi.mocked(getProviderFluxes).mockResolvedValue([
-      { id: 10, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
-    ])
-    const { onSuccess } = renderDialog()
-    await selectProvider("rss")
-    await screen.findByText("https://free.example.com")
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
-
-    vi.mocked(readToken).mockResolvedValue(null)
+  it("fails closed when there is no instance to target", async () => {
+    renderDialog(true, [])
+    fireEvent.click(screen.getByText(fr.addFlux.makeRequest))
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
+
     expect(await screen.findByText(fr.feed.tokenMissing)).toBeInTheDocument()
-    expect(subscribeFlux).not.toHaveBeenCalled()
-    expect(onSuccess).not.toHaveBeenCalled()
+    expect(addUserRepository).not.toHaveBeenCalled()
   })
 })
 
@@ -261,22 +251,24 @@ describe("pick mode & guards", () => {
     expect(addUserRepository).not.toHaveBeenCalled()
   })
 
-  it("fails closed when the auth token is missing (new flux)", async () => {
-    renderDialog()
+  it("fetches providers and fluxes against the selected instance", async () => {
+    const second: Instance = { id: "i2", url: "https://b.test", name: "Beta", token: TOKEN }
+    renderDialog(true, [INSTANCES[0], second])
     await screen.findByRole("button", { name: "Changelog" })
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
 
-    vi.mocked(readToken).mockResolvedValue(null)
-    fireEvent.click(screen.getByText(fr.addFlux.add))
-    expect(await screen.findByText(fr.feed.tokenMissing)).toBeInTheDocument()
-    expect(addUserRepository).not.toHaveBeenCalled()
+    // The instance selector appears once there is more than one.
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "i2" } })
+
+    await waitFor(() =>
+      expect(getConnectorProviders).toHaveBeenLastCalledWith(TOKEN, "https://b.test"),
+    )
   })
 
-  it("loads no fluxes when there is no token", async () => {
-    vi.mocked(readToken).mockResolvedValue(null)
-    renderDialog()
-    await screen.findByRole("button", { name: "Changelog" })
+  it("loads no fluxes when there is no instance", async () => {
+    renderDialog(true, [])
+    // No provider tiles, no flux fetch.
     expect(getProviderFluxes).not.toHaveBeenCalled()
+    expect(getConnectorProviders).not.toHaveBeenCalled()
   })
 
   it("shows no provider tiles when the connector list fails to load", async () => {

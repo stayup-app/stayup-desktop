@@ -6,7 +6,8 @@ import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
 import { ImportExportButtons } from "./ImportExportButtons"
 import { deleteUserRepository } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
+import { decodeToken } from "@/lib/session"
+import type { Instance } from "@/lib/store"
 import { providerIcon, providerAccent } from "./providerIcons"
 import type { ProviderMeta } from "@/lib/providerTemplate"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -27,7 +28,9 @@ function getProviderMeta(provider: Provider, templates: Record<string, ProviderM
 interface FeedSidebarProps {
   fluxes: FeedFlux[]
   templates: Record<string, ProviderMeta>
+  /** L'instance primaire ; sert d'`userId` par défaut à l'import OPML. */
   userId: string
+  instances: Instance[]
   onRefresh: () => void
   loading?: boolean
   unreadCountByRepoId?: Record<string, number>
@@ -38,6 +41,7 @@ export function FeedSidebar({
   fluxes,
   templates,
   userId,
+  instances,
   onRefresh,
   loading = false,
   unreadCountByRepoId = {},
@@ -79,9 +83,9 @@ export function FeedSidebar({
     setConfirmTarget(null)
     setDeleting(flux.id)
     try {
-      const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-      if (!token) throw new Error(t.feed.tokenMissing)
-      await deleteUserRepository(userId, flux.id, token, apiUrl)
+      const inst = instances.find((i) => i.id === flux.instanceId)
+      if (!inst) throw new Error(t.feed.tokenMissing)
+      await deleteUserRepository(decodeToken(inst.token).userId, flux.id, inst.token, inst.url)
       onRefresh()
     } finally {
       setDeleting(null)
@@ -266,7 +270,7 @@ export function FeedSidebar({
       <AddFluxDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        userId={userId}
+        instances={instances}
         onSuccess={onRefresh}
       />
 

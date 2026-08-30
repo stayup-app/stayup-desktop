@@ -357,6 +357,7 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
           fluxes={fluxes}
           templates={templates}
           userId={session.userId}
+          instances={auth.instances}
           onRefresh={stableRefresh}
           loading={loading}
           unreadCountByRepoId={unreadCountByRepoId}
