@@ -125,13 +125,13 @@ describe("UnifiedFeedList", () => {
   })
 
   it("dims rows that are already read", () => {
-    const { container } = renderList({ readIds: new Set(["changelog:1"]) })
+    const { container } = renderList({ readIds: new Set([":changelog:1"]) })
     expect(container.querySelector<HTMLElement>('[data-index="0"]')!.style.opacity).toBe("0.45")
     expect(container.querySelector<HTMLElement>('[data-index="1"]')!.style.opacity).toBe("1")
   })
 
   it("keeps a read row at full opacity while it is selected", () => {
-    const { container } = renderList({ readIds: new Set(["changelog:1"]), selectedIndex: 0 })
+    const { container } = renderList({ readIds: new Set([":changelog:1"]), selectedIndex: 0 })
     expect(container.querySelector<HTMLElement>('[data-index="0"]')!.style.opacity).toBe("1")
   })
 })

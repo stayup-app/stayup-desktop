@@ -30,7 +30,7 @@ interface FeedSidebarProps {
   userId: string
   onRefresh: () => void
   loading?: boolean
-  unreadCountByRepoId?: Record<number, number>
+  unreadCountByRepoId?: Record<string, number>
   width?: number
 }
 
@@ -56,6 +56,9 @@ export function FeedSidebar({
   }, {})
 
   const providers = Object.keys(byProvider) as Provider[]
+  // Badge d'instance sur chaque flux dès qu'il y en a plus d'une.
+  const multiInstance = new Set(fluxes.map((f) => f.instanceId)).size > 1
+  const unreadKey = (f: FeedFlux) => `${f.instanceId ?? ""}:${f.repository_id}`
 
   function isExpanded(provider: Provider) {
     return expanded[provider] !== false
@@ -144,7 +147,7 @@ export function FeedSidebar({
             const open = isExpanded(provider)
             const providerFluxes = byProvider[provider] ?? []
             const totalUnread = providerFluxes.reduce(
-              (sum, flux) => sum + (unreadCountByRepoId[flux.repository_id] ?? 0),
+              (sum, flux) => sum + (unreadCountByRepoId[unreadKey(flux)] ?? 0),
               0,
             )
 
@@ -187,8 +190,11 @@ export function FeedSidebar({
                 {open && (
                   <div className="ml-7 mt-0.5 space-y-0.5 mb-1">
                     {providerFluxes.map((flux) => {
-                      const isActive = selection.type === "flux" && selection.fluxId === flux.id
-                      const fluxUnread = unreadCountByRepoId[flux.repository_id] ?? 0
+                      const isActive =
+                        selection.type === "flux" &&
+                        selection.fluxId === flux.id &&
+                        selection.instanceId === flux.instanceId
+                      const fluxUnread = unreadCountByRepoId[unreadKey(flux)] ?? 0
                       return (
                         <div
                           key={flux.id}
@@ -210,6 +216,7 @@ export function FeedSidebar({
                                 type: "flux",
                                 fluxId: flux.id,
                                 provider: flux.provider,
+                                instanceId: flux.instanceId,
                               })
                             }
                             className={cn(
@@ -220,6 +227,14 @@ export function FeedSidebar({
                             )}
                           >
                             <span className="truncate">{stripUrlScheme(flux.identifier)}</span>
+                            {multiInstance && (
+                              <span
+                                className="shrink-0 rounded bg-[var(--surface-2)] px-1 text-[10px] text-dim"
+                                title={flux.instanceName}
+                              >
+                                {flux.instanceName}
+                              </span>
+                            )}
                             {fluxUnread > 0 && (
                               <span
                                 className="text-[12px] font-mono px-1 rounded shrink-0"

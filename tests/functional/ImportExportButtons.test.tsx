@@ -30,6 +30,8 @@ function flux(overrides: Partial<FeedFlux> = {}): FeedFlux {
     provider: "changelog",
     url: "https://github.com/facebook/react/",
     identifier: "facebook/react",
+    instanceId: "i1",
+    instanceName: "api.test",
     ...overrides,
   }
 }

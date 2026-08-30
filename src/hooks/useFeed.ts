@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { getUserFeed, getConnectorProviders, type UserFeedResponse } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
+import { decodeToken, isTokenExpired } from "@/lib/session"
+import type { Instance } from "@/lib/store"
 import { buildTemplateMap, resolveFeedLabel, type ProviderMeta } from "@/lib/providerTemplate"
 import type { Provider } from "@/types"
 
@@ -10,12 +11,22 @@ export interface FeedFlux {
   provider: Provider
   url: string
   identifier: string
+  instanceId: string
+  instanceName: string
+}
+
+/** Un connecteur inaccessible ou expiré : sa tranche du feed manque, on l'affiche
+ *  sans casser le reste. */
+export interface InstanceError {
+  instanceId: string
+  instanceName: string
 }
 
 interface FeedState {
   fluxes: FeedFlux[]
   connectors: UserFeedResponse["connectors"] | null
   templates: Record<string, ProviderMeta>
+  instanceErrors: InstanceError[]
   loading: boolean
   error: string | null
 }
@@ -24,59 +35,113 @@ interface UseFeed extends FeedState {
   refresh: () => void
 }
 
-export function useFeed(userId: string): UseFeed {
+/** Fusionne les templates de plusieurs instances : premier vu gagne, sauf pour
+ *  compléter un template manquant. */
+function mergeTemplates(maps: Record<string, ProviderMeta>[]): Record<string, ProviderMeta> {
+  const out: Record<string, ProviderMeta> = {}
+  for (const map of maps) {
+    for (const [name, meta] of Object.entries(map)) {
+      const cur = out[name]
+      if (!cur) out[name] = meta
+      else if (!cur.template && meta.template) out[name] = { ...cur, template: meta.template }
+    }
+  }
+  return out
+}
+
+export function useFeed(instances: Instance[]): UseFeed {
   const [state, setState] = useState<FeedState>({
     fluxes: [],
     connectors: null,
     templates: {},
+    instanceErrors: [],
     loading: true,
     error: null,
   })
 
+  // Signature stable : ne relance le fan-out que si la liste (id + token) change.
+  const key = instances.map((i) => `${i.id}:${i.token.slice(-12)}`).join("|")
+
   const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }))
-    try {
-      const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
-      if (!token) throw new Error("Token manquant")
+    const live = instances.filter((i) => i.token && !isTokenExpired(i.token))
+    const expired = instances.filter((i) => i.token && isTokenExpired(i.token))
 
-      const [data, providers] = await Promise.all([
-        getUserFeed(userId, token, apiUrl),
-        // Les templates ne doivent pas faire échouer le feed : sur erreur, map vide
-        // (rendu générique).
-        getConnectorProviders(token, apiUrl).catch(() => []),
-      ])
+    const results = await Promise.all(
+      live.map(async (inst) => {
+        try {
+          const userId = decodeToken(inst.token).userId
+          const [data, providers] = await Promise.all([
+            getUserFeed(userId, inst.token, inst.url),
+            getConnectorProviders(inst.token, inst.url).catch(() => []),
+          ])
+          return { inst, data, providers, ok: true as const }
+        } catch {
+          return { inst, ok: false as const }
+        }
+      }),
+    )
 
-      const templates = buildTemplateMap(providers)
-      const fluxes: FeedFlux[] = data.repositories.map((r) => ({
-        id: r.id,
-        repository_id: r.repository_id,
-        provider: r.provider,
-        url: r.url,
-        identifier: resolveFeedLabel(templates[r.provider]?.template ?? null, {
-          url: r.url,
-          config: (r.config ?? {}) as Record<string, unknown>,
-        }),
-      }))
+    const templates = mergeTemplates(
+      results.filter((r) => r.ok).map((r) => buildTemplateMap(r.providers!)),
+    )
 
-      setState({
-        fluxes,
-        connectors: data.connectors,
-        templates,
-        loading: false,
-        error: null,
-      })
-    } catch (err) {
-      setState((s) => ({
-        ...s,
-        loading: false,
-        error: err instanceof Error ? err.message : "Erreur de chargement.",
-      }))
+    const connectors: UserFeedResponse["connectors"] = {}
+    const fluxes: FeedFlux[] = []
+    const instanceErrors: InstanceError[] = [
+      ...expired.map((i) => ({ instanceId: i.id, instanceName: i.name })),
+    ]
+
+    for (const r of results) {
+      if (!r.ok) {
+        instanceErrors.push({ instanceId: r.inst.id, instanceName: r.inst.name })
+        continue
+      }
+      for (const [provider, items] of Object.entries(r.data.connectors ?? {})) {
+        const tagged = items.map((it) => ({
+          ...it,
+          _instance_id: r.inst.id,
+          _instance_name: r.inst.name,
+        }))
+        connectors[provider] = [...(connectors[provider] ?? []), ...tagged]
+      }
+      for (const repo of r.data.repositories) {
+        fluxes.push({
+          id: repo.id,
+          repository_id: repo.repository_id,
+          provider: repo.provider,
+          url: repo.url,
+          identifier: resolveFeedLabel(templates[repo.provider]?.template ?? null, {
+            url: repo.url,
+            config: (repo.config ?? {}) as Record<string, unknown>,
+          }),
+          instanceId: r.inst.id,
+          instanceName: r.inst.name,
+        })
+      }
     }
-  }, [userId])
+
+    setState({
+      fluxes,
+      connectors: results.some((r) => r.ok) || instances.length === 0 ? connectors : null,
+      templates,
+      instanceErrors,
+      loading: false,
+      error: !results.some((r) => r.ok) && live.length > 0 ? "Erreur de chargement." : null,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
 
   useEffect(() => {
+    // Chargement asynchrone : le seul setState de `load` arrive après les awaits,
+    // pas de cascade de rendus synchrone.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])
 
-  return { ...state, refresh: load }
+  const refresh = useCallback(() => {
+    setState((s) => ({ ...s, loading: true, error: null }))
+    void load()
+  }, [load])
+
+  return { ...state, refresh }
 }

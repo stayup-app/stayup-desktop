@@ -88,7 +88,12 @@ export function FeedContentViewer({ item, repositories, templates }: FeedContent
     )
   }
 
-  const repo = repositories.find((r) => r.repository_id === item.item.repository_id)
+  const repo = repositories.find(
+    (r) =>
+      r.repository_id === item.item.repository_id &&
+      (r.instanceId ?? "") ===
+        (typeof item.item._instance_id === "string" ? item.item._instance_id : ""),
+  )
   const source = repo
     ? { url: repo.url, config: repo.config ?? {}, type: repo.provider ?? "" }
     : undefined

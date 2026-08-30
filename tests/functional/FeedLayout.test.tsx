@@ -83,6 +83,8 @@ function makeAuth(sess: AppSession | null = session): {
   return { auth, logout }
 }
 
+const INST = { instanceId: "i1", instanceName: "api.test" }
+
 const fluxes = [
   {
     id: "1",
@@ -90,6 +92,7 @@ const fluxes = [
     provider: "changelog" as const,
     url: "https://github.com/facebook/react",
     identifier: "facebook/react",
+    ...INST,
   },
   {
     id: "2",
@@ -97,10 +100,11 @@ const fluxes = [
     provider: "youtube" as const,
     url: "https://www.youtube.com/@fireship",
     identifier: "@fireship",
+    ...INST,
   },
 ]
 
-const connectors = {
+const rawConnectors = {
   changelog: [
     {
       id: 1,
@@ -149,11 +153,20 @@ const connectors = {
   ],
 }
 
+// Chaque ligne porte son instance d'origine, comme le fait useFeed après fan-out.
+const connectors = Object.fromEntries(
+  Object.entries(rawConnectors).map(([p, items]) => [
+    p,
+    items.map((it) => ({ ...it, _instance_id: "i1", _instance_name: "api.test" })),
+  ]),
+) as unknown as typeof rawConnectors
+
 type FeedState = ReturnType<typeof useFeed>
 
 function mockFeed(overrides: Partial<FeedState> = {}) {
   vi.mocked(useFeed).mockReturnValue({
     fluxes,
+    instanceErrors: [],
     connectors,
     templates: TEMPLATES,
     loading: false,
@@ -264,7 +277,7 @@ describe("feed list", () => {
 
   it("shows only the items of the selected flux", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "1", provider: "changelog" },
+      selection: { type: "flux", fluxId: "1", provider: "changelog", instanceId: "i1" },
     })
     const { container } = renderLayout()
     expect(container.querySelectorAll("[data-index]")).toHaveLength(1)
@@ -273,7 +286,7 @@ describe("feed list", () => {
 
   it("shows every item of the provider when the flux is unknown", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "missing", provider: "youtube" },
+      selection: { type: "flux", fluxId: "missing", provider: "youtube", instanceId: "i1" },
     })
     const { container } = renderLayout()
     expect(container.querySelectorAll("[data-index]")).toHaveLength(1)
@@ -283,6 +296,14 @@ describe("feed list", () => {
     mockFeed({ loading: true, connectors: null })
     renderLayout()
     expect(screen.getByText(fr.feed.loading)).toBeInTheDocument()
+  })
+
+  it("shows a soft strip for an unreachable instance without dropping the feed", () => {
+    mockFeed({ instanceErrors: [{ instanceId: "b", instanceName: "Beta" }] })
+    renderLayout()
+    expect(screen.getByText(new RegExp(`${fr.instances.unreachable}.*Beta`))).toBeInTheDocument()
+    // The feed still renders.
+    expect(screen.getByText("Newest video")).toBeInTheDocument()
   })
 
   it("renders an error with a retry button", () => {
@@ -302,7 +323,7 @@ describe("read state", () => {
 
     fireEvent.click(container.querySelector('[data-index="0"]')!)
 
-    await waitFor(() => expect(useReadItemsStore.getState().readIds.has("youtube:2")).toBe(true))
+    await waitFor(() => expect(useReadItemsStore.getState().readIds.has("i1:youtube:2")).toBe(true))
   })
 
   it("shows the item content once opened", async () => {
@@ -337,7 +358,7 @@ describe("read state", () => {
   })
 
   it("drops read ids that are no longer in the feed", async () => {
-    useReadItemsStore.setState({ readIds: new Set(["changelog:999"]), initialized: true })
+    useReadItemsStore.setState({ readIds: new Set(["i1:changelog:999"]), initialized: true })
     renderLayout()
 
     await waitFor(() => expect(useReadItemsStore.getState().readIds.size).toBe(0))
@@ -562,7 +583,9 @@ describe("partial connector payloads", () => {
   it.each(["changelog", "youtube", "rss", "scrap"] as const)(
     "treats a missing %s array as empty in the flux view",
     (provider) => {
-      useNavigationStore.setState({ selection: { type: "flux", fluxId: "1", provider } })
+      useNavigationStore.setState({
+        selection: { type: "flux", fluxId: "1", provider, instanceId: "i1" },
+      })
       mockFeed({ connectors: {} as typeof connectors })
       const { container } = renderLayout()
       expect(container.querySelectorAll("[data-index]")).toHaveLength(0)

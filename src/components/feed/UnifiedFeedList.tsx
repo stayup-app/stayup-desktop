@@ -32,9 +32,11 @@ export function UnifiedFeedList({
     )
   }
 
+  // Clé `<instanceId>:<repository_id>` : un repository_id peut se répéter d'une
+  // instance à l'autre.
   const sourceMap = Object.fromEntries(
     repositories.map((r) => [
-      r.repository_id,
+      `${r.instanceId ?? ""}:${r.repository_id}`,
       { url: r.url, config: r.config ?? {}, type: r.provider ?? "" },
     ]),
   )
@@ -45,8 +47,9 @@ export function UnifiedFeedList({
         const meta = templates[tagged.provider]
         const color = providerAccent(meta)
         const isSelected = selectedIndex === i
-        const isRead = readIds?.has(`${tagged.provider}:${tagged.item.id}`) ?? false
-        const source = sourceMap[tagged.item.repository_id as number]
+        const instId = typeof tagged.item._instance_id === "string" ? tagged.item._instance_id : ""
+        const isRead = readIds?.has(`${instId}:${tagged.provider}:${tagged.item.id}`) ?? false
+        const source = sourceMap[`${instId}:${tagged.item.repository_id}`]
 
         return (
           <div

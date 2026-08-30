@@ -14,6 +14,8 @@ vi.mock("@/hooks/useFeed", () => ({
   useFeed: vi.fn().mockReturnValue({
     fluxes: [],
     connectors: { changelog: [], youtube: [], rss: [], scrap: [] },
+    templates: {},
+    instanceErrors: [],
     loading: false,
     error: null,
     refresh: vi.fn(),

@@ -38,6 +38,8 @@ const nodeProcess = (
   }
 ).process
 
+const INST = { instanceId: "i1", instanceName: "api.test" }
+
 const fluxes: FeedFlux[] = [
   {
     id: "1",
@@ -45,6 +47,7 @@ const fluxes: FeedFlux[] = [
     provider: "changelog",
     url: "https://github.com/facebook/react",
     identifier: "facebook/react",
+    ...INST,
   },
   {
     id: "2",
@@ -52,6 +55,7 @@ const fluxes: FeedFlux[] = [
     provider: "youtube",
     url: "https://youtube.com/@fireship",
     identifier: "@fireship",
+    ...INST,
   },
   {
     id: "3",
@@ -59,6 +63,7 @@ const fluxes: FeedFlux[] = [
     provider: "youtube",
     url: "https://youtube.com/@theo",
     identifier: "@theo",
+    ...INST,
   },
 ]
 
@@ -138,7 +143,27 @@ describe("FeedSidebar", () => {
       type: "flux",
       fluxId: "1",
       provider: "changelog",
+      instanceId: "i1",
     })
+  })
+
+  it("badges each flux with its instance name when several instances are connected", () => {
+    const multi: FeedFlux[] = [
+      { ...fluxes[0], instanceId: "i1", instanceName: "Alpha" },
+      { ...fluxes[1], instanceId: "i2", instanceName: "Beta" },
+    ]
+    renderWithLang(
+      <FeedSidebar fluxes={multi} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
+    expect(screen.getByText("Alpha")).toBeInTheDocument()
+    expect(screen.getByText("Beta")).toBeInTheDocument()
+  })
+
+  it("shows no instance badge with a single instance", () => {
+    renderWithLang(
+      <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
+    )
+    expect(screen.queryByText("api.test")).not.toBeInTheDocument()
   })
 
   it("renders an empty sidebar without errors when there are no fluxes", () => {
@@ -158,7 +183,7 @@ describe("unread badges", () => {
         fluxes={fluxes}
         userId="user-1"
         onRefresh={() => {}}
-        unreadCountByRepoId={{ 2: 3, 3: 4 }}
+        unreadCountByRepoId={{ "i1:2": 3, "i1:3": 4 }}
       />,
     )
     expect(screen.getByText("3")).toBeInTheDocument()
@@ -196,7 +221,7 @@ describe("layout", () => {
 
   it("marks the active flux with an accent bar", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "1", provider: "changelog" },
+      selection: { type: "flux", fluxId: "1", provider: "changelog", instanceId: "i1" },
     })
     const { container } = renderWithLang(
       <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
@@ -234,12 +259,15 @@ describe("refreshing feeds", () => {
 })
 
 describe("adding a feed", () => {
-  it("opens the add-flux dialog", () => {
+  it("opens and closes the add-flux dialog", () => {
     renderWithLang(
       <FeedSidebar fluxes={fluxes} templates={TEMPLATES} userId="user-1" onRefresh={() => {}} />,
     )
     fireEvent.click(screen.getByLabelText(fr.addFlux.title))
     expect(screen.getByText(fr.addFlux.provider)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId("dialog-backdrop"))
+    expect(screen.queryByText(fr.addFlux.provider)).not.toBeInTheDocument()
   })
 })
 

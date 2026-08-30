@@ -46,6 +46,8 @@ export interface FeedRepository {
   url: string
   provider?: string
   config?: Record<string, unknown>
+  /** Instance d'origine — un `repository_id` n'est unique qu'au sein d'une instance. */
+  instanceId?: string
 }
 
 export interface ConnectorData {

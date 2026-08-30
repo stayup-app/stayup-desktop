@@ -4,7 +4,7 @@ import type { Provider } from "@/types"
 export type NavSelection =
   | { type: "all" }
   | { type: "category"; provider: Provider }
-  | { type: "flux"; fluxId: string; provider: Provider }
+  | { type: "flux"; fluxId: string; provider: Provider; instanceId: string }
 
 interface NavigationState {
   selection: NavSelection

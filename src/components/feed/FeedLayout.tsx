@@ -42,17 +42,23 @@ function flattenConnectors(connectors: UserFeedResponse["connectors"]): TaggedIt
 
 /** Lien externe d'une ligne pour la touche Entrée : résolu depuis le template du
  *  connecteur (aucune règle par-provider ici). */
+/** Clé de source : `<instanceId>:<repository_id>` — un repository_id n'est unique
+ *  qu'au sein d'une instance. */
+function sourceKey(instanceId: unknown, repositoryId: unknown): string {
+  return `${typeof instanceId === "string" ? instanceId : ""}:${repositoryId}`
+}
+
 function getItemExternalUrl(
   tagged: TaggedItem,
   templates: Record<string, ProviderMeta>,
-  sourceMap: Record<number, Record<string, unknown>>,
+  sourceMap: Record<string, Record<string, unknown>>,
 ): string | null {
   const tpl = templates[tagged.provider]?.template
   if (!tpl) return null
   return resolveOpenUrl(
     tpl,
     tagged.item as Record<string, unknown>,
-    sourceMap[tagged.item.repository_id],
+    sourceMap[sourceKey(tagged.item._instance_id, tagged.item.repository_id)],
   )
 }
 
@@ -62,7 +68,9 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   const onLogout = auth.logout
   const { selection } = useNavigationStore()
   const { readIds, initialized, init, markRead, markAllRead, cleanup } = useReadItemsStore()
-  const { fluxes, connectors, templates, loading, error, refresh } = useFeed(session.userId)
+  const { fluxes, connectors, templates, instanceErrors, loading, error, refresh } = useFeed(
+    auth.instances,
+  )
   const { lang, t, setLang } = useLanguage()
   const { theme, setTheme } = useTheme()
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -117,8 +125,8 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   )
 
   useEffect(() => {
-    void init()
-  }, [init])
+    void init(auth.instances[0]?.id)
+  }, [init, auth.instances])
 
   const stableRefresh = useCallback(() => refresh(), [refresh])
 
@@ -133,14 +141,23 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   })
 
   const repositories = useMemo(
-    () => fluxes.map((f) => ({ repository_id: f.repository_id, url: f.url, provider: f.provider })),
+    () =>
+      fluxes.map((f) => ({
+        repository_id: f.repository_id,
+        url: f.url,
+        provider: f.provider,
+        instanceId: f.instanceId,
+      })),
     [fluxes],
   )
 
   const sourceMap = useMemo(
     () =>
       Object.fromEntries(
-        fluxes.map((f) => [f.repository_id, { url: f.url, type: f.provider, config: {} }]),
+        fluxes.map((f) => [
+          sourceKey(f.instanceId, f.repository_id),
+          { url: f.url, type: f.provider, config: {} },
+        ]),
       ),
     [fluxes],
   )
@@ -176,11 +193,13 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
       const items = connectors[provider] ?? []
       raw = items.map((item) => ({ provider, item }) as TaggedItem)
     } else if (selection.type === "flux") {
-      const { fluxId, provider } = selection
-      const flux = fluxes.find((f) => f.id === fluxId)
+      const { fluxId, provider, instanceId } = selection
+      const flux = fluxes.find((f) => f.id === fluxId && f.instanceId === instanceId)
       const repoId = flux?.repository_id
       const allItems = connectors[provider] ?? []
-      const filtered = repoId ? allItems.filter((i) => i.repository_id === repoId) : allItems
+      const filtered = repoId
+        ? allItems.filter((i) => i.repository_id === repoId && i._instance_id === instanceId)
+        : allItems
       raw = filtered.map((item) => ({ provider, item }) as TaggedItem)
     }
 
@@ -244,11 +263,11 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   }, [connectors])
 
   const unreadCountByRepoId = useMemo(() => {
-    const counts: Record<number, number> = {}
+    const counts: Record<string, number> = {}
     for (const tagged of allConnectorItems) {
       if (!readIds.has(getTaggedItemId(tagged))) {
-        const repoId = tagged.item.repository_id
-        counts[repoId] = (counts[repoId] ?? 0) + 1
+        const k = sourceKey(tagged.item._instance_id, tagged.item.repository_id)
+        counts[k] = (counts[k] ?? 0) + 1
       }
     }
     return counts
@@ -409,6 +428,15 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
               </button>
             )}
           </div>
+
+          {instanceErrors.length > 0 && (
+            <div
+              className="px-3 py-1.5 text-[12px] shrink-0"
+              style={{ background: "var(--rose-dim)", color: "var(--rose)" }}
+            >
+              {t.instances.unreachable} : {instanceErrors.map((e) => e.instanceName).join(", ")}
+            </div>
+          )}
 
           <div ref={listContainerRef} className="flex-1 overflow-y-auto">
             {loading ? (
