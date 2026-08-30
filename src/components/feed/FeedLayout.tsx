@@ -484,7 +484,12 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
         </div>
       </div>
 
-      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} session={session} />
+      <ProfileModal
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        sessions={auth.sessions}
+        instances={auth.instances}
+      />
       <InstancesModal open={instancesOpen} onClose={() => setInstancesOpen(false)} auth={auth} />
     </div>
   )

@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ApiError, updateProfile } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
 import { useLanguage } from "@/context/LanguageContext"
 import type { Translations } from "@/lib/translations"
 
@@ -26,9 +25,11 @@ type FormValues = { currentPassword: string; newPassword: string; confirmPasswor
 
 interface ChangePasswordFormProps {
   userId: string
+  token: string
+  apiUrl: string
 }
 
-export function ChangePasswordForm({ userId }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ userId, token, apiUrl }: ChangePasswordFormProps) {
   const { t } = useLanguage()
   const schema = useMemo(() => makeSchema(t), [t])
   const [success, setSuccess] = useState(false)
@@ -45,7 +46,6 @@ export function ChangePasswordForm({ userId }: ChangePasswordFormProps) {
     setError(null)
     setSuccess(false)
     try {
-      const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
       if (!token) throw new Error(t.feed.tokenMissing)
       await updateProfile(userId, token, apiUrl, {
         password: data.newPassword,

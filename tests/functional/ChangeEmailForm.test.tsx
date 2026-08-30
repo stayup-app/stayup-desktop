@@ -4,28 +4,24 @@ import userEvent from "@testing-library/user-event"
 import { ChangeEmailForm } from "@/components/profile/ChangeEmailForm"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { updateProfile } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
 
 vi.mock("@/lib/api", () => ({ updateProfile: vi.fn() }))
-vi.mock("@/lib/store", () => ({
-  readToken: vi.fn().mockResolvedValue("token-1"),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
-  readLang: vi.fn().mockResolvedValue(null),
-  writeLang: vi.fn().mockResolvedValue(undefined),
-}))
 
-function renderForm() {
+function renderForm(token = "token-1") {
   return render(
     <LanguageProvider initialLang="fr">
-      <ChangeEmailForm userId="user-1" currentEmail="alice@test.com" />
+      <ChangeEmailForm
+        userId="user-1"
+        currentEmail="alice@test.com"
+        token={token}
+        apiUrl="https://api.test"
+      />
     </LanguageProvider>,
   )
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(readToken).mockResolvedValue("token-1")
-  vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
   vi.mocked(updateProfile).mockResolvedValue(undefined)
 })
 
@@ -68,8 +64,7 @@ describe("ChangeEmailForm", () => {
   })
 
   it("shows an error when the token is missing", async () => {
-    vi.mocked(readToken).mockResolvedValue(null)
-    renderForm()
+    renderForm("")
     fireEvent.submit(screen.getByRole("button", { name: "Mettre à jour l'e-mail" }))
     await screen.findByText("Token manquant")
     expect(updateProfile).not.toHaveBeenCalled()

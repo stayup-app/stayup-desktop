@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event"
 import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { ApiError, updateProfile } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
 
 // Le formulaire lit le statut porté par ApiError pour choisir le message traduit.
 vi.mock("@/lib/api", () => ({
@@ -19,25 +18,17 @@ vi.mock("@/lib/api", () => ({
   },
   updateProfile: vi.fn(),
 }))
-vi.mock("@/lib/store", () => ({
-  readToken: vi.fn().mockResolvedValue("token-1"),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
-  readLang: vi.fn().mockResolvedValue(null),
-  writeLang: vi.fn().mockResolvedValue(undefined),
-}))
 
-function renderForm() {
+function renderForm(token = "token-1") {
   return render(
     <LanguageProvider initialLang="fr">
-      <ChangePasswordForm userId="user-1" />
+      <ChangePasswordForm userId="user-1" token={token} apiUrl="https://api.test" />
     </LanguageProvider>,
   )
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(readToken).mockResolvedValue("token-1")
-  vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
   vi.mocked(updateProfile).mockResolvedValue(undefined)
 })
 
@@ -98,8 +89,7 @@ describe("ChangePasswordForm", () => {
   })
 
   it("shows an error when the token is missing", async () => {
-    vi.mocked(readToken).mockResolvedValue(null)
-    renderForm()
+    renderForm("")
     await userEvent.type(screen.getByLabelText("Mot de passe actuel"), "oldpassword1")
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")
     await userEvent.type(screen.getByLabelText("Confirmer le nouveau mot de passe"), "newpassword1")

@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { updateProfile } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
 import { useLanguage } from "@/context/LanguageContext"
 import type { Translations } from "@/lib/translations"
 
@@ -18,9 +17,11 @@ type FormValues = { email: string }
 interface ChangeEmailFormProps {
   userId: string
   currentEmail: string
+  token: string
+  apiUrl: string
 }
 
-export function ChangeEmailForm({ userId, currentEmail }: ChangeEmailFormProps) {
+export function ChangeEmailForm({ userId, currentEmail, token, apiUrl }: ChangeEmailFormProps) {
   const { t } = useLanguage()
   const schema = useMemo(() => makeSchema(t), [t])
   const [success, setSuccess] = useState(false)
@@ -39,7 +40,6 @@ export function ChangeEmailForm({ userId, currentEmail }: ChangeEmailFormProps) 
     setError(null)
     setSuccess(false)
     try {
-      const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
       if (!token) throw new Error(t.feed.tokenMissing)
       await updateProfile(userId, token, apiUrl, { email: data.email })
       setSuccess(true)
