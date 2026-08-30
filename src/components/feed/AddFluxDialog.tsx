@@ -149,7 +149,15 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
       try {
         const [token, apiUrl] = await Promise.all([readToken(), readApiUrl()])
         if (!token) throw new Error(t.feed.tokenMissing)
-        await subscribeFlux(provider, Number(selectedFluxId), token, apiUrl)
+        // value = "<dataSourceId>:<id>" ("" pour la base principale).
+        const [dsPart, idPart] = selectedFluxId.split(":")
+        await subscribeFlux(
+          provider,
+          Number(idPart),
+          token,
+          apiUrl,
+          dsPart ? Number(dsPart) : undefined,
+        )
         onSuccess()
         handleClose()
       } catch (err) {
@@ -313,8 +321,12 @@ export function AddFluxDialog({ open, onClose, userId, onSuccess }: AddFluxDialo
                         </option>
                       ) : (
                         availableFluxes.map((f) => (
-                          <option key={f.id} value={String(f.id)}>
+                          <option
+                            key={`${f.dataSourceId ?? ""}:${f.id}`}
+                            value={`${f.dataSourceId ?? ""}:${f.id}`}
+                          >
                             {f.url}
+                            {f.dataSourceName ? ` — ${f.dataSourceName}` : ""}
                           </option>
                         ))
                       )}

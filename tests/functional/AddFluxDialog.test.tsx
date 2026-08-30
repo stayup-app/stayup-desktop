@@ -160,13 +160,37 @@ describe("subscribe to an existing flux", () => {
     // The already-followed one is hidden.
     expect(screen.queryByText("https://taken.example.com")).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() =>
-      expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, "jwt", "https://api.test"),
+      expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, "jwt", "https://api.test", undefined),
     )
     expect(onSuccess).toHaveBeenCalled()
+  })
+
+  it("subscribes to a flux living in a secondary database", async () => {
+    vi.mocked(getProviderFluxes).mockResolvedValue([
+      {
+        id: 4,
+        url: "https://ext.example.com",
+        config: {},
+        created_at: "2026-01-01",
+        is_subscribed: false,
+        dataSourceId: 7,
+        dataSourceName: "Team feeds",
+      },
+    ])
+    renderDialog()
+    await selectProvider("rss")
+    await screen.findByText(/https:\/\/ext\.example\.com/)
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "7:4" } })
+    fireEvent.click(screen.getByText(fr.addFlux.add))
+
+    await waitFor(() =>
+      expect(subscribeFlux).toHaveBeenCalledWith("rss", 4, "jwt", "https://api.test", 7),
+    )
   })
 
   it("rejects an empty selection", async () => {
@@ -191,7 +215,7 @@ describe("subscribe to an existing flux", () => {
     await selectProvider("rss")
     await screen.findByText("https://free.example.com")
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText("subscribe failed")).toBeInTheDocument()
   })
@@ -203,7 +227,7 @@ describe("subscribe to an existing flux", () => {
     const { onSuccess } = renderDialog()
     await selectProvider("rss")
     await screen.findByText("https://free.example.com")
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
 
     vi.mocked(readToken).mockResolvedValue(null)
     fireEvent.click(screen.getByText(fr.addFlux.add))
@@ -308,7 +332,7 @@ describe("pick mode & guards", () => {
     renderDialog()
     await selectProvider("rss")
     await screen.findByText("https://free.example.com")
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "9" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":9" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.common.error)).toBeInTheDocument()
   })

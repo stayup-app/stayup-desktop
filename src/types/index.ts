@@ -61,4 +61,7 @@ export interface ProviderFlux {
   config: Record<string, unknown>
   created_at: string
   is_subscribed: boolean
+  /** Renseigné pour un flux vivant dans une base secondaire (sinon null). */
+  dataSourceId?: number | null
+  dataSourceName?: string | null
 }

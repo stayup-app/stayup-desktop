@@ -209,6 +209,7 @@ export async function subscribeFlux(
   id: number,
   token: string,
   apiUrl: string,
+  dataSourceId?: number | null,
 ): Promise<void> {
   await apiFetch<{ success: boolean }>(
     `/providers/${provider}/fluxes/${id}/subscribe`,
@@ -216,6 +217,7 @@ export async function subscribeFlux(
     apiUrl,
     {
       method: "POST",
+      ...(dataSourceId != null ? { body: JSON.stringify({ dataSourceId }) } : {}),
     },
   )
 }
@@ -225,6 +227,7 @@ export async function unsubscribeFlux(
   id: number,
   token: string,
   apiUrl: string,
+  dataSourceId?: number | null,
 ): Promise<void> {
   await apiFetch<{ success: boolean }>(
     `/providers/${provider}/fluxes/${id}/subscribe`,
@@ -232,6 +235,7 @@ export async function unsubscribeFlux(
     apiUrl,
     {
       method: "DELETE",
+      ...(dataSourceId != null ? { body: JSON.stringify({ dataSourceId }) } : {}),
     },
   )
 }

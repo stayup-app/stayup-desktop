@@ -32,11 +32,15 @@ const media: ProviderTemplate = {
   },
 }
 
-function renderEntry(template: ProviderTemplate, content: Record<string, unknown>) {
+function renderEntry(
+  template: ProviderTemplate,
+  content: Record<string, unknown>,
+  extra: Record<string, unknown> = {},
+) {
   return render(
     <TemplatedEntry
       template={template}
-      item={{ content: JSON.stringify(content) }}
+      item={{ content: JSON.stringify(content), ...extra }}
       color="#f4b585"
     />,
   )
@@ -61,6 +65,15 @@ describe("row layout", () => {
     expect(screen.getByText("—")).toBeInTheDocument()
     expect(screen.getByText("only a source")).toBeInTheDocument()
   })
+
+  it("tags the row with its data source name when the line comes from a secondary base", () => {
+    renderEntry(
+      row,
+      { title: "Hello", ts: "2024-06-15T14:30:00Z" },
+      { _data_source_name: "Team feeds" },
+    )
+    expect(screen.getByText("Team feeds")).toBeInTheDocument()
+  })
 })
 
 describe("media layout", () => {
@@ -73,5 +86,14 @@ describe("media layout", () => {
     const { container } = renderEntry(media, { title: "Clip" })
     expect(screen.queryByRole("img")).not.toBeInTheDocument()
     expect(container.querySelector("svg")).toBeInTheDocument()
+  })
+
+  it("tags a media entry with its data source name", () => {
+    renderEntry(
+      media,
+      { title: "Clip", img: "https://img.test/t.jpg", ts: "2024-06-15T14:30:00Z" },
+      { _data_source_name: "Partner CDN" },
+    )
+    expect(screen.getByText("Partner CDN")).toBeInTheDocument()
   })
 })

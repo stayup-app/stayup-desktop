@@ -15,6 +15,12 @@ export function TemplatedEntry({ template, item, source, color }: TemplatedEntry
   const view = resolveItemView(template, item, source)
   const layout = template.list?.layout ?? "row"
   const date = view.timestamp ? formatDate(view.timestamp) : ""
+  const srcName = typeof item._data_source_name === "string" ? item._data_source_name : ""
+  const srcBadge = srcName ? (
+    <span className="shrink-0 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[11px] text-dim">
+      {srcName}
+    </span>
+  ) : null
 
   if (layout === "media") {
     return (
@@ -58,6 +64,7 @@ export function TemplatedEntry({ template, item, source, color }: TemplatedEntry
               </span>
             )}
             {date && <span className="text-[13px] font-mono shrink-0 text-dim">{date}</span>}
+            {srcBadge}
           </div>
         </div>
       </div>
@@ -72,7 +79,10 @@ export function TemplatedEntry({ template, item, source, color }: TemplatedEntry
         <span className="text-[15px] font-medium line-clamp-1 text-foreground">
           {view.title || "—"}
         </span>
-        {date && <span className="text-[13px] font-mono shrink-0 text-dim">{date}</span>}
+        <span className="flex items-center gap-2 shrink-0">
+          {date && <span className="text-[13px] font-mono text-dim">{date}</span>}
+          {srcBadge}
+        </span>
       </div>
       {view.subtitle && (
         <p className="text-[13px] font-mono" style={{ color }}>
