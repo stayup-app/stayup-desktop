@@ -10,6 +10,7 @@ import { FeedSidebar } from "./FeedSidebar"
 import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
+import { ServerStatusDots } from "@/components/layout/ServerStatusDots"
 import { ProfileModal } from "@/components/profile/ProfileModal"
 import { InstancesModal } from "@/components/instances/InstancesModal"
 import { AuroraWordmark } from "@/components/ui/AuroraMark"
@@ -352,6 +353,14 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <ServerStatusDots
+            instances={auth.instances}
+            instanceErrors={instanceErrors}
+            onOpen={() => {
+              setDismissedErrors(null)
+              setInstancesOpen(true)
+            }}
+          />
           <UserMenu
             session={session}
             instanceCount={auth.instances.length}

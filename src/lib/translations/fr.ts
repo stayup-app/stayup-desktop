@@ -20,6 +20,11 @@ export const fr: Translations = {
     unreachable: "Injoignable",
     reconnectPrompt: "Ces serveurs demandent une reconnexion :",
   },
+  serverStatus: {
+    title: "État des serveurs",
+    connected: "Connecté",
+    disconnected: "Déconnecté",
+  },
 
   auth: {
     subtitle: "Reprends ta lecture là où tu l'avais laissée.",

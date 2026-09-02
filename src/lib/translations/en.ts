@@ -18,6 +18,11 @@ export const en = {
     unreachable: "Unreachable",
     reconnectPrompt: "These servers need you to sign in again:",
   },
+  serverStatus: {
+    title: "Server status",
+    connected: "Connected",
+    disconnected: "Disconnected",
+  },
 
   auth: {
     subtitle: "Pick up right where you left off.",

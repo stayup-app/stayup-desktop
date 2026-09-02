@@ -20,6 +20,11 @@ export const zh: Translations = {
     unreachable: "无法访问",
     reconnectPrompt: "以下服务器需要重新登录：",
   },
+  serverStatus: {
+    title: "服务器状态",
+    connected: "已连接",
+    disconnected: "已断开",
+  },
 
   auth: {
     subtitle: "从你上次离开的地方继续。",

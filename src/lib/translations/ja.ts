@@ -20,6 +20,11 @@ export const ja: Translations = {
     unreachable: "到達不能",
     reconnectPrompt: "次のサーバーへの再ログインが必要です：",
   },
+  serverStatus: {
+    title: "サーバーの状態",
+    connected: "接続済み",
+    disconnected: "切断",
+  },
 
   auth: {
     subtitle: "前回の続きから始めよう。",

@@ -20,6 +20,11 @@ export const de: Translations = {
     unreachable: "Nicht erreichbar",
     reconnectPrompt: "Bei diesen Servern musst du dich neu anmelden:",
   },
+  serverStatus: {
+    title: "Serverstatus",
+    connected: "Verbunden",
+    disconnected: "Getrennt",
+  },
 
   auth: {
     subtitle: "Mach da weiter, wo du aufgehört hast.",

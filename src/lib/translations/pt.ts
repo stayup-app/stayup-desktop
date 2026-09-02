@@ -20,6 +20,11 @@ export const pt: Translations = {
     unreachable: "Inacessível",
     reconnectPrompt: "Estes servidores exigem que inicie sessão novamente:",
   },
+  serverStatus: {
+    title: "Estado dos servidores",
+    connected: "Ligado",
+    disconnected: "Desligado",
+  },
 
   auth: {
     subtitle: "Continua de onde paraste.",

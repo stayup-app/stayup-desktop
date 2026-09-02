@@ -245,6 +245,21 @@ describe("header", () => {
     fireEvent.click(screen.getByText(fr.common.close))
     expect(screen.queryByText(fr.instances.subtitle)).not.toBeInTheDocument()
   })
+
+  it("shows a green server dot that opens the servers manager on click", () => {
+    renderLayout()
+    const dot = screen.getByLabelText(`api.test — ${fr.serverStatus.connected}`)
+    fireEvent.click(dot)
+    expect(screen.getByText(fr.instances.subtitle)).toBeInTheDocument()
+  })
+
+  it("shows a red server dot when that instance's session is dead", () => {
+    mockFeed({
+      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "auth" }],
+    })
+    renderLayout()
+    expect(screen.getByLabelText(`api.test — ${fr.serverStatus.disconnected}`)).toBeInTheDocument()
+  })
 })
 
 describe("feed list", () => {
