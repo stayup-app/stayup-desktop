@@ -10,7 +10,8 @@ import { useUpdater } from "@/hooks/useUpdater"
 vi.mock("@/hooks/useAuth", () => ({ useAuth: vi.fn() }))
 vi.mock("@/hooks/useUpdater", () => ({ useUpdater: vi.fn() }))
 vi.mock("@/hooks/useMenu", () => ({ useMenu: vi.fn() }))
-vi.mock("@/hooks/useFeed", () => ({
+vi.mock("@/hooks/useFeed", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useFeed")>()),
   useFeed: vi.fn().mockReturnValue({
     fluxes: [],
     connectors: { changelog: [], youtube: [], rss: [], scrap: [] },

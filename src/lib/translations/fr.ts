@@ -18,6 +18,7 @@ export const fr: Translations = {
     removePrimaryWarning: "Retirer ton serveur primaire te déconnecte de tout.",
     nameLabel: "Nom",
     unreachable: "Injoignable",
+    reconnectPrompt: "Ces serveurs demandent une reconnexion :",
   },
 
   auth: {

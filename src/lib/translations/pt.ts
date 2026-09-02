@@ -18,6 +18,7 @@ export const pt: Translations = {
     removePrimaryWarning: "Remover o servidor principal desconecta você de tudo.",
     nameLabel: "Nome",
     unreachable: "Inacessível",
+    reconnectPrompt: "Estes servidores exigem que inicie sessão novamente:",
   },
 
   auth: {

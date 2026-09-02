@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Star, Trash2, RefreshCw, Plus } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { LoginForm } from "@/components/auth/LoginForm"
@@ -11,6 +11,9 @@ interface InstancesModalProps {
   open: boolean
   onClose: () => void
   auth: ReturnType<typeof useAuth>
+  /** Instances dont la session est morte : la modale affiche un bandeau et déplie
+   *  d'office le formulaire de reconnexion de la première. */
+  autoReason?: { instanceId: string; instanceName: string }[]
 }
 
 /** Petit formulaire de connexion (mot de passe + OAuth) pointé sur une URL
@@ -52,7 +55,7 @@ function ConnectForm({
   )
 }
 
-export function InstancesModal({ open, onClose, auth }: InstancesModalProps) {
+export function InstancesModal({ open, onClose, auth, autoReason }: InstancesModalProps) {
   const { t } = useLanguage()
   const {
     instances,
@@ -71,6 +74,20 @@ export function InstancesModal({ open, onClose, auth }: InstancesModalProps) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reconnectId, setReconnectId] = useState<string | null>(null)
+
+  const brokenIds = useMemo(
+    () => new Set((autoReason ?? []).map((a) => a.instanceId)),
+    [autoReason],
+  )
+
+  // Reconnexion poussée automatiquement : déplie d'office le formulaire de la
+  // première instance concernée (sans écraser un choix déjà fait par l'utilisateur).
+  useEffect(() => {
+    if (autoReason && autoReason.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setReconnectId((cur) => cur ?? autoReason[0].instanceId)
+    }
+  }, [autoReason])
 
   if (!open) return null
 
@@ -124,6 +141,15 @@ export function InstancesModal({ open, onClose, auth }: InstancesModalProps) {
         </h2>
         <p className="mt-1 mb-4 text-[13px] text-muted-foreground">{t.instances.subtitle}</p>
 
+        {autoReason && autoReason.length > 0 && (
+          <div
+            className="mb-4 rounded-lg px-3 py-2 text-[13px]"
+            style={{ background: "var(--rose-dim)", color: "var(--rose)" }}
+          >
+            {t.instances.reconnectPrompt} {autoReason.map((a) => a.instanceName).join(", ")}
+          </div>
+        )}
+
         <ul className="space-y-2">
           {instances.map((inst, i) => {
             const s = sessionById.get(inst.id)
@@ -151,7 +177,7 @@ export function InstancesModal({ open, onClose, auth }: InstancesModalProps) {
                 </div>
                 <p className="mt-0.5 px-1 text-[12px] font-mono text-dim">{hostOf(inst.url)}</p>
 
-                {s?.expired && (
+                {(s?.expired || brokenIds.has(inst.id)) && (
                   <p className="mt-1 px-1 text-[12px] text-rose">{t.instances.expired}</p>
                 )}
 
@@ -166,7 +192,7 @@ export function InstancesModal({ open, onClose, auth }: InstancesModalProps) {
                       {t.instances.makePrimary}
                     </button>
                   )}
-                  {s?.expired && (
+                  {(s?.expired || brokenIds.has(inst.id)) && (
                     <button
                       type="button"
                       onClick={() => setReconnectId(reconnectId === inst.id ? null : inst.id)}

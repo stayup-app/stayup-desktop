@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } fr
 import { CheckCheck } from "lucide-react"
 import { useNavigationStore } from "@/store/navigation"
 import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
-import { useFeed } from "@/hooks/useFeed"
+import { useFeed, needsReconnect, type InstanceError } from "@/hooks/useFeed"
 import { useMenu } from "@/hooks/useMenu"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -79,6 +79,17 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   const [listWidth, setListWidth] = useState(380)
   const [profileOpen, setProfileOpen] = useState(false)
   const [instancesOpen, setInstancesOpen] = useState(false)
+  // Le fan-out range les instances à session morte (token expiré ou rejeté) dans
+  // `instanceErrors`. On pousse une modale de reconnexion au lancement et à chaque
+  // refresh tant que c'est le cas ; `dismissedErrors` retient le lot déjà écarté
+  // par l'utilisateur — un nouveau lot (nouvel objet) rouvre la modale.
+  const [dismissedErrors, setDismissedErrors] = useState<InstanceError[] | null>(null)
+  const reconnectNeeded = useMemo(() => needsReconnect(instanceErrors), [instanceErrors])
+  const showReconnect = reconnectNeeded.length > 0 && dismissedErrors !== instanceErrors
+  const unreachable = useMemo(
+    () => instanceErrors.filter((e) => e.reason === "unreachable"),
+    [instanceErrors],
+  )
 
   const handleSidebarDrag = useCallback(
     (e: React.MouseEvent) => {
@@ -430,12 +441,12 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
             )}
           </div>
 
-          {instanceErrors.length > 0 && (
+          {unreachable.length > 0 && (
             <div
               className="px-3 py-1.5 text-[12px] shrink-0"
               style={{ background: "var(--rose-dim)", color: "var(--rose)" }}
             >
-              {t.instances.unreachable} : {instanceErrors.map((e) => e.instanceName).join(", ")}
+              {t.instances.unreachable} : {unreachable.map((e) => e.instanceName).join(", ")}
             </div>
           )}
 
@@ -490,7 +501,15 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
         sessions={auth.sessions}
         instances={auth.instances}
       />
-      <InstancesModal open={instancesOpen} onClose={() => setInstancesOpen(false)} auth={auth} />
+      <InstancesModal
+        open={instancesOpen || showReconnect}
+        onClose={() => {
+          setInstancesOpen(false)
+          setDismissedErrors(instanceErrors)
+        }}
+        auth={auth}
+        autoReason={reconnectNeeded.length > 0 ? reconnectNeeded : undefined}
+      />
     </div>
   )
 }

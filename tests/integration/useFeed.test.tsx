@@ -1,11 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { renderHook, act, waitFor } from "@testing-library/react"
-import { useFeed } from "@/hooks/useFeed"
-import { getUserFeed, getConnectorProviders } from "@/lib/api"
+import { useFeed, needsReconnect } from "@/hooks/useFeed"
+import { getUserFeed, getConnectorProviders, ApiError } from "@/lib/api"
 import { RAW_PROVIDERS } from "../functional/_templates"
 import type { Instance } from "@/lib/store"
 
-vi.mock("@/lib/api", () => ({ getUserFeed: vi.fn(), getConnectorProviders: vi.fn() }))
+vi.mock("@/lib/api", () => ({
+  getUserFeed: vi.fn(),
+  getConnectorProviders: vi.fn(),
+  ApiError: class ApiError extends Error {
+    constructor(
+      public status: number,
+      message: string,
+    ) {
+      super(message)
+      this.name = "ApiError"
+    }
+  },
+}))
 
 function makeJwt(payload: Record<string, unknown>): string {
   const encoded = btoa(JSON.stringify(payload))
@@ -158,8 +170,27 @@ describe("useFeed", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.fluxes.map((f) => f.instanceId)).toEqual(["a", "a"])
-    expect(result.current.instanceErrors).toEqual([{ instanceId: "b", instanceName: "B" }])
+    expect(result.current.instanceErrors).toEqual([
+      { instanceId: "b", instanceName: "B", reason: "unreachable" },
+    ])
     expect(result.current.error).toBeNull()
+  })
+
+  it("flags a 401 as `auth` (needs reconnection), a plain failure as `unreachable`", async () => {
+    vi.mocked(getUserFeed)
+      .mockRejectedValueOnce(new ApiError(401, "Unauthorized"))
+      .mockRejectedValueOnce(new Error("network"))
+
+    const a = instance({ id: "a", name: "A", token: tokenFor("ua") })
+    const b = instance({ id: "b", name: "B", token: tokenFor("ub") })
+    const { result } = renderHook(() => useFeed([a, b]))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.instanceErrors).toEqual([
+      { instanceId: "a", instanceName: "A", reason: "auth" },
+      { instanceId: "b", instanceName: "B", reason: "unreachable" },
+    ])
+    expect(needsReconnect(result.current.instanceErrors).map((e) => e.instanceId)).toEqual(["a"])
   })
 
   it("flags an error only when every live instance fails", async () => {
@@ -176,7 +207,10 @@ describe("useFeed", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(getUserFeed).not.toHaveBeenCalled()
-    expect(result.current.instanceErrors).toEqual([{ instanceId: "i1", instanceName: "api.test" }])
+    expect(result.current.instanceErrors).toEqual([
+      { instanceId: "i1", instanceName: "api.test", reason: "expired" },
+    ])
+    expect(needsReconnect(result.current.instanceErrors)).toHaveLength(1)
   })
 
   it("handles a repositories-only response (no connectors block, no config, no template)", async () => {

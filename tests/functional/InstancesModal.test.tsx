@@ -226,6 +226,27 @@ describe("InstancesModal", () => {
     )
   })
 
+  it("with autoReason, banners the dead sessions and opens the first reconnect form", () => {
+    const auth = makeAuth()
+    render(
+      <LanguageProvider initialLang="fr">
+        <InstancesModal
+          open
+          onClose={vi.fn()}
+          auth={auth as never}
+          autoReason={[{ instanceId: "i2", instanceName: "Beta" }]}
+        />
+      </LanguageProvider>,
+    )
+    expect(
+      screen.getByText(new RegExp(`${fr.instances.reconnectPrompt}.*Beta`)),
+    ).toBeInTheDocument()
+    // Reconnect affordance appears even though the session is not locally `expired`.
+    expect(screen.getByText(fr.instances.expired)).toBeInTheDocument()
+    // …and its form is expanded straight away.
+    expect(screen.getByLabelText(fr.auth.email)).toBeInTheDocument()
+  })
+
   it("closes from the close button and the backdrop", () => {
     const { onClose } = renderModal()
     fireEvent.click(screen.getByText(fr.common.close))

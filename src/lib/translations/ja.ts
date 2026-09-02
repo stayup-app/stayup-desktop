@@ -18,6 +18,7 @@ export const ja: Translations = {
     removePrimaryWarning: "プライマリーサーバーを削除すると、すべてからサインアウトします。",
     nameLabel: "名前",
     unreachable: "到達不能",
+    reconnectPrompt: "次のサーバーへの再ログインが必要です：",
   },
 
   auth: {

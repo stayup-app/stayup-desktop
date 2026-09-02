@@ -18,6 +18,7 @@ export const zh: Translations = {
     removePrimaryWarning: "移除主服务器会让你退出所有登录。",
     nameLabel: "名称",
     unreachable: "无法访问",
+    reconnectPrompt: "以下服务器需要重新登录：",
   },
 
   auth: {

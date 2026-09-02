@@ -11,7 +11,10 @@ import { useFeed } from "@/hooks/useFeed"
 import type { AppSession } from "@/lib/session"
 import { TEMPLATES } from "./_templates"
 
-vi.mock("@/hooks/useFeed", () => ({ useFeed: vi.fn() }))
+vi.mock("@/hooks/useFeed", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useFeed")>()),
+  useFeed: vi.fn(),
+}))
 vi.mock("@/hooks/useMenu", () => ({ useMenu: vi.fn() }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("jwt"),
@@ -299,11 +302,43 @@ describe("feed list", () => {
   })
 
   it("shows a soft strip for an unreachable instance without dropping the feed", () => {
-    mockFeed({ instanceErrors: [{ instanceId: "b", instanceName: "Beta" }] })
+    mockFeed({
+      instanceErrors: [{ instanceId: "b", instanceName: "Beta", reason: "unreachable" }],
+    })
     renderLayout()
     expect(screen.getByText(new RegExp(`${fr.instances.unreachable}.*Beta`))).toBeInTheDocument()
     // The feed still renders.
     expect(screen.getByText("Newest video")).toBeInTheDocument()
+    // A transient failure is not a reconnection prompt.
+    expect(screen.queryByText(new RegExp(fr.instances.reconnectPrompt))).not.toBeInTheDocument()
+  })
+
+  it("pushes the reconnect modal when an instance session is dead", () => {
+    mockFeed({
+      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "expired" }],
+    })
+    renderLayout()
+    expect(
+      screen.getByText(new RegExp(`${fr.instances.reconnectPrompt}.*api\\.test`)),
+    ).toBeInTheDocument()
+    // Not shown as a "just retry" strip.
+    expect(
+      screen.queryByText(new RegExp(`${fr.instances.unreachable}.*api\\.test`)),
+    ).not.toBeInTheDocument()
+  })
+
+  it("treats a 401'd instance (auth) as needing reconnection too", () => {
+    mockFeed({
+      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "auth" }],
+    })
+    renderLayout()
+    expect(screen.getByText(new RegExp(fr.instances.reconnectPrompt))).toBeInTheDocument()
+  })
+
+  it("does not push the reconnect modal when every instance is healthy", () => {
+    mockFeed()
+    renderLayout()
+    expect(screen.queryByText(new RegExp(fr.instances.reconnectPrompt))).not.toBeInTheDocument()
   })
 
   it("renders an error with a retry button", () => {

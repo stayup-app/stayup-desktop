@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { getUserFeed, getConnectorProviders, type UserFeedResponse } from "@/lib/api"
+import { getUserFeed, getConnectorProviders, ApiError, type UserFeedResponse } from "@/lib/api"
 import { decodeToken, isTokenExpired } from "@/lib/session"
 import type { Instance } from "@/lib/store"
 import { buildTemplateMap, resolveFeedLabel, type ProviderMeta } from "@/lib/providerTemplate"
@@ -15,11 +15,25 @@ export interface FeedFlux {
   instanceName: string
 }
 
+/** Pourquoi une instance manque au feed :
+ *  - `expired`     : le token est expiré (exp dépassé), constaté localement ;
+ *  - `auth`        : l'API a refusé le token (401/403) — révoqué côté serveur ;
+ *  - `unreachable` : réseau ou 5xx, probablement transitoire.
+ *  `expired` et `auth` demandent une reconnexion ; `unreachable` un simple retry. */
+export type InstanceErrorReason = "expired" | "auth" | "unreachable"
+
 /** Un connecteur inaccessible ou expiré : sa tranche du feed manque, on l'affiche
  *  sans casser le reste. */
 export interface InstanceError {
   instanceId: string
   instanceName: string
+  reason: InstanceErrorReason
+}
+
+/** Les instances dont la session est morte (token expiré ou rejeté) : il faut se
+ *  reconnecter, un simple retry n'y changera rien. */
+export function needsReconnect(errors: InstanceError[]): InstanceError[] {
+  return errors.filter((e) => e.reason === "expired" || e.reason === "auth")
 }
 
 interface FeedState {
@@ -75,8 +89,11 @@ export function useFeed(instances: Instance[]): UseFeed {
             getConnectorProviders(inst.token, inst.url).catch(() => []),
           ])
           return { inst, data, providers, ok: true as const }
-        } catch {
-          return { inst, ok: false as const }
+        } catch (e) {
+          // 401/403 = token rejeté (à reconnecter) ; le reste = injoignable (à réessayer).
+          const reason: InstanceErrorReason =
+            e instanceof ApiError && (e.status === 401 || e.status === 403) ? "auth" : "unreachable"
+          return { inst, ok: false as const, reason }
         }
       }),
     )
@@ -88,12 +105,20 @@ export function useFeed(instances: Instance[]): UseFeed {
     const connectors: UserFeedResponse["connectors"] = {}
     const fluxes: FeedFlux[] = []
     const instanceErrors: InstanceError[] = [
-      ...expired.map((i) => ({ instanceId: i.id, instanceName: i.name })),
+      ...expired.map((i) => ({
+        instanceId: i.id,
+        instanceName: i.name,
+        reason: "expired" as const,
+      })),
     ]
 
     for (const r of results) {
       if (!r.ok) {
-        instanceErrors.push({ instanceId: r.inst.id, instanceName: r.inst.name })
+        instanceErrors.push({
+          instanceId: r.inst.id,
+          instanceName: r.inst.name,
+          reason: r.reason,
+        })
         continue
       }
       for (const [provider, items] of Object.entries(r.data.connectors ?? {})) {

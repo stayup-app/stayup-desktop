@@ -18,6 +18,7 @@ export const es: Translations = {
     removePrimaryWarning: "Quitar tu servidor principal te cierra la sesión en todo.",
     nameLabel: "Nombre",
     unreachable: "Inaccesible",
+    reconnectPrompt: "Estos servidores requieren que vuelvas a iniciar sesión:",
   },
 
   auth: {

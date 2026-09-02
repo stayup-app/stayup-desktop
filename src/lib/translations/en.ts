@@ -16,6 +16,7 @@ export const en = {
     removePrimaryWarning: "Removing your primary server signs you out of everything.",
     nameLabel: "Name",
     unreachable: "Unreachable",
+    reconnectPrompt: "These servers need you to sign in again:",
   },
 
   auth: {

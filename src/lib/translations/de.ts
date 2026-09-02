@@ -18,6 +18,7 @@ export const de: Translations = {
     removePrimaryWarning: "Den primären Server zu entfernen meldet dich überall ab.",
     nameLabel: "Name",
     unreachable: "Nicht erreichbar",
+    reconnectPrompt: "Bei diesen Servern musst du dich neu anmelden:",
   },
 
   auth: {
