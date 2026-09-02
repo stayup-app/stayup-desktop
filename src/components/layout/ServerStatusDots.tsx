@@ -5,7 +5,7 @@ import type { InstanceError } from "@/hooks/useFeed"
 type DotState = "ok" | "reconnect" | "unreachable"
 
 const DOT_COLOR: Record<DotState, string> = {
-  ok: "var(--teal)",
+  ok: "var(--sage)", // vert du thème (--teal/--green y sont remappés)
   reconnect: "var(--rose)",
   unreachable: "var(--peach)",
 }
@@ -39,7 +39,7 @@ export function ServerStatusDots({ instances, instanceErrors, onOpen }: ServerSt
   }
 
   return (
-    <div className="flex items-center gap-0.5" role="group" aria-label={t.serverStatus.title}>
+    <div className="flex items-center gap-1" role="group" aria-label={t.serverStatus.title}>
       {instances.map((inst) => {
         const s = stateOf(inst.id)
         return (
@@ -49,10 +49,10 @@ export function ServerStatusDots({ instances, instanceErrors, onOpen }: ServerSt
             onClick={onOpen}
             title={`${inst.name} — ${labelOf[s]}`}
             aria-label={`${inst.name} — ${labelOf[s]}`}
-            className="grid h-6 w-6 place-items-center rounded-md transition-colors hover:bg-[var(--surface-2)]"
+            className="grid h-7 w-7 place-items-center rounded-md transition-colors hover:bg-[var(--surface-2)]"
           >
             <span
-              className="h-2 w-2"
+              className="h-[11px] w-[11px]"
               style={{ backgroundColor: DOT_COLOR[s], borderRadius: "9999px" }}
             />
           </button>
