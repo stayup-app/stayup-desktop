@@ -27,12 +27,17 @@ export interface InstanceSession extends AppSession {
   expired: boolean
 }
 
-/** Comment authentifier une instance qu'on ajoute (ou reconnecte). On se
- *  connecte à un compte existant sur l'instance ; créer un compte s'y fait
- *  depuis l'écran de connexion principal, pas ici. */
+/** Comment authentifier une instance qu'on ajoute (ou reconnecte) : se connecter
+ *  à un compte existant. Créer un compte sur l'instance passe par
+ *  `registerInstance`, pas par `AuthMethod`. */
 export type AuthMethod =
   | { kind: "password"; email: string; password: string }
   | { kind: "oauth"; provider: "github" | "google" }
+
+/** Résultat d'une création de compte sur une instance : `{}` = compte actif et
+ *  instance ajoutée ; `{ pending: true }` = instance en mode `approval`, compte
+ *  en attente de validation admin (rien n'est ajouté) ; `{ error }` sinon. */
+export type RegisterInstanceResult = { pending?: boolean; error?: string }
 
 interface UseAuth {
   session: InstanceSession | null
@@ -45,6 +50,10 @@ interface UseAuth {
   loginOAuth: (provider: "github" | "google") => Promise<void>
   logout: () => Promise<void>
   addInstance: (url: string, method: AuthMethod) => Promise<string | null>
+  registerInstance: (
+    url: string,
+    creds: { name: string; email: string; password: string },
+  ) => Promise<RegisterInstanceResult>
   reconnectInstance: (id: string, method: AuthMethod) => Promise<string | null>
   removeInstance: (id: string) => Promise<void>
   renameInstance: (id: string, name: string) => Promise<void>
@@ -139,9 +148,25 @@ export function useAuth(): UseAuth {
   )
 
   const register = useCallback(
-    (name: string, email: string, password: string) =>
-      primaryLogin(async () => registerWithPassword(name, email, password, await readApiUrl())),
-    [primaryLogin],
+    async (name: string, email: string, password: string) => {
+      setLoading(true)
+      setError(null)
+      try {
+        const url = await readApiUrl()
+        const outcome = await registerWithPassword(name, email, password, url)
+        if ("pending" in outcome) {
+          setError(t.auth.accountPending)
+          return
+        }
+        await upsertPrimaryInstance({ url, token: outcome.token })
+        await reload()
+      } catch (err) {
+        setError(authErrorMessage(err, t.errors.emailTaken))
+      } finally {
+        setLoading(false)
+      }
+    },
+    [authErrorMessage, reload, t],
   )
 
   const loginOAuth = useCallback(
@@ -170,6 +195,24 @@ export function useAuth(): UseAuth {
         return null
       } catch (err) {
         return authErrorMessage(err, t.errors.emailTaken)
+      }
+    },
+    [authErrorMessage, reload, resolveName, t],
+  )
+
+  const registerInstance = useCallback(
+    async (
+      url: string,
+      creds: { name: string; email: string; password: string },
+    ): Promise<RegisterInstanceResult> => {
+      try {
+        const outcome = await registerWithPassword(creds.name, creds.email, creds.password, url)
+        if ("pending" in outcome) return { pending: true }
+        await storeAddInstance({ url, name: await resolveName(url), token: outcome.token })
+        await reload()
+        return {}
+      } catch (err) {
+        return { error: authErrorMessage(err, t.errors.emailTaken) }
       }
     },
     [authErrorMessage, reload, resolveName, t],
@@ -231,6 +274,7 @@ export function useAuth(): UseAuth {
     loginOAuth,
     logout,
     addInstance,
+    registerInstance,
     reconnectInstance,
     removeInstance,
     renameInstance,

@@ -17,6 +17,8 @@ export const en = {
     nameLabel: "Name",
     unreachable: "Unreachable",
     reconnectPrompt: "These servers need you to sign in again:",
+    urlUnreachable: "Can't reach that server.",
+    urlIncompatible: "This URL is not a StayUp API.",
   },
   serverStatus: {
     title: "Server status",
@@ -25,6 +27,7 @@ export const en = {
   },
 
   auth: {
+    accountPending: "Account created. An administrator needs to approve it before you can sign in.",
     subtitle: "Pick up right where you left off.",
     loginTitle: "Good to see you again.",
     registerTitle: "Create your account.",

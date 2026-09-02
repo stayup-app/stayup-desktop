@@ -19,6 +19,8 @@ export const it: Translations = {
     nameLabel: "Nome",
     unreachable: "Irraggiungibile",
     reconnectPrompt: "Questi server richiedono di accedere di nuovo:",
+    urlUnreachable: "Server irraggiungibile.",
+    urlIncompatible: "Questo URL non è un'API StayUp.",
   },
   serverStatus: {
     title: "Stato dei server",
@@ -27,6 +29,8 @@ export const it: Translations = {
   },
 
   auth: {
+    accountPending:
+      "Account creato. Un amministratore deve approvarlo prima che tu possa accedere.",
     subtitle: "Riprendi la lettura da dove l'avevi lasciata.",
     loginTitle: "Bentornato.",
     registerTitle: "Crea il tuo account.",

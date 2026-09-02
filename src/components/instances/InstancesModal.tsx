@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo } from "react"
 import { Star, Trash2, RefreshCw, Plus } from "lucide-react"
 import { useLanguage } from "@/context/LanguageContext"
 import { LoginForm } from "@/components/auth/LoginForm"
+import { RegisterForm } from "@/components/auth/RegisterForm"
 import { OAuthButtons } from "@/components/auth/OAuthButtons"
-import { type AuthConfig, fetchAuthConfig } from "@/lib/api"
+import { type AuthConfig, probeApiUrl } from "@/lib/api"
 import { hostOf } from "@/lib/store"
 import type { useAuth } from "@/hooks/useAuth"
 
@@ -16,23 +17,30 @@ interface InstancesModalProps {
   autoReason?: { instanceId: string; instanceName: string }[]
 }
 
-/** Petit formulaire de connexion (mot de passe + OAuth) pointé sur une URL
- *  donnée — sert à ajouter une instance et à en reconnecter une expirée. */
+/** Formulaire d'authentification pointé sur une URL donnée — sert à ajouter une
+ *  instance et à en reconnecter une expirée. `onRegister` (ajout seulement)
+ *  active le basculement « se connecter / créer un compte ». */
 function ConnectForm({
   config,
   loading,
   error,
   onPassword,
   onOAuth,
+  onRegister,
 }: {
   config: AuthConfig | null
   loading: boolean
   error: string | null
   onPassword: (email: string, password: string) => void
   onOAuth: (provider: "github" | "google") => void
+  onRegister?: (name: string, email: string, password: string) => void
 }) {
+  const { t } = useLanguage()
+  const [mode, setMode] = useState<"login" | "register">("login")
   // API trop ancienne pour /auth/config → on propose tout.
   const oauth = config?.oauth ?? { github: true, google: true }
+  const canRegister = !!onRegister && (config?.emailPassword ?? true)
+
   return (
     <div className="space-y-3">
       {(oauth.github || oauth.google) && (
@@ -44,13 +52,38 @@ function ConnectForm({
           providers={oauth}
         />
       )}
-      <LoginForm
-        onSubmit={async (e, p) => {
-          onPassword(e, p)
-        }}
-        loading={loading}
-        error={error}
-      />
+      {canRegister && mode === "register" ? (
+        <RegisterForm
+          onSubmit={async (n, e, p) => {
+            onRegister?.(n, e, p)
+          }}
+          loading={loading}
+          error={error}
+        />
+      ) : (
+        <LoginForm
+          onSubmit={async (e, p) => {
+            onPassword(e, p)
+          }}
+          loading={loading}
+          error={error}
+        />
+      )}
+      {canRegister && (
+        <p className="text-center text-[12px] text-muted-foreground">
+          {mode === "login" ? t.auth.noAccount : t.auth.alreadyHaveAccount}{" "}
+          <button
+            type="button"
+            onClick={() => setMode(mode === "login" ? "register" : "login")}
+            className="font-medium text-foreground hover:underline"
+          >
+            {mode === "login" ? t.auth.signUp : t.auth.signIn}
+          </button>
+        </p>
+      )}
+      {canRegister && mode === "register" && config?.registrationMode === "approval" && (
+        <p className="text-[12px] text-muted-foreground">{t.auth.pendingApprovalHint}</p>
+      )}
     </div>
   )
 }
@@ -61,6 +94,7 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
     instances,
     sessions,
     addInstance,
+    registerInstance,
     reconnectInstance,
     removeInstance,
     renameInstance,
@@ -73,6 +107,9 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
   const [checked, setChecked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Confirmation « compte créé, en attente d'un admin » : survit à la fermeture du
+  // formulaire d'ajout, contrairement à `error`.
+  const [notice, setNotice] = useState<string | null>(null)
   const [reconnectId, setReconnectId] = useState<string | null>(null)
 
   const brokenIds = useMemo(
@@ -104,9 +141,16 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
   async function checkUrl() {
     setBusy(true)
     setError(null)
-    setConfig(await fetchAuthConfig(url.trim()).catch(() => null))
-    setChecked(true)
+    const probe = await probeApiUrl(url.trim())
     setBusy(false)
+    if (!probe.ok) {
+      setError(
+        probe.reason === "unreachable" ? t.instances.urlUnreachable : t.instances.urlIncompatible,
+      )
+      return
+    }
+    setConfig(probe.config)
+    setChecked(true)
   }
 
   async function runAdd(method: Parameters<typeof addInstance>[1]) {
@@ -116,6 +160,19 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
     setBusy(false)
     if (err) setError(err)
     else resetAdd()
+  }
+
+  async function runRegister(name: string, email: string, password: string) {
+    setBusy(true)
+    setError(null)
+    const res = await registerInstance(url.trim(), { name, email, password })
+    setBusy(false)
+    if (res.error) {
+      setError(res.error)
+      return
+    }
+    if (res.pending) setNotice(t.auth.accountPending)
+    resetAdd()
   }
 
   async function runReconnect(id: string, method: Parameters<typeof reconnectInstance>[1]) {
@@ -235,11 +292,23 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
           })}
         </ul>
 
+        {notice && (
+          <p
+            className="mt-4 rounded-lg px-3 py-2 text-[13px]"
+            style={{ background: "var(--sage-dim)", color: "var(--sage)" }}
+          >
+            {notice}
+          </p>
+        )}
+
         <div className="mt-4">
           {!adding ? (
             <button
               type="button"
-              onClick={() => setAdding(true)}
+              onClick={() => {
+                setNotice(null)
+                setAdding(true)
+              }}
               className="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-[13px] hover:bg-surface-hi"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -271,6 +340,8 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
                 </button>
               </div>
 
+              {error && !checked && <p className="mt-2 text-[12px] text-rose">{error}</p>}
+
               {checked && (
                 <div className="mt-3">
                   <ConnectForm
@@ -279,6 +350,7 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
                     error={error}
                     onPassword={(e, p) => void runAdd({ kind: "password", email: e, password: p })}
                     onOAuth={(provider) => void runAdd({ kind: "oauth", provider })}
+                    onRegister={(n, e, p) => void runRegister(n, e, p)}
                   />
                 </div>
               )}

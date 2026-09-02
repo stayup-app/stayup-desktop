@@ -82,17 +82,52 @@ export interface AuthConfig {
   oauth: { google: boolean; github: boolean }
 }
 
+function isAuthConfig(v: unknown): v is AuthConfig {
+  if (!v || typeof v !== "object") return false
+  const c = v as Record<string, unknown>
+  const o = c.oauth as Record<string, unknown> | null | undefined
+  return (
+    typeof c.emailPassword === "boolean" &&
+    !!o &&
+    typeof o === "object" &&
+    typeof o.github === "boolean" &&
+    typeof o.google === "boolean"
+  )
+}
+
+/** Résultat d'une sonde d'URL d'API, avec la raison de l'échec pour un message
+ *  clair : `unreachable` = rien ne répond ; `incompatible` = ça répond mais ce
+ *  n'est pas une API StayUp (ou trop ancienne pour `/auth/config`). */
+export type ApiProbe =
+  | { ok: true; config: AuthConfig }
+  | { ok: false; reason: "unreachable" | "incompatible" }
+
+/** Vérifie qu'une URL pointe bien sur une API StayUp joignable : `GET /auth/config`
+ *  doit répondre 2xx avec la forme attendue. */
+export async function probeApiUrl(apiUrl: string): Promise<ApiProbe> {
+  const base = apiUrl.replace(/\/$/, "")
+  let res: Response
+  try {
+    res = await fetch(`${base}/auth/config`)
+  } catch {
+    return { ok: false, reason: "unreachable" }
+  }
+  if (!res.ok) return { ok: false, reason: "incompatible" }
+  let body: unknown
+  try {
+    body = await res.json()
+  } catch {
+    return { ok: false, reason: "incompatible" }
+  }
+  return isAuthConfig(body) ? { ok: true, config: body } : { ok: false, reason: "incompatible" }
+}
+
 /** Ce qu'un client doit savoir avant l'écran de connexion. `null` si l'API ne
  *  répond pas ou est trop ancienne pour exposer `/auth/config` — l'appelant
  *  retombe alors sur « tout est proposé ». */
 export async function fetchAuthConfig(apiUrl: string): Promise<AuthConfig | null> {
-  try {
-    const res = await fetch(`${apiUrl.replace(/\/$/, "")}/auth/config`)
-    if (!res.ok) return null
-    return (await res.json()) as AuthConfig
-  } catch {
-    return null
-  }
+  const probe = await probeApiUrl(apiUrl)
+  return probe.ok ? probe.config : null
 }
 
 export async function loginWithPassword(
@@ -112,22 +147,28 @@ export async function loginWithPassword(
   return token
 }
 
+/** `{ token }` : compte actif, connecté. `{ pending: true }` : l'instance est en
+ *  `REGISTRATION_MODE=approval` — le compte attend la validation d'un admin, il
+ *  n'y a pas de token et rien à stocker. */
+export type RegisterOutcome = { token: string } | { pending: true }
+
 export async function registerWithPassword(
   name: string,
   email: string,
   password: string,
   apiUrl: string,
-): Promise<string> {
+): Promise<RegisterOutcome> {
   const res = await fetch(`${apiUrl.replace(/\/$/, "")}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
   })
 
+  if (res.status === 202) return { pending: true }
   if (!res.ok) throw new ApiError(res.status, `Register failed: ${res.status}`)
 
   const { token } = (await res.json()) as { token: string }
-  return token
+  return { token }
 }
 
 export async function updateProfile(

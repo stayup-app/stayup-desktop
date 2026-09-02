@@ -160,7 +160,7 @@ describe("login", () => {
 
 describe("register", () => {
   it("upserts the primary instance and exposes the decoded session", async () => {
-    vi.mocked(registerWithPassword).mockResolvedValue(validToken)
+    vi.mocked(registerWithPassword).mockResolvedValue({ token: validToken })
     vi.mocked(readInstances).mockResolvedValueOnce([]).mockResolvedValue([instance()])
     const { result } = renderAuth()
     await waitFor(() => expect(result.current.loading).toBe(false))
@@ -188,6 +188,18 @@ describe("register", () => {
     await act(() => result.current.register("Alice", "taken@test.com", "pass1234"))
 
     expect(result.current.error).toBe(en.errors.emailTaken)
+    expect(result.current.session).toBeNull()
+  })
+
+  it("surfaces the pending-approval message and stores nothing in approval mode", async () => {
+    vi.mocked(registerWithPassword).mockResolvedValue({ pending: true })
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(() => result.current.register("Alice", "alice@test.com", "pass1234"))
+
+    expect(result.current.error).toBe(en.auth.accountPending)
+    expect(upsertPrimaryInstance).not.toHaveBeenCalled()
     expect(result.current.session).toBeNull()
   })
 })
@@ -322,6 +334,69 @@ describe("secondary instances", () => {
       })
     })
     expect(err).toBe(en.errors.invalidCredentials)
+    expect(addInstance).not.toHaveBeenCalled()
+  })
+
+  it("registers a new account on an instance and adds it", async () => {
+    vi.mocked(fetchAuthConfig).mockResolvedValue(null)
+    vi.mocked(registerWithPassword).mockResolvedValue({ token: validToken })
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let res: { pending?: boolean; error?: string } = {}
+    await act(async () => {
+      res = await result.current.registerInstance("https://b.example.com", {
+        name: "Bea",
+        email: "bea@b.io",
+        password: "pass1234",
+      })
+    })
+
+    expect(res).toEqual({})
+    expect(registerWithPassword).toHaveBeenCalledWith(
+      "Bea",
+      "bea@b.io",
+      "pass1234",
+      "https://b.example.com",
+    )
+    expect(addInstance).toHaveBeenCalledWith(
+      expect.objectContaining({ url: "https://b.example.com", token: validToken }),
+    )
+  })
+
+  it("returns { pending } and stores nothing when the instance needs approval", async () => {
+    vi.mocked(registerWithPassword).mockResolvedValue({ pending: true })
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let res: { pending?: boolean; error?: string } = {}
+    await act(async () => {
+      res = await result.current.registerInstance("https://b.example.com", {
+        name: "Bea",
+        email: "bea@b.io",
+        password: "pass1234",
+      })
+    })
+
+    expect(res).toEqual({ pending: true })
+    expect(addInstance).not.toHaveBeenCalled()
+  })
+
+  it("returns a translated error when registration fails", async () => {
+    vi.mocked(registerWithPassword).mockRejectedValue(new ApiError(409, "taken"))
+    const { result } = renderAuth()
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let res: { pending?: boolean; error?: string } = {}
+    await act(async () => {
+      res = await result.current.registerInstance("https://b.example.com", {
+        name: "Bea",
+        email: "taken@b.io",
+        password: "pass1234",
+      })
+    })
+
+    expect(res).toEqual({ error: en.errors.emailTaken })
     expect(addInstance).not.toHaveBeenCalled()
   })
 

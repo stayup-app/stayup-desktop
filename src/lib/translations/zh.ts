@@ -19,6 +19,8 @@ export const zh: Translations = {
     nameLabel: "名称",
     unreachable: "无法访问",
     reconnectPrompt: "以下服务器需要重新登录：",
+    urlUnreachable: "无法连接到该服务器。",
+    urlIncompatible: "此网址不是 StayUp API。",
   },
   serverStatus: {
     title: "服务器状态",
@@ -27,6 +29,7 @@ export const zh: Translations = {
   },
 
   auth: {
+    accountPending: "账户已创建。管理员批准后才能登录。",
     subtitle: "从你上次离开的地方继续。",
     loginTitle: "欢迎回来。",
     registerTitle: "创建你的账户。",

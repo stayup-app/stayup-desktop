@@ -61,7 +61,7 @@ describe("loginWithPassword", () => {
 })
 
 describe("registerWithPassword", () => {
-  it("returns the token string on successful registration", async () => {
+  it("returns the token on successful registration", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -70,8 +70,19 @@ describe("registerWithPassword", () => {
         json: async () => ({ token: "jwt-new-1" }),
       }),
     )
-    const token = await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)
-    expect(token).toBe("jwt-new-1")
+    expect(await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)).toEqual({
+      token: "jwt-new-1",
+    })
+  })
+
+  it("reports a pending account when the instance needs admin approval", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 202, json: async () => ({}) }),
+    )
+    expect(await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)).toEqual({
+      pending: true,
+    })
   })
 
   it("throws an ApiError carrying the 409", async () => {

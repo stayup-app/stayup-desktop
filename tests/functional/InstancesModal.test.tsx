@@ -3,12 +3,19 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { InstancesModal } from "@/components/instances/InstancesModal"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { fr } from "@/lib/translations/fr"
-import { fetchAuthConfig } from "@/lib/api"
+import { probeApiUrl, type AuthConfig } from "@/lib/api"
 
 vi.mock("@/lib/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api")>()),
-  fetchAuthConfig: vi.fn(),
+  probeApiUrl: vi.fn(),
 }))
+
+const OK_CONFIG: AuthConfig = {
+  name: null,
+  registrationMode: "open",
+  emailPassword: true,
+  oauth: { github: true, google: true },
+}
 vi.mock("@/lib/store", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/store")>()),
   hostOf: (u: string) => {
@@ -38,6 +45,7 @@ function buildAuth() {
     loginOAuth: vi.fn(),
     logout: vi.fn(),
     addInstance: vi.fn().mockResolvedValue(null),
+    registerInstance: vi.fn().mockResolvedValue({}),
     reconnectInstance: vi.fn().mockResolvedValue(null),
     removeInstance: vi.fn().mockResolvedValue(undefined),
     renameInstance: vi.fn().mockResolvedValue(undefined),
@@ -57,7 +65,7 @@ function renderModal(auth = makeAuth()) {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(fetchAuthConfig).mockResolvedValue(null)
+  vi.mocked(probeApiUrl).mockResolvedValue({ ok: true, config: OK_CONFIG })
 })
 
 describe("InstancesModal", () => {
@@ -132,7 +140,7 @@ describe("InstancesModal", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "→" }))
 
-    await waitFor(() => expect(fetchAuthConfig).toHaveBeenCalledWith("https://c.example.com"))
+    await waitFor(() => expect(probeApiUrl).toHaveBeenCalledWith("https://c.example.com"))
 
     fireEvent.change(screen.getByLabelText(fr.auth.email), { target: { value: "u@x.io" } })
     fireEvent.change(screen.getByLabelText(fr.auth.password), { target: { value: "pw" } })
@@ -145,6 +153,98 @@ describe("InstancesModal", () => {
         password: "pw",
       }),
     )
+  })
+
+  it("rejects an unreachable URL and never shows the login form", async () => {
+    vi.mocked(probeApiUrl).mockResolvedValue({ ok: false, reason: "unreachable" })
+    renderModal()
+    fireEvent.click(screen.getByText(fr.instances.add))
+    fireEvent.change(screen.getByPlaceholderText(fr.instances.urlPlaceholder), {
+      target: { value: "https://nope.example.com" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "→" }))
+
+    expect(await screen.findByText(fr.instances.urlUnreachable)).toBeInTheDocument()
+    expect(screen.queryByLabelText(fr.auth.email)).not.toBeInTheDocument()
+  })
+
+  it("rejects a URL that is not a StayUp API", async () => {
+    vi.mocked(probeApiUrl).mockResolvedValue({ ok: false, reason: "incompatible" })
+    renderModal()
+    fireEvent.click(screen.getByText(fr.instances.add))
+    fireEvent.change(screen.getByPlaceholderText(fr.instances.urlPlaceholder), {
+      target: { value: "https://example.com" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "→" }))
+
+    expect(await screen.findByText(fr.instances.urlIncompatible)).toBeInTheDocument()
+    expect(screen.queryByLabelText(fr.auth.email)).not.toBeInTheDocument()
+  })
+
+  async function openAddForm(value = "https://c.example.com") {
+    fireEvent.click(screen.getByText(fr.instances.add))
+    fireEvent.change(screen.getByPlaceholderText(fr.instances.urlPlaceholder), {
+      target: { value },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "→" }))
+    await screen.findByLabelText(fr.auth.email)
+  }
+
+  it("creates an account on the new server via the register form", async () => {
+    const { auth } = renderModal()
+    await openAddForm()
+
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp })) // toggle → register
+    fireEvent.change(screen.getByPlaceholderText(fr.auth.namePlaceholder), {
+      target: { value: "Bea" },
+    })
+    fireEvent.change(screen.getByLabelText(fr.auth.email), { target: { value: "bea@x.io" } })
+    fireEvent.change(screen.getByLabelText(fr.auth.password), { target: { value: "pass1234" } })
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp })) // register submit
+
+    await waitFor(() =>
+      expect(auth.registerInstance).toHaveBeenCalledWith("https://c.example.com", {
+        name: "Bea",
+        email: "bea@x.io",
+        password: "pass1234",
+      }),
+    )
+  })
+
+  it("shows the pending-approval notice when the server needs admin approval", async () => {
+    const auth = makeAuth({ registerInstance: vi.fn().mockResolvedValue({ pending: true }) })
+    renderModal(auth)
+    await openAddForm()
+
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp }))
+    fireEvent.change(screen.getByPlaceholderText(fr.auth.namePlaceholder), {
+      target: { value: "Bea" },
+    })
+    fireEvent.change(screen.getByLabelText(fr.auth.email), { target: { value: "bea@x.io" } })
+    fireEvent.change(screen.getByLabelText(fr.auth.password), { target: { value: "pass1234" } })
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp }))
+
+    expect(await screen.findByText(fr.auth.accountPending)).toBeInTheDocument()
+    // the add form is closed again
+    expect(screen.queryByPlaceholderText(fr.instances.urlPlaceholder)).not.toBeInTheDocument()
+  })
+
+  it("shows the approval hint in the register form for an approval-mode server", async () => {
+    vi.mocked(probeApiUrl).mockResolvedValue({
+      ok: true,
+      config: {
+        name: null,
+        registrationMode: "approval",
+        emailPassword: true,
+        oauth: { github: true, google: true },
+      },
+    })
+    renderModal()
+    await openAddForm()
+
+    expect(screen.queryByText(fr.auth.pendingApprovalHint)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: fr.auth.signUp }))
+    expect(screen.getByText(fr.auth.pendingApprovalHint)).toBeInTheDocument()
   })
 
   it("adds an instance through an OAuth provider", async () => {

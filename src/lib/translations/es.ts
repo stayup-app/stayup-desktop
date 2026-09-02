@@ -19,6 +19,8 @@ export const es: Translations = {
     nameLabel: "Nombre",
     unreachable: "Inaccesible",
     reconnectPrompt: "Estos servidores requieren que vuelvas a iniciar sesión:",
+    urlUnreachable: "No se puede conectar con ese servidor.",
+    urlIncompatible: "Esta URL no es una API de StayUp.",
   },
   serverStatus: {
     title: "Estado de los servidores",
@@ -27,6 +29,8 @@ export const es: Translations = {
   },
 
   auth: {
+    accountPending:
+      "Cuenta creada. Un administrador debe aprobarla antes de que puedas iniciar sesión.",
     subtitle: "Retoma la lectura justo donde la dejaste.",
     loginTitle: "Qué bueno verte de nuevo.",
     registerTitle: "Crea tu cuenta.",
