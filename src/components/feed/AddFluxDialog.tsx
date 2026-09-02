@@ -13,6 +13,7 @@ import {
   normalizeTemplate,
   buildFluxUrl,
   matchesFormPattern,
+  resolveFeedLabel,
   type ProviderTemplate,
 } from "@/lib/providerTemplate"
 import { providerIcon, providerAccent } from "./providerIcons"
@@ -68,11 +69,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
             })
             return {
               id: name,
-              label:
-                tpl?.display?.name ??
-                t.feed.providers[name as keyof typeof t.feed.providers] ??
-                displayName ??
-                name,
+              label: tpl?.display?.name ?? displayName ?? name,
               color,
               dim: tpl?.display?.accent ? `${color}22` : "var(--surface-2)",
               icon: providerIcon(tpl?.display ?? undefined),
@@ -90,7 +87,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
     return () => {
       cancelled = true
     }
-  }, [open, t, active])
+  }, [open, active])
 
   // Flux existants du provider sélectionné, sur l'instance choisie.
   useEffect(() => {
@@ -212,18 +209,14 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
 
   const fluxesLoading = fluxes === null
   const availableFluxes = (fluxes ?? []).filter((f) => !f.is_subscribed)
-  const isKnownFeedProvider =
-    provider === "changelog" || provider === "youtube" || provider === "rss"
-  const inputLabel =
-    currentForm?.label ??
-    (isKnownFeedProvider
-      ? t.addFlux.identifierLabels[provider as "changelog" | "youtube" | "rss"]
-      : t.addFlux.identifierLabels.generic)
-  const inputPlaceholder =
-    currentForm?.placeholder ??
-    (isKnownFeedProvider
-      ? t.addFlux.placeholders[provider as "changelog" | "youtube" | "rss"]
-      : t.addFlux.placeholders.generic)
+  // Libellé / placeholder du champ « ajouter » : ceux du connecteur (`form` du
+  // template), avec un repli générique. L'app ne connaît aucun provider en dur.
+  const inputLabel = currentForm?.label ?? t.addFlux.identifierLabels.generic
+  const inputPlaceholder = currentForm?.placeholder ?? t.addFlux.placeholders.generic
+  // Étiquette d'un flux existant : rendue par le template du connecteur, comme
+  // dans la sidebar (repli : URL sans schéma).
+  const fluxLabel = (f: ProviderFlux) =>
+    resolveFeedLabel(tpls[provider], { url: f.url, config: f.config })
 
   const inputClass =
     "w-full rounded-[10px] border border-border bg-[var(--bg)] text-foreground px-3.5 py-2.5 text-sm focus:outline-none focus:border-peach/70 focus:shadow-peach-ring transition-colors"
@@ -350,7 +343,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
                             key={`${f.dataSourceId ?? ""}:${f.id}`}
                             value={`${f.dataSourceId ?? ""}:${f.id}`}
                           >
-                            {f.url}
+                            {fluxLabel(f)}
                             {f.dataSourceName ? ` — ${f.dataSourceName}` : ""}
                           </option>
                         ))

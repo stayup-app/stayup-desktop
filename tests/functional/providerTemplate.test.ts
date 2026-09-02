@@ -108,6 +108,15 @@ describe("applyFormat", () => {
     expect(applyFormat("nope", "hostname")).toBe("nope")
   })
 
+  it("domain drops www. and the last host segment", () => {
+    expect(applyFormat("https://blog.stephane-robert.info/rss.xml", "domain")).toBe(
+      "blog.stephane-robert",
+    )
+    expect(applyFormat("https://www.korben.info/feed", "domain")).toBe("korben")
+    expect(applyFormat("https://feeds.feedburner.com/x", "domain")).toBe("feeds.feedburner")
+    expect(applyFormat("not-a-url", "domain")).toBe("not-a-url")
+  })
+
   it("stripMarkdown removes headings, bold and inline code", () => {
     expect(applyFormat("## Title **bold** `code`", "stripMarkdown")).toBe("Title bold code")
   })

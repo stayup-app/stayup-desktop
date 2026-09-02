@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { ChevronDown, ChevronRight, LayoutList, Plus, RefreshCw, Trash2 } from "lucide-react"
-import { cn, providerDisplayName, stripUrlScheme } from "@/lib/utils"
+import { cn, providerDisplayName } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
@@ -230,7 +230,7 @@ export function FeedSidebar({
                                 : "text-muted-foreground hover:text-foreground",
                             )}
                           >
-                            <span className="truncate">{stripUrlScheme(flux.identifier)}</span>
+                            <span className="truncate">{flux.identifier}</span>
                             {multiInstance && (
                               <span
                                 className="shrink-0 rounded bg-[var(--surface-2)] px-1 text-[10px] text-dim"

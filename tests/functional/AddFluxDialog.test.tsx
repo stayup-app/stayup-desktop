@@ -151,10 +151,10 @@ describe("subscribe to an existing flux", () => {
     ])
     const { onSuccess } = renderDialog()
     await selectProvider("rss")
-    await screen.findByText("https://free.example.com")
+    await screen.findByText("free.example")
 
     // The already-followed one is hidden.
-    expect(screen.queryByText("https://taken.example.com")).not.toBeInTheDocument()
+    expect(screen.queryByText("taken.example")).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
@@ -179,7 +179,7 @@ describe("subscribe to an existing flux", () => {
     ])
     renderDialog()
     await selectProvider("rss")
-    await screen.findByText(/https:\/\/ext\.example\.com/)
+    await screen.findByText(/ext\.example/)
 
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "7:4" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
@@ -195,7 +195,7 @@ describe("subscribe to an existing flux", () => {
     ])
     renderDialog()
     await selectProvider("rss")
-    await screen.findByText("https://free.example.com")
+    await screen.findByText("free.example")
 
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.addFlux.selectError)).toBeInTheDocument()
@@ -209,7 +209,7 @@ describe("subscribe to an existing flux", () => {
     vi.mocked(subscribeFlux).mockRejectedValue(new Error("subscribe failed"))
     renderDialog()
     await selectProvider("rss")
-    await screen.findByText("https://free.example.com")
+    await screen.findByText("free.example")
 
     fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
@@ -233,7 +233,9 @@ describe("pick mode & guards", () => {
       { id: 10, url: "https://free.example.com", config: {}, created_at: "", is_subscribed: false },
     ])
     renderDialog()
-    await screen.findByText("https://free.example.com")
+    // Default provider is changelog: `urlSlug` of a path-less URL is empty, so
+    // resolveFeedLabel falls back to the scheme-stripped host.
+    await screen.findByText("free.example.com")
 
     fireEvent.click(screen.getByText(fr.addFlux.makeRequest))
     expect(screen.getByRole("textbox")).toBeInTheDocument()
@@ -323,7 +325,7 @@ describe("pick mode & guards", () => {
     vi.mocked(subscribeFlux).mockRejectedValue("boom")
     renderDialog()
     await selectProvider("rss")
-    await screen.findByText("https://free.example.com")
+    await screen.findByText("free.example")
     fireEvent.change(screen.getByRole("combobox"), { target: { value: ":9" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.common.error)).toBeInTheDocument()

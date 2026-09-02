@@ -137,7 +137,7 @@ const RAW = [
         },
         accent: "#a8d4b5",
         sortOrder: 30,
-        feedLabel: { path: "$source.url", format: "hostname" },
+        feedLabel: { path: "$source.url", format: "domain" },
       },
       item: {
         parseContentAsJson: true,
@@ -184,7 +184,7 @@ const RAW = [
         },
         accent: "#9dc7e0",
         sortOrder: 40,
-        feedLabel: { path: "$source.url", format: "hostname" },
+        feedLabel: { path: "$source.url", format: "domain" },
       },
       item: {
         parseContentAsJson: false,

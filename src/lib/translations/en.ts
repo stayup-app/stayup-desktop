@@ -57,12 +57,6 @@ export const en = {
     filterAll: "All",
     filterUnread: "Unread",
     markAllRead: "Mark all read",
-    providers: {
-      changelog: "GitHub",
-      youtube: "YouTube",
-      rss: "RSS",
-      scrap: "Web",
-    },
   },
   importExport: {
     export: "Export feeds",
@@ -79,15 +73,9 @@ export const en = {
     description: "Pick a source, we'll handle the rest.",
     provider: "Provider",
     identifierLabels: {
-      changelog: "GitHub repository",
-      youtube: "YouTube channel",
-      rss: "RSS feed URL",
       generic: "URL",
     },
     placeholders: {
-      changelog: "e.g. facebook/react",
-      youtube: "e.g. fireship",
-      rss: "e.g. https://example.com/feed.xml",
       generic: "https://example.com",
     },
     scrapRepo: "Available feed",

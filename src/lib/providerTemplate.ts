@@ -23,6 +23,7 @@ export type TplFormat =
   | "relativeTime"
   | "urlSlug"
   | "hostname"
+  | "domain"
   | "stripMarkdown"
   | "upper"
   | "lower"
@@ -229,6 +230,16 @@ export function applyFormat(value: unknown, format: TplFormat | undefined): unkn
     case "hostname":
       try {
         return new URL(s).hostname.replace(/^www\./, "")
+      } catch {
+        return s
+      }
+    case "domain":
+      // Hostname sans `www.` ni le dernier segment : blog.stephane-robert.info
+      // → blog.stephane-robert. Libellé court des flux rss / scrap.
+      try {
+        const host = new URL(s).hostname.replace(/^www\./, "")
+        const parts = host.split(".")
+        return parts.length > 1 ? parts.slice(0, -1).join(".") : host
       } catch {
         return s
       }

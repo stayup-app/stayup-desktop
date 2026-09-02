@@ -58,12 +58,6 @@ export const zh: Translations = {
     filterAll: "全部",
     filterUnread: "未读",
     markAllRead: "全部标记为已读",
-    providers: {
-      changelog: "GitHub",
-      youtube: "YouTube",
-      rss: "RSS",
-      scrap: "Web",
-    },
   },
   importExport: {
     export: "导出订阅",
@@ -80,15 +74,9 @@ export const zh: Translations = {
     description: "选择一个来源，剩下的交给我们。",
     provider: "来源",
     identifierLabels: {
-      changelog: "GitHub 仓库",
-      youtube: "YouTube 频道",
-      rss: "RSS 订阅地址",
       generic: "网址",
     },
     placeholders: {
-      changelog: "例如 facebook/react",
-      youtube: "例如 fireship",
-      rss: "例如 https://example.com/feed.xml",
       generic: "https://example.com",
     },
     scrapRepo: "可用订阅",
