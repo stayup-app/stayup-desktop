@@ -63,6 +63,10 @@ export function FeedSidebar({
   // Badge d'instance sur chaque flux dès qu'il y en a plus d'une.
   const multiInstance = new Set(fluxes.map((f) => f.instanceId)).size > 1
   const unreadKey = (f: FeedFlux) => `${f.instanceId ?? ""}:${f.repository_id}`
+  // `flux.instanceName` est figé au chargement du feed ; on le re-résout depuis
+  // `instances` pour refléter un renommage de serveur fait entre-temps.
+  const instanceLabel = (f: FeedFlux) =>
+    instances.find((i) => i.id === f.instanceId)?.name ?? f.instanceName
 
   function isExpanded(provider: Provider) {
     return expanded[provider] !== false
@@ -234,9 +238,9 @@ export function FeedSidebar({
                             {multiInstance && (
                               <span
                                 className="shrink-0 rounded bg-[var(--surface-2)] px-1 text-[10px] text-dim"
-                                title={flux.instanceName}
+                                title={instanceLabel(flux)}
                               >
-                                {flux.instanceName}
+                                {instanceLabel(flux)}
                               </span>
                             )}
                             {fluxUnread > 0 && (

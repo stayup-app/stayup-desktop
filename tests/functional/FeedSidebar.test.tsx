@@ -206,17 +206,43 @@ describe("FeedSidebar", () => {
       { ...fluxes[0], instanceId: "i1", instanceName: "Alpha" },
       { ...fluxes[1], instanceId: "i2", instanceName: "Beta" },
     ]
+    const two: Instance[] = [
+      { id: "i1", url: "https://a.test", name: "Alpha", token: jwt("a") },
+      { id: "i2", url: "https://b.test", name: "Beta", token: jwt("b") },
+    ]
     renderWithLang(
       <FeedSidebar
         fluxes={multi}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        instances={two}
         userId="user-1"
         onRefresh={() => {}}
       />,
     )
     expect(screen.getByText("Alpha")).toBeInTheDocument()
     expect(screen.getByText("Beta")).toBeInTheDocument()
+  })
+
+  it("shows the current server name on the badge, not the one stamped at feed load", () => {
+    const multi: FeedFlux[] = [
+      { ...fluxes[0], instanceId: "i1", instanceName: "old-host.example" },
+      { ...fluxes[1], instanceId: "i2", instanceName: "Beta" },
+    ]
+    const renamed: Instance[] = [
+      { id: "i1", url: "https://a.test", name: "Main", token: jwt("a") },
+      { id: "i2", url: "https://b.test", name: "Beta", token: jwt("b") },
+    ]
+    renderWithLang(
+      <FeedSidebar
+        fluxes={multi}
+        templates={TEMPLATES}
+        instances={renamed}
+        userId="user-1"
+        onRefresh={() => {}}
+      />,
+    )
+    expect(screen.getByText("Main")).toBeInTheDocument()
+    expect(screen.queryByText("old-host.example")).not.toBeInTheDocument()
   })
 
   it("shows no instance badge with a single instance", () => {
