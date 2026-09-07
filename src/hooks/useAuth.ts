@@ -19,7 +19,7 @@ import { ApiError, fetchAuthConfig, loginWithPassword, registerWithPassword } fr
 import { useLanguage } from "@/context/LanguageContext"
 import type { AppSession } from "@/lib/session"
 
-/** Une session, rattachée à son instance. `session` (compat) = la primaire. */
+/** A session, attached to its instance. `session` (compat) = the primary. */
 export interface InstanceSession extends AppSession {
   instanceId: string
   instanceName: string
@@ -27,16 +27,16 @@ export interface InstanceSession extends AppSession {
   expired: boolean
 }
 
-/** Comment authentifier une instance qu'on ajoute (ou reconnecte) : se connecter
- *  à un compte existant. Créer un compte sur l'instance passe par
- *  `registerInstance`, pas par `AuthMethod`. */
+/** How to authenticate an instance being added (or reconnected): logging in to
+ *  an existing account. Creating an account on the instance goes through
+ *  `registerInstance`, not `AuthMethod`. */
 export type AuthMethod =
   | { kind: "password"; email: string; password: string }
   | { kind: "oauth"; provider: "github" | "google" }
 
-/** Résultat d'une création de compte sur une instance : `{}` = compte actif et
- *  instance ajoutée ; `{ pending: true }` = instance en mode `approval`, compte
- *  en attente de validation admin (rien n'est ajouté) ; `{ error }` sinon. */
+/** Result of creating an account on an instance: `{}` = account active and
+ *  instance added; `{ pending: true }` = instance in `approval` mode, account
+ *  awaiting admin approval (nothing is added); `{ error }` otherwise. */
 export type RegisterInstanceResult = { pending?: boolean; error?: string }
 
 interface UseAuth {
@@ -70,9 +70,9 @@ function toSession(inst: Instance): InstanceSession {
   }
 }
 
-/** Récupère un token pour `url` selon la méthode choisie. Pour OAuth desktop,
- *  la fenêtre système émet `oauth-token` : le closure capture déjà l'instance
- *  visée, donc pas besoin de router par `state`. */
+/** Gets a token for `url` using the chosen method. For desktop OAuth, the
+ *  system window emits `oauth-token`: the closure already captures the target
+ *  instance, so there is no need to route by `state`. */
 async function tokenFor(url: string, method: AuthMethod): Promise<string> {
   if (method.kind === "password") {
     return loginWithPassword(method.email, method.password, url)
@@ -180,7 +180,7 @@ export function useAuth(): UseAuth {
     await reload()
   }, [reload])
 
-  /** Nom d'affichage : `INSTANCE_NAME` s'il existe, sinon l'hôte de l'URL. */
+  /** Display name: `INSTANCE_NAME` if present, otherwise the URL's host. */
   const resolveName = useCallback(async (url: string): Promise<string> => {
     const config = await fetchAuthConfig(url).catch(() => null)
     return config?.name?.trim() || hostOf(url)
@@ -236,7 +236,7 @@ export function useAuth(): UseAuth {
 
   const removeInstance = useCallback(
     async (id: string) => {
-      // Retirer la primaire = déconnexion complète.
+      // Removing the primary = full logout.
       if (instances[0]?.id === id) {
         await clearInstances()
       } else {

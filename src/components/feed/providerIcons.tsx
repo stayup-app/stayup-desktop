@@ -3,9 +3,9 @@ import type { ProviderMeta, ProviderTemplate } from "@/lib/providerTemplate"
 import { resolveIcon } from "@/lib/providerTemplate"
 
 /**
- * Jeu d'icônes nommées : un template déclare `display.icon` = une de ces clés
- * (un nom inconnu, ou aucun template, retombe sur `dot`). C'est le seul lien
- * entre un connecteur et l'app côté visuel — jamais de SVG venu de la base.
+ * Named icon set: a template declares `display.icon` = one of these keys (an
+ * unknown name, or no template, falls back to `dot`). It is the only visual
+ * link between a connector and the app — never an SVG from the database.
  */
 const ICONS: Record<string, ReactNode> = {
   changelog: (
@@ -106,14 +106,14 @@ export function providerIcon(display: ProviderTemplate["display"] | undefined): 
 
 const GENERIC_ACCENT = "var(--muted-foreground)"
 
-/** Couleur d'accent d'un provider : celle de son template, sinon neutre. */
+/** A provider's accent color: its template's, otherwise neutral. */
 export function providerAccent(meta: ProviderMeta | undefined): string {
   const accent = meta?.template?.display?.accent
   return accent && /^#|^var\(|^hsl|^rgb/.test(accent) ? accent : GENERIC_ACCENT
 }
 
-/** Libellé d'un provider : `display.name` du template, sinon le displayName API,
- *  sinon le nom capitalisé (même repli que stayup-api). */
+/** A provider's label: the template's `display.name`, otherwise the API
+ *  displayName, otherwise the capitalized name (same fallback as stayup-api). */
 export function providerLabel(meta: ProviderMeta | undefined, fallback: string): string {
   return (
     meta?.template?.display?.name ||

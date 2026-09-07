@@ -42,7 +42,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
   const [identifier, setIdentifier] = useState("")
   const [pickMode, setPickMode] = useState<"existing" | "new">("existing")
   const [selectedFluxId, setSelectedFluxId] = useState("")
-  // null = pas encore chargé, [] = chargé (éventuellement vide)
+  // null = not loaded yet, [] = loaded (possibly empty)
   const [fluxes, setFluxes] = useState<ProviderFlux[] | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -89,7 +89,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
     }
   }, [open, active])
 
-  // Flux existants du provider sélectionné, sur l'instance choisie.
+  // Existing fluxes of the selected provider, on the chosen instance.
   useEffect(() => {
     if (!open || !active) return
     let cancelled = false
@@ -153,7 +153,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
       setSubmitting(true)
       try {
         if (!active) throw new Error(t.feed.tokenMissing)
-        // value = "<dataSourceId>:<id>" ("" pour la base principale de l'instance).
+        // value = "<dataSourceId>:<id>" ("" for the instance's primary database).
         const [dsPart, idPart] = selectedFluxId.split(":")
         await subscribeFlux(
           provider,
@@ -209,12 +209,12 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
 
   const fluxesLoading = fluxes === null
   const availableFluxes = (fluxes ?? []).filter((f) => !f.is_subscribed)
-  // Libellé / placeholder du champ « ajouter » : ceux du connecteur (`form` du
-  // template), avec un repli générique. L'app ne connaît aucun provider en dur.
+  // Label / placeholder of the "add" field: the connector's (`form` in the
+  // template), with a generic fallback. The app knows no provider hardcoded.
   const inputLabel = currentForm?.label ?? t.addFlux.identifierLabels.generic
   const inputPlaceholder = currentForm?.placeholder ?? t.addFlux.placeholders.generic
-  // Étiquette d'un flux existant : rendue par le template du connecteur, comme
-  // dans la sidebar (repli : URL sans schéma).
+  // An existing flux's label: rendered by the connector template, as in the
+  // sidebar (fallback: URL without scheme).
   const fluxLabel = (f: ProviderFlux) =>
     resolveFeedLabel(tpls[provider], { url: f.url, config: f.config })
 

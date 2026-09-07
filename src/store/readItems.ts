@@ -2,15 +2,15 @@ import { create } from "zustand"
 import { readReadItems, writeReadItems } from "@/lib/store"
 import type { TaggedItem } from "@/types"
 
-/** Clé d'un item lu : `<instanceId>:<provider>:<id>`. L'id d'un connecteur
- *  (SERIAL) n'est unique qu'au sein d'une instance, d'où le préfixe. */
+/** Key for a read item: `<instanceId>:<provider>:<id>`. A connector id
+ *  (SERIAL) is only unique within an instance, hence the prefix. */
 export function getTaggedItemId(tagged: TaggedItem): string {
   const inst = typeof tagged.item._instance_id === "string" ? tagged.item._instance_id : ""
   return `${inst}:${tagged.provider}:${tagged.item.id}`
 }
 
-/** Migration : les clés d'avant le multi-instance sont `<provider>:<id>` (2
- *  segments) — on les rattache à l'instance primaire. */
+/** Migration: pre-multi-instance keys are `<provider>:<id>` (2 segments) — we
+ *  attach them to the primary instance. */
 function migrateIds(stored: string[], primaryId: string | undefined): string[] {
   if (!primaryId) return stored
   return stored.map((id) => (id.split(":").length === 2 ? `${primaryId}:${id}` : id))

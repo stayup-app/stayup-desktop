@@ -1,10 +1,10 @@
 /**
- * Couverture directe du moteur de templates (`src/lib/providerTemplate.ts`).
+ * Direct coverage of the template engine (`src/lib/providerTemplate.ts`).
  *
- * Le moteur est pur : chaque fonction exportée et chaque branche est exercée ici,
- * sans passer par un composant. Les composants `Templated*` n'en testent que le
- * chemin nominal ; les cas limites (formats non parsables, accesseurs vides,
- * regex invalides, `flux` déjà URL…) vivent ici.
+ * The engine is pure: every exported function and every branch is exercised
+ * here, without going through a component. The `Templated*` components only test
+ * the nominal path; the edge cases (unparsable formats, empty accessors,
+ * invalid regexes, `flux` already a URL…) live here.
  */
 import {
   applyFormTransform,

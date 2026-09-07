@@ -1,7 +1,7 @@
 /**
- * Rendu direct de `TemplatedEntry` (ligne de liste). Le parcours nominal passe
- * par `UnifiedFeedList` ; ici on cible les branches qu'il ne touche pas : une
- * entrée sans date, la vignette de repli du layout `media`, le `snippet`.
+ * Direct rendering of `TemplatedEntry` (list row). The nominal path goes
+ * through `UnifiedFeedList`; here we target the branches it does not touch: an
+ * entry with no date, the `media` layout's fallback thumbnail, the `snippet`.
  */
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"

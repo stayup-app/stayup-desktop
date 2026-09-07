@@ -5,7 +5,7 @@ import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { ApiError, updateProfile } from "@/lib/api"
 
-// Le formulaire lit le statut porté par ApiError pour choisir le message traduit.
+// The form reads the status carried by ApiError to pick the translated message.
 vi.mock("@/lib/api", () => ({
   ApiError: class ApiError extends Error {
     constructor(
@@ -78,7 +78,7 @@ describe("ChangePasswordForm", () => {
     await screen.findByText("Ton mot de passe actuel n'est pas correct.")
   })
 
-  // Sans mot de passe actuel, l'API refuserait : le formulaire s'arrête avant.
+  // Without the current password, the API would refuse: the form stops before that.
   it("refuses to submit without the current password", async () => {
     renderForm()
     await userEvent.type(screen.getByLabelText("Nouveau mot de passe"), "newpassword1")

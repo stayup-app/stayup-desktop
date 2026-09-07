@@ -1,6 +1,6 @@
-// Un provider n'est jamais codé en dur : la liste vient de GET /connectors/providers
-// et le rendu de son `template` (provider_registry.template). Un provider sans
-// template reconnu retombe sur le rendu générique.
+// A provider is never hardcoded: the list comes from GET /connectors/providers
+// and rendering from its `template` (provider_registry.template). A provider
+// with no recognized template falls back to generic rendering.
 export type Provider = string
 
 export interface UserRepository {
@@ -14,11 +14,11 @@ export interface UserRepository {
   createdAt: string
 }
 
-// ─── Contenu d'un connecteur ─────────────────────────────────────────────────
+// ─── A connector's content ──────────────────────────────────────────────────
 
-// Forme minimale garantie par le contrat d'un provider (voir stayup-api). Tout le
-// reste (colonnes propres au connecteur) passe par l'index de signature — c'est le
-// template qui sait comment le lire.
+// Minimal shape guaranteed by a provider's contract (see stayup-api).
+// Everything else (connector-specific columns) goes through the index signature
+// — the template knows how to read it.
 export interface ConnectorItem {
   id: number
   repository_id: number
@@ -31,7 +31,7 @@ export interface ConnectorItem {
   [key: string]: unknown
 }
 
-// Nom conservé : plusieurs composants et tests l'emploient pour « une ligne quelconque ».
+// Name kept: several components and tests use it for "any row".
 export type GenericItem = ConnectorItem
 
 export interface TaggedItem {
@@ -39,14 +39,14 @@ export interface TaggedItem {
   item: ConnectorItem
 }
 
-// La source (repository) associée à une ligne, telle qu'un template peut la lire
+// The source (repository) associated with a row, as a template can read it
 // via `$source.*`.
 export interface FeedRepository {
   repository_id: number
   url: string
   provider?: string
   config?: Record<string, unknown>
-  /** Instance d'origine — un `repository_id` n'est unique qu'au sein d'une instance. */
+  /** The origin instance — a `repository_id` is only unique within an instance. */
   instanceId?: string
 }
 
@@ -56,14 +56,14 @@ export interface ConnectorData {
 
 // ─── Scrap ─────────────────────────────────────────────────────────────────────
 
-/** Un flux existant d'un provider, avec l'état d'abonnement de l'utilisateur. */
+/** An existing flux of a provider, with the user's subscription state. */
 export interface ProviderFlux {
   id: number
   url: string
   config: Record<string, unknown>
   created_at: string
   is_subscribed: boolean
-  /** Renseigné pour un flux vivant dans une base secondaire (sinon null). */
+  /** Set for a flux living in a secondary database (otherwise null). */
   dataSourceId?: number | null
   dataSourceName?: string | null
 }

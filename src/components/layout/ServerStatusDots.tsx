@@ -5,22 +5,22 @@ import type { InstanceError } from "@/hooks/useFeed"
 type DotState = "ok" | "reconnect" | "unreachable"
 
 const DOT_COLOR: Record<DotState, string> = {
-  ok: "var(--sage)", // vert du thème (--teal/--green y sont remappés)
+  ok: "var(--sage)", // the theme green (--teal/--green are remapped to it)
   reconnect: "var(--rose)",
   unreachable: "var(--peach)",
 }
 
 interface ServerStatusDotsProps {
   instances: Instance[]
-  /** Erreurs par instance du dernier fan-out (`useFeed`). */
+  /** Per-instance errors from the last fan-out (`useFeed`). */
   instanceErrors: InstanceError[]
-  /** Clic sur une pastille : ouvre le gestionnaire de serveurs. Pour une
-   *  pastille rouge, l'appelant y déplie le formulaire de reconnexion. */
+  /** Clicking a dot: opens the server manager. For a red dot, the caller
+   *  unfolds the reconnect form there. */
   onOpen: () => void
 }
 
-/** Une pastille par serveur suivi, dans le header, à côté du menu profil :
- *  vert = joignable, rouge = session morte (token expiré/rejeté), ambre =
+/** One dot per tracked server, in the header, next to the profile menu:
+ *  green = reachable, red = dead session (expired/rejected token), amber =
  *  serveur injoignable. */
 export function ServerStatusDots({ instances, instanceErrors, onOpen }: ServerStatusDotsProps) {
   const { t } = useLanguage()

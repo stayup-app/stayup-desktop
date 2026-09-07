@@ -17,15 +17,15 @@ export interface UserFeedResponse {
 export interface ConnectorProvider {
   name: string
   displayName: string
-  /** `auto` : l'ajout d'un flux est immédiat ; `manual` : il passe par une demande. */
+  /** `auto`: adding a flux is immediate; `manual`: it goes through a request. */
   fluxApproval?: "auto" | "manual"
-  /** Manifeste d'affichage brut (provider_registry.template), relayé tel quel. */
+  /** Raw display manifest (provider_registry.template), relayed as-is. */
   template?: unknown
 }
 
-/** Erreur d'appel API porteuse du statut HTTP. Le message de l'API est en anglais
- *  quelle que soit la langue de l'app : c'est au point d'affichage de traduire à
- *  partir du statut, pas de montrer `StayUp API error 409: /ui/...` à l'utilisateur. */
+/** API call error carrying the HTTP status. The API message is in English
+ *  whatever the app's language: it is up to the display point to translate from
+ *  the status, not to show `StayUp API error 409: /ui/...` to the user. */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -44,8 +44,8 @@ async function apiFetch<T>(
   attempt = 0,
 ): Promise<T> {
   const base = apiUrl.replace(/\/$/, "")
-  // Un POST/DELETE peut avoir été traité avant la coupure : le rejouer créerait un
-  // doublon. Seules les lectures sont réessayées.
+  // A POST/DELETE may have been processed before the cut: replaying it would
+  // create a duplicate. Only reads are retried.
   const isGet = !init?.method || init.method === "GET"
   try {
     const res = await fetch(`${base}${path}`, {
@@ -75,7 +75,7 @@ async function apiFetch<T>(
 }
 
 export interface AuthConfig {
-  /** `INSTANCE_NAME` de l'API, ou `null`. Sert de libellé par défaut d'instance. */
+  /** The API's `INSTANCE_NAME`, or `null`. Used as the default instance label. */
   name?: string | null
   registrationMode: "open" | "approval"
   emailPassword: boolean
@@ -95,15 +95,15 @@ function isAuthConfig(v: unknown): v is AuthConfig {
   )
 }
 
-/** Résultat d'une sonde d'URL d'API, avec la raison de l'échec pour un message
- *  clair : `unreachable` = rien ne répond ; `incompatible` = ça répond mais ce
- *  n'est pas une API StayUp (ou trop ancienne pour `/auth/config`). */
+/** Result of an API URL probe, with the failure reason for a clear message:
+ *  `unreachable` = nothing responds; `incompatible` = it responds but is not a
+ *  StayUp API (or too old for `/auth/config`). */
 export type ApiProbe =
   | { ok: true; config: AuthConfig }
   | { ok: false; reason: "unreachable" | "incompatible" }
 
-/** Vérifie qu'une URL pointe bien sur une API StayUp joignable : `GET /auth/config`
- *  doit répondre 2xx avec la forme attendue. */
+/** Checks that a URL points to a reachable StayUp API: `GET /auth/config` must
+ *  answer 2xx with the expected shape. */
 export async function probeApiUrl(apiUrl: string): Promise<ApiProbe> {
   const base = apiUrl.replace(/\/$/, "")
   let res: Response
@@ -122,9 +122,9 @@ export async function probeApiUrl(apiUrl: string): Promise<ApiProbe> {
   return isAuthConfig(body) ? { ok: true, config: body } : { ok: false, reason: "incompatible" }
 }
 
-/** Ce qu'un client doit savoir avant l'écran de connexion. `null` si l'API ne
- *  répond pas ou est trop ancienne pour exposer `/auth/config` — l'appelant
- *  retombe alors sur « tout est proposé ». */
+/** What a client needs to know before the login screen. `null` if the API does
+ *  not respond or is too old to expose `/auth/config` — the caller then falls
+ *  back to "everything is offered". */
 export async function fetchAuthConfig(apiUrl: string): Promise<AuthConfig | null> {
   const probe = await probeApiUrl(apiUrl)
   return probe.ok ? probe.config : null
@@ -147,9 +147,9 @@ export async function loginWithPassword(
   return token
 }
 
-/** `{ token }` : compte actif, connecté. `{ pending: true }` : l'instance est en
- *  `REGISTRATION_MODE=approval` — le compte attend la validation d'un admin, il
- *  n'y a pas de token et rien à stocker. */
+/** `{ token }`: account active, logged in. `{ pending: true }`: the instance is
+ *  in `REGISTRATION_MODE=approval` — the account is awaiting an admin's
+ *  approval, there is no token and nothing to store. */
 export type RegisterOutcome = { token: string } | { pending: true }
 
 export async function registerWithPassword(
@@ -203,8 +203,8 @@ export async function getConnectorProviders(
   return data.providers
 }
 
-/** `{ repository }` (flux créé) ou `{ status: 'pending' }` (provider `manual` :
- *  la demande part en file d'approbation admin). */
+/** `{ repository }` (flux created) or `{ status: 'pending' }` (`manual`
+ *  provider: the request goes to the admin approval queue). */
 export type AddRepositoryResult =
   | { repository: UserRepositoryItem; status?: undefined }
   | { status: "pending" }
@@ -232,7 +232,7 @@ export async function deleteUserRepository(
   })
 }
 
-// ─── Flux d'un provider (liste + abonnement) ────────────────────────────────────
+// ─── A provider's fluxes (list + subscribe) ────────────────────────────────────
 
 export async function getProviderFluxes(
   provider: string,

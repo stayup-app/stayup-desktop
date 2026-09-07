@@ -156,7 +156,7 @@ const rawConnectors = {
   ],
 }
 
-// Chaque ligne porte son instance d'origine, comme le fait useFeed après fan-out.
+// Each row carries its origin instance, as useFeed does after fan-out.
 const connectors = Object.fromEntries(
   Object.entries(rawConnectors).map(([p, items]) => [
     p,

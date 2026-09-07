@@ -32,8 +32,8 @@ export function UnifiedFeedList({
     )
   }
 
-  // Clé `<instanceId>:<repository_id>` : un repository_id peut se répéter d'une
-  // instance à l'autre.
+  // Key `<instanceId>:<repository_id>`: a repository_id can repeat from one
+  // instance to the next.
   const sourceMap = Object.fromEntries(
     repositories.map((r) => [
       `${r.instanceId ?? ""}:${r.repository_id}`,

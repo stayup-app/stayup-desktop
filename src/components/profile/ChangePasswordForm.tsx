@@ -9,8 +9,8 @@ import type { Translations } from "@/lib/translations"
 function makeSchema(t: Translations) {
   return z
     .object({
-      // L'API exige le mot de passe actuel : un token seul ne doit pas suffire à
-      // verrouiller le compte de son propriétaire.
+      // The API requires the current password: a token alone must not be enough
+      // to lock the owner out of their account.
       currentPassword: z.string().min(1, t.profile.currentPasswordRequired),
       newPassword: z.string().min(8, t.auth.passwordTooShort),
       confirmPassword: z.string(),
@@ -54,14 +54,14 @@ export function ChangePasswordForm({ userId, token, apiUrl }: ChangePasswordForm
       setSuccess(true)
       reset()
     } catch (err) {
-      // Le message de l'API est en anglais : on traduit depuis le statut.
+      // The API message is in English: we translate from the status.
       if (err instanceof ApiError && err.status === 401) {
         setError(t.errors.wrongCurrentPassword)
       } else if (err instanceof ApiError && err.status === 409) {
         setError(t.errors.emailTaken)
       } else {
-        // Les erreurs de l'API sont toutes des ApiError : ce qui reste vient de
-        // l'app elle-même (token manquant) et porte déjà un message traduit.
+        // API errors are all ApiError: what is left comes from the app itself
+        // (missing token) and already carries a translated message.
         setError(err instanceof Error ? err.message : t.common.error)
       }
     }

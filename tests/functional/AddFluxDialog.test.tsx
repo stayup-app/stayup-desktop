@@ -19,7 +19,7 @@ vi.mock("@/lib/api", () => ({
   getConnectorProviders: vi.fn(),
 }))
 
-// Un JWT dont le `sub` est "user-1", pour que le dialogue en dérive l'userId.
+// A JWT whose `sub` is "user-1", so the dialog derives the userId from it.
 const TOKEN = `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify({ sub: "user-1" })).replace(/=/g, "")}.sig`
 const INSTANCES: Instance[] = [{ id: "i1", url: "https://api.test", name: "Primary", token: TOKEN }]
 

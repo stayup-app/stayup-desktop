@@ -1,8 +1,8 @@
 /**
- * `providerIcons` — le seul pont visuel entre un connecteur et l'app : une clé
- * nommée, un tracé SVG teintable, ou une image. Les templates réels n'exercent
- * que le tracé `stroke` ; ici on couvre l'image, le tracé plein et les replis
- * d'accent / de libellé.
+ * `providerIcons` — the only visual bridge between a connector and the app: a
+ * named key, a tintable SVG path, or an image. Real templates only exercise the
+ * `stroke` path; here we cover the image, the filled path and the accent /
+ * label fallbacks.
  */
 import { describe, it, expect } from "vitest"
 import { render } from "@testing-library/react"

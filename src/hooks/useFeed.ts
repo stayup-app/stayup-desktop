@@ -15,23 +15,23 @@ export interface FeedFlux {
   instanceName: string
 }
 
-/** Pourquoi une instance manque au feed :
- *  - `expired`     : le token est expiré (exp dépassé), constaté localement ;
- *  - `auth`        : l'API a refusé le token (401/403) — révoqué côté serveur ;
- *  - `unreachable` : réseau ou 5xx, probablement transitoire.
- *  `expired` et `auth` demandent une reconnexion ; `unreachable` un simple retry. */
+/** Why an instance is missing from the feed:
+ *  - `expired`     : the token is expired (past `exp`), seen locally;
+ *  - `auth`        : the API rejected the token (401/403) — revoked server-side;
+ *  - `unreachable` : network or 5xx, probably transient.
+ *  `expired` and `auth` need a reconnect; `unreachable` a simple retry. */
 export type InstanceErrorReason = "expired" | "auth" | "unreachable"
 
-/** Un connecteur inaccessible ou expiré : sa tranche du feed manque, on l'affiche
- *  sans casser le reste. */
+/** An unreachable or expired connector: its slice of the feed is missing, we
+ *  show it without breaking the rest. */
 export interface InstanceError {
   instanceId: string
   instanceName: string
   reason: InstanceErrorReason
 }
 
-/** Les instances dont la session est morte (token expiré ou rejeté) : il faut se
- *  reconnecter, un simple retry n'y changera rien. */
+/** The instances whose session is dead (expired or rejected token): a
+ *  reconnect is needed, a simple retry will not help. */
 export function needsReconnect(errors: InstanceError[]): InstanceError[] {
   return errors.filter((e) => e.reason === "expired" || e.reason === "auth")
 }
@@ -49,8 +49,8 @@ interface UseFeed extends FeedState {
   refresh: () => void
 }
 
-/** Fusionne les templates de plusieurs instances : premier vu gagne, sauf pour
- *  compléter un template manquant. */
+/** Merges templates from several instances: first seen wins, except to fill in
+ *  a missing template. */
 function mergeTemplates(maps: Record<string, ProviderMeta>[]): Record<string, ProviderMeta> {
   const out: Record<string, ProviderMeta> = {}
   for (const map of maps) {
@@ -73,7 +73,7 @@ export function useFeed(instances: Instance[]): UseFeed {
     error: null,
   })
 
-  // Signature stable : ne relance le fan-out que si la liste (id + token) change.
+  // Stable signature: only re-runs the fan-out if the list (id + token) changes.
   const key = instances.map((i) => `${i.id}:${i.token.slice(-12)}`).join("|")
 
   const load = useCallback(async () => {
@@ -90,7 +90,7 @@ export function useFeed(instances: Instance[]): UseFeed {
           ])
           return { inst, data, providers, ok: true as const }
         } catch (e) {
-          // 401/403 = token rejeté (à reconnecter) ; le reste = injoignable (à réessayer).
+          // 401/403 = rejected token (reconnect); the rest = unreachable (retry).
           const reason: InstanceErrorReason =
             e instanceof ApiError && (e.status === 401 || e.status === 403) ? "auth" : "unreachable"
           return { inst, ok: false as const, reason }
@@ -157,8 +157,8 @@ export function useFeed(instances: Instance[]): UseFeed {
   }, [key])
 
   useEffect(() => {
-    // Chargement asynchrone : le seul setState de `load` arrive après les awaits,
-    // pas de cascade de rendus synchrone.
+    // Async load: `load`'s only setState comes after the awaits, no synchronous
+    // render cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load])

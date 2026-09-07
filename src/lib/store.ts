@@ -3,15 +3,15 @@ import type { Store } from "@tauri-apps/plugin-store"
 import type { Language } from "@/lib/translations"
 
 const STORE_FILE = "settings.json"
-// Clés legacy (mono-API) : encore lues une fois pour migrer vers `instances`.
+// Legacy keys (single-API): still read once to migrate to `instances`.
 const AUTH_KEY = "auth_token"
 const API_URL_KEY = "api_url"
 const INSTANCES_KEY = "instances"
 const LANG_KEY = "lang"
 export const DEFAULT_API_URL = "https://stayup-api.r-sik.workers.dev"
 
-/** Une session sur une instance d'API. `instances[0]` est la primaire : cible
- *  par défaut d'un nouveau flux, non supprimable sans déconnexion complète. */
+/** A session on an API instance. `instances[0]` is the primary: the default
+ *  target for a new flux, not removable without a full logout. */
 export interface Instance {
   id: string
   url: string
@@ -47,8 +47,8 @@ export async function readInstances(): Promise<Instance[]> {
   const stored = (await store.get<Instance[]>(INSTANCES_KEY)) ?? null
   if (stored && stored.length > 0) return stored
 
-  // Migration mono-API → liste : on reconstruit une instance primaire à partir
-  // des anciennes clés, puis on les efface.
+  // single-API → list migration: we rebuild a primary instance from the old
+  // keys, then erase them.
   const legacyToken = (await store.get<string>(AUTH_KEY)) ?? null
   if (!legacyToken) return []
   const legacyUrl = (await store.get<string>(API_URL_KEY)) ?? DEFAULT_API_URL
@@ -66,8 +66,8 @@ export async function writeInstances(list: Instance[]): Promise<void> {
   await store.set(INSTANCES_KEY, list)
 }
 
-/** Crée ou remplace la primaire (même id conservé s'il existe). Sert au flux de
- *  connexion tant qu'il n'y a qu'une instance. */
+/** Creates or replaces the primary (same id kept if it exists). Used by the
+ *  login flow as long as there is only one instance. */
 export async function upsertPrimaryInstance(input: {
   url: string
   token: string
@@ -125,9 +125,9 @@ export async function clearInstances(): Promise<void> {
   await store.delete(INSTANCES_KEY)
 }
 
-// ─── Compat mono-API : lit/écrit la primaire ─────────────────────────────────
-// Ces helpers restent le temps que le feed, la sidebar et le profil passent au
-// multi-instance ; ils opèrent sur `instances[0]`.
+// ─── single-API compat: reads/writes the primary ────────────────────────────
+// These helpers stay until the feed, the sidebar and the profile move to
+// multi-instance; they operate on `instances[0]`.
 
 export async function readToken(): Promise<string | null> {
   return (await readInstances())[0]?.token ?? null

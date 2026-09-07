@@ -1,8 +1,8 @@
 /**
- * Rendu direct de `TemplatedDetail` — un test par `detail.mode` et par branche
- * de rendu (lien de ligne, cellule vide/préfixée, `openUrl` malformé, image de
- * repli, légende…). Le parcours nominal passe déjà par `FeedContentViewer` ; ici
- * on cible les cas que ce chemin ne touche pas, `link-list` en tête.
+ * Direct rendering of `TemplatedDetail` — one test per `detail.mode` and per
+ * render branch (row link, empty/prefixed cell, malformed `openUrl`, fallback
+ * image, caption…). The nominal path already goes through `FeedContentViewer`;
+ * here we target the cases that path does not touch, `link-list` first.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"

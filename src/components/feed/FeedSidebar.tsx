@@ -13,7 +13,7 @@ import type { ProviderMeta } from "@/lib/providerTemplate"
 import type { FeedFlux } from "@/hooks/useFeed"
 import type { Provider } from "@/types"
 
-/** Métadonnées d'un provider pour la sidebar, dérivées de son template. */
+/** A provider's metadata for the sidebar, derived from its template. */
 function getProviderMeta(provider: Provider, templates: Record<string, ProviderMeta>) {
   const meta = templates[provider]
   const color = providerAccent(meta)
@@ -28,7 +28,7 @@ function getProviderMeta(provider: Provider, templates: Record<string, ProviderM
 interface FeedSidebarProps {
   fluxes: FeedFlux[]
   templates: Record<string, ProviderMeta>
-  /** L'instance primaire ; sert d'`userId` par défaut à l'import OPML. */
+  /** The primary instance; used as the default `userId` for OPML import. */
   userId: string
   instances: Instance[]
   onRefresh: () => void
@@ -60,11 +60,11 @@ export function FeedSidebar({
   }, {})
 
   const providers = Object.keys(byProvider) as Provider[]
-  // Badge d'instance sur chaque flux dès qu'il y en a plus d'une.
+  // Instance badge on each flux as soon as there is more than one.
   const multiInstance = new Set(fluxes.map((f) => f.instanceId)).size > 1
   const unreadKey = (f: FeedFlux) => `${f.instanceId ?? ""}:${f.repository_id}`
-  // `flux.instanceName` est figé au chargement du feed ; on le re-résout depuis
-  // `instances` pour refléter un renommage de serveur fait entre-temps.
+  // `flux.instanceName` is frozen at feed load; we re-resolve it from
+  // `instances` to reflect a server rename made in the meantime.
   const instanceLabel = (f: FeedFlux) =>
     instances.find((i) => i.id === f.instanceId)?.name ?? f.instanceName
 

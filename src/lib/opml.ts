@@ -53,8 +53,8 @@ export function parseOpml(xml: string): OpmlFlux[] {
         url: el.getAttribute("xmlUrl") ?? "",
         identifier: el.getAttribute("text") ?? el.getAttribute("title") ?? "",
       }))
-      // Le provider n'a pas besoin d'être un des 4 connus de l'app : n'importe quel
-      // provider déclaré côté API (voir GET /connectors/providers) est accepté ici.
+      // The provider need not be one of the 4 the app knows: any provider
+      // declared on the API side (see GET /connectors/providers) is accepted here.
       .filter((f): f is OpmlFlux => f.provider.length > 0 && f.url.length > 0)
   )
 }

@@ -12,14 +12,14 @@ interface InstancesModalProps {
   open: boolean
   onClose: () => void
   auth: ReturnType<typeof useAuth>
-  /** Instances dont la session est morte : la modale affiche un bandeau et déplie
-   *  d'office le formulaire de reconnexion de la première. */
+  /** Instances whose session is dead: the modal shows a banner and
+   *  automatically unfolds the first one's reconnect form. */
   autoReason?: { instanceId: string; instanceName: string }[]
 }
 
-/** Formulaire d'authentification pointé sur une URL donnée — sert à ajouter une
- *  instance et à en reconnecter une expirée. `onRegister` (ajout seulement)
- *  active le basculement « se connecter / créer un compte ». */
+/** Auth form pointed at a given URL — used to add an instance and to reconnect
+ *  an expired one. `onRegister` (add only) enables the "log in / create an
+ *  account" toggle. */
 function ConnectForm({
   config,
   loading,
@@ -37,7 +37,7 @@ function ConnectForm({
 }) {
   const { t } = useLanguage()
   const [mode, setMode] = useState<"login" | "register">("login")
-  // API trop ancienne pour /auth/config → on propose tout.
+  // API too old for /auth/config → we offer everything.
   const oauth = config?.oauth ?? { github: true, google: true }
   const canRegister = !!onRegister && (config?.emailPassword ?? true)
 
@@ -107,8 +107,8 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
   const [checked, setChecked] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Confirmation « compte créé, en attente d'un admin » : survit à la fermeture du
-  // formulaire d'ajout, contrairement à `error`.
+  // "account created, awaiting an admin" confirmation: survives the close of
+  // the add form, unlike `error`.
   const [notice, setNotice] = useState<string | null>(null)
   const [reconnectId, setReconnectId] = useState<string | null>(null)
 
@@ -117,8 +117,8 @@ export function InstancesModal({ open, onClose, auth, autoReason }: InstancesMod
     [autoReason],
   )
 
-  // Reconnexion poussée automatiquement : déplie d'office le formulaire de la
-  // première instance concernée (sans écraser un choix déjà fait par l'utilisateur).
+  // Auto-pushed reconnect: automatically unfolds the first affected instance's
+  // form (without overwriting a choice the user already made).
   useEffect(() => {
     if (autoReason && autoReason.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect

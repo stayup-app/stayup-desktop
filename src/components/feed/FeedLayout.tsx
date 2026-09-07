@@ -34,17 +34,17 @@ function getItemDate(tagged: TaggedItem): string {
   return item.executed_at
 }
 
-/** Aplati les connecteurs découverts dynamiquement en une seule liste taguée. */
+/** Flattens the dynamically discovered connectors into a single tagged list. */
 function flattenConnectors(connectors: UserFeedResponse["connectors"]): TaggedItem[] {
   return Object.entries(connectors).flatMap(([provider, items]) =>
     items.map((item) => ({ provider, item }) as TaggedItem),
   )
 }
 
-/** Lien externe d'une ligne pour la touche Entrée : résolu depuis le template du
- *  connecteur (aucune règle par-provider ici). */
-/** Clé de source : `<instanceId>:<repository_id>` — un repository_id n'est unique
- *  qu'au sein d'une instance. */
+/** A row's external link for the Enter key: resolved from the connector
+ *  template (no per-provider rule here). */
+/** Source key: `<instanceId>:<repository_id>` — a repository_id is only unique
+ *  within an instance. */
 function sourceKey(instanceId: unknown, repositoryId: unknown): string {
   return `${typeof instanceId === "string" ? instanceId : ""}:${repositoryId}`
 }
@@ -64,7 +64,7 @@ function getItemExternalUrl(
 }
 
 export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
-  // App ne rend FeedLayout qu'une fois `session` non nulle.
+  // App only renders FeedLayout once `session` is non-null.
   const session = auth.session as NonNullable<typeof auth.session>
   const onLogout = auth.logout
   const { selection } = useNavigationStore()
@@ -80,10 +80,10 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   const [listWidth, setListWidth] = useState(380)
   const [profileOpen, setProfileOpen] = useState(false)
   const [instancesOpen, setInstancesOpen] = useState(false)
-  // Le fan-out range les instances à session morte (token expiré ou rejeté) dans
-  // `instanceErrors`. On pousse une modale de reconnexion au lancement et à chaque
-  // refresh tant que c'est le cas ; `dismissedErrors` retient le lot déjà écarté
-  // par l'utilisateur — un nouveau lot (nouvel objet) rouvre la modale.
+  // The fan-out puts dead-session instances (expired or rejected token) into
+  // `instanceErrors`. We push a reconnect modal on launch and on every refresh
+  // while that is the case; `dismissedErrors` remembers the batch the user
+  // already dismissed — a new batch (new object) reopens the modal.
   const [dismissedErrors, setDismissedErrors] = useState<InstanceError[] | null>(null)
   const reconnectNeeded = useMemo(() => needsReconnect(instanceErrors), [instanceErrors])
   const showReconnect = reconnectNeeded.length > 0 && dismissedErrors !== instanceErrors

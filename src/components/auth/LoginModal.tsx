@@ -42,7 +42,7 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
     void refresh()
   }, [])
 
-  // Une API trop ancienne pour /auth/config → on propose tout, comme avant.
+  // An API too old for /auth/config → we offer everything, as before.
   const oauth = config?.oauth ?? { github: true, google: true }
   const hasOAuth = oauth.github || oauth.google
 
@@ -115,7 +115,7 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
           </p>
         </div>
 
-        {/* Serveur : réglable avant même de se connecter. */}
+        {/* Server: adjustable even before logging in. */}
         <div className="mt-4 w-[380px] text-center">
           <button
             type="button"

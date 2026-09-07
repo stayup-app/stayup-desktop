@@ -1,6 +1,6 @@
 /**
- * Templates d'affichage des 5 connecteurs officiels, tels qu'ils sont écrits dans
- * les projets stayup-cmd-*. Sert de fixture aux tests du moteur de templates.
+ * Display templates of the 5 official connectors, as written in the
+ * stayup-cmd-* projects. Used as a fixture for the template engine tests.
  */
 import { buildTemplateMap, type ProviderMeta } from "@/lib/providerTemplate"
 
@@ -267,7 +267,7 @@ const RAW = [
   },
 ]
 
-/** La forme brute renvoyée par GET /connectors/providers (pour mocker l'API). */
+/** The raw shape returned by GET /connectors/providers (to mock the API). */
 export const RAW_PROVIDERS = RAW as { name: string; displayName: string; template: unknown }[]
 
 export const TEMPLATES: Record<string, ProviderMeta> = buildTemplateMap(RAW)

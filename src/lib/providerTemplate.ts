@@ -1,20 +1,20 @@
 /**
- * Moteur de templates d'affichage.
+ * Display template engine.
  *
- * Un connecteur déclare, dans `provider_registry.template`, un manifeste JSON qui
- * dit aux apps comment rendre ses lignes. stayup-api le relaie tel quel via
- * `GET /connectors/providers`. Ce fichier ne fait que le *lire* : il résout des
- * accesseurs (chemins, gabarits `{x}`, formats) contre une ligne de contenu et sa
- * source, et rend un objet plat que les composants `Templated*` affichent.
+ * A connector declares, in `provider_registry.template`, a JSON manifest that
+ * tells the apps how to render its rows. stayup-api relays it as-is via
+ * `GET /connectors/providers`. This file only *reads* it: it resolves accessors
+ * (paths, `{x}` templates, formats) against a content row and its source, and
+ * produces a flat object the `Templated*` components display.
  *
- * Aucune logique par-connecteur ici : ajouter un connecteur = ajouter un template
- * en base, rien à toucher dans les apps. Un provider sans template (ou au schéma
- * non reconnu) retombe sur le rendu générique.
+ * No per-connector logic here: adding a connector = adding a template in the
+ * database, nothing to touch in the apps. A provider with no template (or an
+ * unrecognized schema) falls back to generic rendering.
  *
- * Le format est documenté dans stayup-api/docs/self-hosting-and-providers.md.
+ * The format is documented in stayup-api/docs/self-hosting-and-providers.md.
  */
 
-// ─── Types du manifeste ──────────────────────────────────────────────────────
+// ─── Manifest types ────────────────────────────────────────────────────────
 
 export type TplFormat =
   | "compactNumber"
@@ -52,11 +52,11 @@ export interface ProviderTemplate {
   version: number
   display?: {
     name?: string
-    /** Clé du jeu intégré, objet de tracés SVG, data-URI, ou URL http(s) d'image. */
+    /** Built-in set key, SVG paths object, data URI, or http(s) image URL. */
     icon?: string | { paths?: string[]; d?: string; viewBox?: string; stroke?: boolean }
     accent?: string
     sortOrder?: number
-    /** Libellé court d'un flux dans la sidebar, évalué contre "$source". */
+    /** A flux's short label in the sidebar, evaluated against "$source". */
     feedLabel?: Accessor
   }
   item?: {
@@ -96,15 +96,15 @@ export interface ProviderTemplate {
   form?: {
     label?: string
     placeholder?: string
-    /** "{value}" = ce que l'utilisateur saisit. Ignoré si la valeur est déjà une URL http(s). */
+    /** "{value}" = what the user types. Ignored if the value is already an http(s) URL. */
     urlTemplate?: string
-    /** Regex de forme, validée côté client. */
+    /** Shape regex, validated client-side. */
     pattern?: string
     transform?: {
       trim?: boolean
       stripPrefix?: string | string[]
       stripSuffix?: string | string[]
-      /** Regex ; si elle matche, on garde le groupe 1. */
+      /** Regex; if it matches, we keep group 1. */
       extract?: string
     }
   }
@@ -112,7 +112,7 @@ export interface ProviderTemplate {
 
 // ─── Chargement ──────────────────────────────────────────────────────────────
 
-/** Valide grossièrement un template brut. Renvoie null si inexploitable. */
+/** Roughly validates a raw template. Returns null if unusable. */
 export function normalizeTemplate(raw: unknown): ProviderTemplate | null {
   let value = raw
   if (typeof value === "string") {
@@ -124,7 +124,7 @@ export function normalizeTemplate(raw: unknown): ProviderTemplate | null {
   }
   if (!value || typeof value !== "object") return null
   const tpl = value as ProviderTemplate
-  // Une version inconnue : on préfère le rendu générique à un rendu partiel.
+  // An unknown version: we prefer generic rendering over partial rendering.
   if (tpl.version !== 1) return null
   return tpl
 }
@@ -135,7 +135,7 @@ export interface ProviderMeta {
   template: ProviderTemplate | null
 }
 
-/** Indexe la réponse de GET /connectors/providers par nom de provider. */
+/** Indexes the GET /connectors/providers response by provider name. */
 export function buildTemplateMap(
   providers: { name: string; displayName?: string; template?: unknown }[] | undefined,
 ): Record<string, ProviderMeta> {
@@ -150,7 +150,7 @@ export function buildTemplateMap(
   return map
 }
 
-// ─── Résolution ──────────────────────────────────────────────────────────────
+// ─── Resolution ────────────────────────────────────────────────────────────
 
 export interface ResolveCtx {
   row: Record<string, unknown>
@@ -193,10 +193,10 @@ function resolvePath(pathStr: string, ctx: ResolveCtx): unknown {
   if (head === "$row") return walk(ctx.row, rest)
   if (head === "$source") return walk(ctx.source, rest)
   if (head === "$vars") return walk(ctx.vars, rest)
-  // `$self` = la valeur de base courante (utile pour une collection d'URLs nues).
+  // `$self` = the current base value (useful for a collection of bare URLs).
   if (head === "$self") return rest.length === 0 ? ctx.base : walk(ctx.base, rest)
-  // Un nom simple (`{repo}`, `{window}`) désigne d'abord une var calculée, puis,
-  // à défaut, une clé du contenu.
+  // A plain name (`{repo}`, `{window}`) first refers to a computed var, then,
+  // failing that, a content key.
   if (segs.length === 1 && Object.prototype.hasOwnProperty.call(ctx.vars, head)) {
     return ctx.vars[head]
   }
@@ -234,8 +234,8 @@ export function applyFormat(value: unknown, format: TplFormat | undefined): unkn
         return s
       }
     case "domain":
-      // Hostname sans `www.` ni le dernier segment : blog.stephane-robert.info
-      // → blog.stephane-robert. Libellé court des flux rss / scrap.
+      // Hostname without `www.` or the last segment: blog.stephane-robert.info
+      // → blog.stephane-robert. Short label for rss / scrap fluxes.
       try {
         const host = new URL(s).hostname.replace(/^www\./, "")
         const parts = host.split(".")
@@ -270,7 +270,7 @@ function fillTemplate(tpl: string, ctx: ResolveCtx): string {
   })
 }
 
-/** Résout un accesseur en valeur brute (string/number/null/objet selon le cas). */
+/** Resolves an accessor to a raw value (string/number/null/object as the case may be). */
 export function resolveAccessor(acc: Accessor | undefined, ctx: ResolveCtx): unknown {
   if (acc == null) return null
 
@@ -298,13 +298,13 @@ export function resolveAccessor(acc: Accessor | undefined, ctx: ResolveCtx): unk
   return v
 }
 
-/** Comme resolveAccessor, mais garantit une chaîne ('' si vide). */
+/** Like resolveAccessor, but guarantees a string ('' if empty). */
 export function resolveText(acc: Accessor | undefined, ctx: ResolveCtx): string {
   const v = resolveAccessor(acc, ctx)
   return isEmpty(v) ? "" : String(v)
 }
 
-// ─── Vue d'un item ───────────────────────────────────────────────────────────
+// ─── An item's view ────────────────────────────────────────────────────────
 
 export interface ItemView {
   title: string
@@ -316,7 +316,7 @@ export interface ItemView {
   ctx: ResolveCtx
 }
 
-/** Construit le contexte de résolution d'une ligne de contenu et de sa source. */
+/** Builds the resolution context for a content row and its source. */
 export function makeCtx(
   template: ProviderTemplate,
   row: Record<string, unknown>,
@@ -356,7 +356,7 @@ export function resolveItemView(
   }
 }
 
-/** Résout la collection interne d'un template `table` / `link-list`. */
+/** Resolves the inner collection of a `table` / `link-list` template. */
 export function resolveCollection(
   template: ProviderTemplate,
   ctx: ResolveCtx,
@@ -367,12 +367,12 @@ export function resolveCollection(
   return Array.isArray(arr) ? (arr as Record<string, unknown>[]) : []
 }
 
-/** Contexte dérivé pour un élément de collection (accès relatifs à l'élément). */
+/** Derived context for a collection element (accesses relative to the element). */
 export function elementCtx(ctx: ResolveCtx, element: Record<string, unknown>): ResolveCtx {
   return { row: ctx.row, source: ctx.source, base: element, vars: ctx.vars }
 }
 
-/** Une URL d'embed n'est utilisée que si elle pointe vers un identifiant réel. */
+/** An embed URL is only used if it points to a real id. */
 export function usableEmbedUrl(url: string | null | undefined): string | null {
   if (!url) return null
   if (!/^https?:\/\//.test(url)) return null
@@ -380,8 +380,8 @@ export function usableEmbedUrl(url: string | null | undefined): string | null {
   return url
 }
 
-/** URL externe « ouvrir » d'une ligne, pour les raccourcis clavier — mêmes règles
- *  que le bouton du volet de lecture (detail.openUrl, sinon fields.url). */
+/** A row's external "open" URL, for keyboard shortcuts — same rules as the
+ *  reading pane's button (detail.openUrl, otherwise fields.url). */
 export function resolveOpenUrl(
   template: ProviderTemplate,
   row: Record<string, unknown>,
@@ -400,7 +400,7 @@ export function resolveOpenUrl(
   return null
 }
 
-// ─── Icône d'un provider ─────────────────────────────────────────────────────
+// ─── A provider's icon ──────────────────────────────────────────────────────
 
 export type IconSpec =
   | { kind: "named"; name: string }
@@ -408,10 +408,10 @@ export type IconSpec =
   | { kind: "image"; src: string }
 
 /**
- * Normalise `display.icon`. Ordre de préférence :
- * 1. objet `{ paths | d, viewBox }` → tracé SVG teintable ;
- * 2. chaîne `data:` ou `http(s)://` → image ;
- * 3. autre chaîne → clé du jeu d'icônes intégré ;
+ * Normalizes `display.icon`. Order of preference:
+ * 1. object `{ paths | d, viewBox }` → tintable SVG path;
+ * 2. `data:` or `http(s)://` string → image;
+ * 3. any other string → key of the built-in icon set;
  * 4. absent → `dot`.
  */
 export function resolveIcon(icon: ProviderTemplate["display"]): IconSpec {
@@ -428,16 +428,16 @@ export function resolveIcon(icon: ProviderTemplate["display"]): IconSpec {
   return { kind: "named", name: "dot" }
 }
 
-// ─── Libellé court d'un flux ─────────────────────────────────────────────────
+// ─── A flux's short label ───────────────────────────────────────────────────
 
-/** Retire le schéma et `www.` d'une URL — le repli quand aucun `feedLabel`. */
+/** Strips the scheme and `www.` from a URL — the fallback when there is no `feedLabel`. */
 export function stripScheme(url: string): string {
   return String(url)
     .replace(/^https?:\/\/(www\.)?/, "")
     .replace(/\/+$/, "")
 }
 
-/** Résout `display.feedLabel` contre une source (repository), sinon repli générique. */
+/** Resolves `display.feedLabel` against a source (repository), otherwise a generic fallback. */
 export function resolveFeedLabel(
   template: ProviderTemplate | null | undefined,
   source: Record<string, unknown>,
@@ -451,13 +451,13 @@ export function resolveFeedLabel(
   return stripScheme(String(source.url ?? ""))
 }
 
-// ─── Formulaire « ajouter un flux » ──────────────────────────────────────────
+// ─── "Add a flux" form ─────────────────────────────────────────────────────
 
 function asList(v: string | string[] | undefined): string[] {
   return v == null ? [] : Array.isArray(v) ? v : [v]
 }
 
-/** Applique `form.transform` à la saisie utilisateur. */
+/** Applies `form.transform` to the user input. */
 export function applyFormTransform(
   raw: string,
   transform: NonNullable<ProviderTemplate["form"]>["transform"],
@@ -470,7 +470,7 @@ export function applyFormTransform(
       const m = v.match(new RegExp(transform.extract))
       if (m && m[1]) v = m[1]
     } catch {
-      /* regex invalide : on ignore */
+      /* invalid regex: ignore */
     }
   }
   for (const p of asList(transform.stripPrefix)) if (v.startsWith(p)) v = v.slice(p.length)
@@ -479,8 +479,8 @@ export function applyFormTransform(
 }
 
 /**
- * Construit l'URL de `repository` à partir de `form` et de la saisie.
- * Si la valeur transformée est déjà une URL http(s), on la garde telle quelle.
+ * Builds the `repository` URL from `form` and the input.
+ * If the transformed value is already an http(s) URL, we keep it as-is.
  */
 export function buildFluxUrl(form: ProviderTemplate["form"] | undefined, input: string): string {
   const value = applyFormTransform(input, form?.transform)
@@ -489,7 +489,7 @@ export function buildFluxUrl(form: ProviderTemplate["form"] | undefined, input: 
   return value
 }
 
-/** La saisie respecte-t-elle `form.pattern` ? (true si pas de pattern) */
+/** Does the input satisfy `form.pattern`? (true if there is no pattern) */
 export function matchesFormPattern(
   form: ProviderTemplate["form"] | undefined,
   input: string,
