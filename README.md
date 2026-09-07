@@ -26,14 +26,12 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 
 ## Features
 
-- **GitHub releases** — subscribe to any repository and receive its release notes as they drop
-- **YouTube channels** — follow creators and see new videos in your feed
-- **RSS / Atom feeds** — add any RSS URL to stay updated from blogs, podcasts, and news sites
-- **Web scraping** — track web pages via CSS selectors when no feed is available
+- **Any provider** — GitHub releases, YouTube channels, RSS / Atom feeds, scraped web pages, and whatever else a StayUp instance exposes; each one renders from the display template the API relays, so a new provider needs no app update
 - **Unified feed** — all sources merged and sorted chronologically in one view
+- **Multiple servers** — point the app at any `stayup-api` instance (checked, with an account-creation flow, before it is saved), follow several at once, and see each row badged with the server it came from
 - **Auto-update** — the app updates itself silently in the background
 - **Light & dark theme** — follows your OS preference
-- **Multilingual** — English and French included
+- **Multilingual** — English, French, German, Spanish, Italian, Portuguese, Japanese and Chinese
 
 ---
 
@@ -216,7 +214,7 @@ npm run tauri build    # Production build
 ## Tech stack
 
 - [Tauri 2](https://tauri.app) — desktop shell (Rust)
-- [React 18](https://react.dev) + [TypeScript](https://www.typescriptlang.org)
+- [React 19](https://react.dev) + [TypeScript](https://www.typescriptlang.org)
 - [Vite](https://vitejs.dev) — bundler
 - [Tailwind CSS](https://tailwindcss.com) — styling
 - [Zustand](https://zustand-demo.pmnd.rs) — state management
