@@ -42,6 +42,11 @@ async function selectProvider(value: string) {
   fireEvent.click(await screen.findByRole("button", { name: PROVIDER_LABELS[value] }))
 }
 
+// The dialog opens on "Choose an existing feed": adding a new one is an explicit click.
+async function chooseNew() {
+  fireEvent.click(await screen.findByText(fr.addFlux.makeRequest))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(getProviderFluxes).mockResolvedValue([])
@@ -84,6 +89,7 @@ describe("add a new flux (form input)", () => {
   it("builds the repository url from the connector form and adds it", async () => {
     const { onSuccess, onClose } = renderDialog()
     await screen.findByRole("button", { name: "Changelog" })
+    await chooseNew()
 
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "https://github.com/facebook/react.git" },
@@ -104,6 +110,7 @@ describe("add a new flux (form input)", () => {
   it("shows the connector form label and placeholder", async () => {
     renderDialog()
     await selectProvider("rss")
+    await chooseNew()
     expect(screen.getByText("RSS/Atom feed URL")).toBeInTheDocument()
     expect(screen.getByPlaceholderText("https://blog.example.com/feed.xml")).toBeInTheDocument()
   })
@@ -111,6 +118,7 @@ describe("add a new flux (form input)", () => {
   it("rejects an empty identifier", async () => {
     renderDialog()
     await screen.findByRole("button", { name: "Changelog" })
+    await chooseNew()
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.addFlux.requiredError)).toBeInTheDocument()
     expect(addUserRepository).not.toHaveBeenCalled()
@@ -120,6 +128,7 @@ describe("add a new flux (form input)", () => {
     vi.mocked(addUserRepository).mockResolvedValue({ status: "pending" })
     renderDialog()
     await selectProvider("scrap")
+    await chooseNew()
 
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "https://blog.dev" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
@@ -132,11 +141,21 @@ describe("add a new flux (form input)", () => {
     vi.mocked(addUserRepository).mockRejectedValue(new Error("StayUp API error 409"))
     renderDialog()
     await screen.findByRole("button", { name: "Changelog" })
+    await chooseNew()
 
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     expect(await screen.findByText("StayUp API error 409")).toBeInTheDocument()
+  })
+})
+
+describe("manual provider hint", () => {
+  it("does not show the request-sent text before the user submits", async () => {
+    renderDialog()
+    await selectProvider("scrap")
+    await chooseNew()
+    expect(screen.queryByText(fr.addFlux.requestSentDescription)).not.toBeInTheDocument()
   })
 })
 
@@ -208,6 +227,7 @@ describe("pick mode & guards", () => {
   it("rejects an identifier that does not match the connector pattern", async () => {
     renderDialog()
     await selectProvider("rss") // pattern: ^https?://.+
+    await chooseNew()
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "not-a-url" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.addFlux.requiredError)).toBeInTheDocument()
@@ -227,12 +247,14 @@ describe("pick mode & guards", () => {
     vi.mocked(getProviderFluxes).mockRejectedValue(new Error("boom"))
     renderDialog()
     await screen.findByRole("button", { name: "Changelog" })
+    await chooseNew()
     expect(await screen.findByRole("textbox")).toBeInTheDocument()
   })
 
   it("tolerates a flux endpoint that resolves nothing", async () => {
     vi.mocked(getProviderFluxes).mockResolvedValue(undefined as never)
     renderDialog()
+    await chooseNew()
     expect(await screen.findByRole("textbox")).toBeInTheDocument()
   })
 
@@ -242,9 +264,7 @@ describe("pick mode & guards", () => {
     ])
     renderDialog()
     await selectProvider("rss")
-    // Every flux is already followed → the dialog opens on the new-flux form.
-    await screen.findByRole("textbox")
-    fireEvent.click(screen.getByText(fr.addFlux.chooseExisting))
+    // Every flux is already followed → the picker is shown, with nothing to pick.
     const select = (await screen.findByRole("combobox")) as HTMLSelectElement
     const disabled = select.querySelector("option[disabled]")
     expect(disabled?.textContent).toBe(fr.addFlux.noScrapRepos)
@@ -254,6 +274,7 @@ describe("pick mode & guards", () => {
     vi.mocked(addUserRepository).mockRejectedValue("nope")
     renderDialog()
     await screen.findByRole("button", { name: "Changelog" })
+    await chooseNew()
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.common.error)).toBeInTheDocument()

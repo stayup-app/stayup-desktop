@@ -46,7 +46,6 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
   const [pending, setPending] = useState(false)
   const [tiles, setTiles] = useState<ProviderTile[]>([])
   const [tpls, setTpls] = useState<Record<string, ProviderTemplate | null>>({})
-  const [approvals, setApprovals] = useState<Record<string, "auto" | "manual">>({})
 
   useEffect(() => {
     if (!open) return
@@ -56,7 +55,6 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
         if (cancelled) return
         const parsed = providers.map((p) => ({ ...p, tpl: PROVIDERS[p.name]?.template ?? null }))
         setTpls(Object.fromEntries(parsed.map((p) => [p.name, p.tpl])))
-        setApprovals(Object.fromEntries(parsed.map((p) => [p.name, p.fluxApproval ?? "auto"])))
         setTiles(
           parsed.map(({ name, displayName, tpl }) => {
             const color = providerAccent({
@@ -78,7 +76,6 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
         if (!cancelled) {
           setTiles([])
           setTpls({})
-          setApprovals({})
         }
       })
     return () => {
@@ -94,12 +91,12 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
       .then((list) => {
         if (cancelled) return
         setFluxes(list ?? [])
-        setPickMode((list ?? []).some((f) => !f.is_subscribed) ? "existing" : "new")
+        setPickMode("existing")
       })
       .catch(() => {
         if (!cancelled) {
           setFluxes([])
-          setPickMode("new")
+          setPickMode("existing")
         }
       })
     return () => {
@@ -316,11 +313,6 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
                     placeholder={inputPlaceholder}
                     className={inputClass}
                   />
-                  {approvals[provider] === "manual" && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {t.addFlux.requestSentDescription}
-                    </p>
-                  )}
                 </div>
               )}
 
