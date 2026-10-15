@@ -26,9 +26,9 @@ StayUp aggregates GitHub releases, YouTube videos, RSS feeds, and web pages into
 
 ## Features
 
-- **Any provider** — GitHub releases, YouTube channels, RSS / Atom feeds, scraped web pages, and whatever else a StayUp instance exposes; each one renders from the display template the API relays, so a new provider needs no app update
+- **Five providers** — GitHub releases and trending, YouTube channels, RSS / Atom feeds and scraped web pages; each one is rendered from a template bundled with the app
 - **Unified feed** — all sources merged and sorted chronologically in one view
-- **Multiple servers** — point the app at any `stayup-api` instance (checked, with an account-creation flow, before it is saved), follow several at once, and see each row badged with the server it came from
+- **One API** — the app talks to the StayUp API set at build time with `VITE_STAYUP_API_URL`
 - **Auto-update** — the app updates itself silently in the background
 - **Light & dark theme** — follows your OS preference
 - **Multilingual** — English, French, German, Spanish, Italian, Portuguese, Japanese and Chinese

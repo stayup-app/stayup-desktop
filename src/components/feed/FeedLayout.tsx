@@ -2,7 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } fr
 import { CheckCheck } from "lucide-react"
 import { useNavigationStore } from "@/store/navigation"
 import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
-import { useFeed, needsReconnect, type InstanceError } from "@/hooks/useFeed"
+import { useFeed } from "@/hooks/useFeed"
 import { useMenu } from "@/hooks/useMenu"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -10,9 +10,7 @@ import { FeedSidebar } from "./FeedSidebar"
 import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
-import { ServerStatusDots } from "@/components/layout/ServerStatusDots"
 import { ProfileModal } from "@/components/profile/ProfileModal"
-import { InstancesModal } from "@/components/instances/InstancesModal"
 import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
@@ -41,14 +39,8 @@ function flattenConnectors(connectors: UserFeedResponse["connectors"]): TaggedIt
   )
 }
 
-/** A row's external link for the Enter key: resolved from the connector
- *  template (no per-provider rule here). */
-/** Source key: `<instanceId>:<repository_id>` — a repository_id is only unique
- *  within an instance. */
-function sourceKey(instanceId: unknown, repositoryId: unknown): string {
-  return `${typeof instanceId === "string" ? instanceId : ""}:${repositoryId}`
-}
-
+/** A row's external link for the Enter key: resolved from the provider's
+ *  template. */
 function getItemExternalUrl(
   tagged: TaggedItem,
   templates: Record<string, ProviderMeta>,
@@ -59,19 +51,18 @@ function getItemExternalUrl(
   return resolveOpenUrl(
     tpl,
     tagged.item as Record<string, unknown>,
-    sourceMap[sourceKey(tagged.item._instance_id, tagged.item.repository_id)],
+    sourceMap[tagged.item.repository_id],
   )
 }
 
 export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   // App only renders FeedLayout once `session` is non-null.
   const session = auth.session as NonNullable<typeof auth.session>
+  const token = auth.token as string
   const onLogout = auth.logout
   const { selection } = useNavigationStore()
   const { readIds, initialized, init, markRead, markAllRead, cleanup } = useReadItemsStore()
-  const { fluxes, connectors, templates, instanceErrors, loading, error, refresh } = useFeed(
-    auth.instances,
-  )
+  const { fluxes, connectors, templates, loading, error, refresh } = useFeed(token, onLogout)
   const { lang, t, setLang } = useLanguage()
   const { theme, setTheme } = useTheme()
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -79,18 +70,6 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [listWidth, setListWidth] = useState(380)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [instancesOpen, setInstancesOpen] = useState(false)
-  // The fan-out puts dead-session instances (expired or rejected token) into
-  // `instanceErrors`. We push a reconnect modal on launch and on every refresh
-  // while that is the case; `dismissedErrors` remembers the batch the user
-  // already dismissed — a new batch (new object) reopens the modal.
-  const [dismissedErrors, setDismissedErrors] = useState<InstanceError[] | null>(null)
-  const reconnectNeeded = useMemo(() => needsReconnect(instanceErrors), [instanceErrors])
-  const showReconnect = reconnectNeeded.length > 0 && dismissedErrors !== instanceErrors
-  const unreachable = useMemo(
-    () => instanceErrors.filter((e) => e.reason === "unreachable"),
-    [instanceErrors],
-  )
 
   const handleSidebarDrag = useCallback(
     (e: React.MouseEvent) => {
@@ -137,8 +116,8 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   )
 
   useEffect(() => {
-    void init(auth.instances[0]?.id)
-  }, [init, auth.instances])
+    void init()
+  }, [init])
 
   const stableRefresh = useCallback(() => refresh(), [refresh])
 
@@ -158,7 +137,6 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
         repository_id: f.repository_id,
         url: f.url,
         provider: f.provider,
-        instanceId: f.instanceId,
       })),
     [fluxes],
   )
@@ -166,10 +144,7 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   const sourceMap = useMemo(
     () =>
       Object.fromEntries(
-        fluxes.map((f) => [
-          sourceKey(f.instanceId, f.repository_id),
-          { url: f.url, type: f.provider, config: {} },
-        ]),
+        fluxes.map((f) => [f.repository_id, { url: f.url, type: f.provider, config: {} }]),
       ),
     [fluxes],
   )
@@ -205,13 +180,11 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
       const items = connectors[provider] ?? []
       raw = items.map((item) => ({ provider, item }) as TaggedItem)
     } else if (selection.type === "flux") {
-      const { fluxId, provider, instanceId } = selection
-      const flux = fluxes.find((f) => f.id === fluxId && f.instanceId === instanceId)
+      const { fluxId, provider } = selection
+      const flux = fluxes.find((f) => f.id === fluxId)
       const repoId = flux?.repository_id
       const allItems = connectors[provider] ?? []
-      const filtered = repoId
-        ? allItems.filter((i) => i.repository_id === repoId && i._instance_id === instanceId)
-        : allItems
+      const filtered = repoId ? allItems.filter((i) => i.repository_id === repoId) : allItems
       raw = filtered.map((item) => ({ provider, item }) as TaggedItem)
     }
 
@@ -275,10 +248,10 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   }, [connectors])
 
   const unreadCountByRepoId = useMemo(() => {
-    const counts: Record<string, number> = {}
+    const counts: Record<number, number> = {}
     for (const tagged of allConnectorItems) {
       if (!readIds.has(getTaggedItemId(tagged))) {
-        const k = sourceKey(tagged.item._instance_id, tagged.item.repository_id)
+        const k = tagged.item.repository_id
         counts[k] = (counts[k] ?? 0) + 1
       }
     }
@@ -353,20 +326,10 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <ServerStatusDots
-            instances={auth.instances}
-            instanceErrors={instanceErrors}
-            onOpen={() => {
-              setDismissedErrors(null)
-              setInstancesOpen(true)
-            }}
-          />
           <UserMenu
             session={session}
-            instanceCount={auth.instances.length}
             onLogout={onLogout}
             onOpenProfile={() => setProfileOpen(true)}
-            onOpenInstances={() => setInstancesOpen(true)}
           />
         </div>
       </header>
@@ -377,7 +340,7 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
           fluxes={fluxes}
           templates={templates}
           userId={session.userId}
-          instances={auth.instances}
+          token={token}
           onRefresh={stableRefresh}
           loading={loading}
           unreadCountByRepoId={unreadCountByRepoId}
@@ -450,15 +413,6 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
             )}
           </div>
 
-          {unreachable.length > 0 && (
-            <div
-              className="px-3 py-1.5 text-[12px] shrink-0"
-              style={{ background: "var(--rose-dim)", color: "var(--rose)" }}
-            >
-              {t.instances.unreachable} : {unreachable.map((e) => e.instanceName).join(", ")}
-            </div>
-          )}
-
           <div ref={listContainerRef} className="flex-1 overflow-y-auto">
             {loading ? (
               <p className="text-[15px] text-muted-foreground italic py-12 text-center">
@@ -507,17 +461,8 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
       <ProfileModal
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
-        sessions={auth.sessions}
-        instances={auth.instances}
-      />
-      <InstancesModal
-        open={instancesOpen || showReconnect}
-        onClose={() => {
-          setInstancesOpen(false)
-          setDismissedErrors(instanceErrors)
-        }}
-        auth={auth}
-        autoReason={reconnectNeeded.length > 0 ? reconnectNeeded : undefined}
+        session={session}
+        token={token}
       />
     </div>
   )

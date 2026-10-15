@@ -26,10 +26,9 @@ type FormValues = { currentPassword: string; newPassword: string; confirmPasswor
 interface ChangePasswordFormProps {
   userId: string
   token: string
-  apiUrl: string
 }
 
-export function ChangePasswordForm({ userId, token, apiUrl }: ChangePasswordFormProps) {
+export function ChangePasswordForm({ userId, token }: ChangePasswordFormProps) {
   const { t } = useLanguage()
   const schema = useMemo(() => makeSchema(t), [t])
   const [success, setSuccess] = useState(false)
@@ -47,7 +46,7 @@ export function ChangePasswordForm({ userId, token, apiUrl }: ChangePasswordForm
     setSuccess(false)
     try {
       if (!token) throw new Error(t.feed.tokenMissing)
-      await updateProfile(userId, token, apiUrl, {
+      await updateProfile(userId, token, {
         password: data.newPassword,
         currentPassword: data.currentPassword,
       })

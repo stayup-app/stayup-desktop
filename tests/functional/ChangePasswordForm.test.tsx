@@ -22,7 +22,7 @@ vi.mock("@/lib/api", () => ({
 function renderForm(token = "token-1") {
   return render(
     <LanguageProvider initialLang="fr">
-      <ChangePasswordForm userId="user-1" token={token} apiUrl="https://api.test" />
+      <ChangePasswordForm userId="user-1" token={token} />
     </LanguageProvider>,
   )
 }
@@ -41,7 +41,7 @@ describe("ChangePasswordForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Changer le mot de passe" }))
 
     await waitFor(() => {
-      expect(updateProfile).toHaveBeenCalledWith("user-1", "token-1", "https://api.test", {
+      expect(updateProfile).toHaveBeenCalledWith("user-1", "token-1", {
         password: "newpassword1",
         currentPassword: "oldpassword1",
       })

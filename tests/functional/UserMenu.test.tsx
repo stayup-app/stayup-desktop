@@ -17,14 +17,7 @@ type Props = Partial<React.ComponentProps<typeof UserMenu>>
 function renderMenu(props: Props = {}) {
   return render(
     <LanguageProvider initialLang="fr">
-      <UserMenu
-        session={session}
-        instanceCount={1}
-        onLogout={() => {}}
-        onOpenProfile={() => {}}
-        onOpenInstances={() => {}}
-        {...props}
-      />
+      <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} {...props} />
     </LanguageProvider>,
   )
 }
@@ -53,30 +46,6 @@ describe("UserMenu", () => {
 
     expect(onOpenProfile).toHaveBeenCalled()
     expect(screen.queryByText(fr.userMenu.profile)).not.toBeInTheDocument()
-  })
-
-  it("opens the instances manager from the menu", () => {
-    const onOpenInstances = vi.fn()
-    renderMenu({ onOpenInstances })
-
-    fireEvent.click(screen.getByTitle("Alice"))
-    fireEvent.click(screen.getByText(fr.userMenu.instances))
-
-    expect(onOpenInstances).toHaveBeenCalled()
-  })
-
-  it("badges the instances row with the count when more than one is connected", () => {
-    renderMenu({ instanceCount: 3 })
-    fireEvent.click(screen.getByTitle("Alice"))
-    const row = screen.getByText(fr.userMenu.instances).closest("button")!
-    expect(row.textContent).toContain("3")
-  })
-
-  it("hides the count badge with a single instance", () => {
-    renderMenu({ instanceCount: 1 })
-    fireEvent.click(screen.getByTitle("Alice"))
-    const row = screen.getByText(fr.userMenu.instances).closest("button")!
-    expect(row.textContent).not.toMatch(/\d/)
   })
 
   it("calls onLogout when sign-out is clicked", () => {
@@ -116,13 +85,7 @@ describe("UserMenu", () => {
     render(
       <LanguageProvider initialLang="fr">
         <div>
-          <UserMenu
-            session={session}
-            instanceCount={1}
-            onLogout={() => {}}
-            onOpenProfile={() => {}}
-            onOpenInstances={() => {}}
-          />
+          <UserMenu session={session} onLogout={() => {}} onOpenProfile={() => {}} />
           <button>outside</button>
         </div>
       </LanguageProvider>,

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import {
+  fetchAuthConfig,
   loginWithPassword,
   registerWithPassword,
   updateProfile,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/api"
 
 const API_URL = "https://api.example.com"
+vi.mock("@/lib/config", () => ({ API_URL: "https://api.example.com" }))
 const TOKEN = "test-token"
 
 beforeEach(() => {
@@ -29,7 +31,7 @@ describe("loginWithPassword", () => {
         json: async () => ({ token: "jwt-abc-123" }),
       }),
     )
-    const token = await loginWithPassword("user@test.com", "pass123", API_URL)
+    const token = await loginWithPassword("user@test.com", "pass123")
     expect(token).toBe("jwt-abc-123")
   })
 
@@ -37,26 +39,16 @@ describe("loginWithPassword", () => {
   // only check that the status is carried by the error.
   it("throws an ApiError carrying the 401", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401 }))
-    await expect(loginWithPassword("bad@test.com", "wrong", API_URL)).rejects.toMatchObject({
+    await expect(loginWithPassword("bad@test.com", "wrong")).rejects.toMatchObject({
       status: 401,
     })
   })
 
   it("throws an ApiError carrying the 5xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
-    await expect(loginWithPassword("u@test.com", "pass", API_URL)).rejects.toMatchObject({
+    await expect(loginWithPassword("u@test.com", "pass")).rejects.toMatchObject({
       status: 500,
     })
-  })
-
-  it("strips trailing slash from apiUrl before calling the endpoint", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ token: "t" }),
-    })
-    vi.stubGlobal("fetch", fetchMock)
-    await loginWithPassword("u@test.com", "pass", "https://api.example.com/")
-    expect(fetchMock).toHaveBeenCalledWith("https://api.example.com/auth/login", expect.anything())
   })
 })
 
@@ -70,33 +62,21 @@ describe("registerWithPassword", () => {
         json: async () => ({ token: "jwt-new-1" }),
       }),
     )
-    expect(await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)).toEqual({
-      token: "jwt-new-1",
-    })
-  })
-
-  it("reports a pending account when the instance needs admin approval", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true, status: 202, json: async () => ({}) }),
-    )
-    expect(await registerWithPassword("Alice", "alice@test.com", "pass1234", API_URL)).toEqual({
-      pending: true,
-    })
+    expect(await registerWithPassword("Alice", "alice@test.com", "pass1234")).toBe("jwt-new-1")
   })
 
   it("throws an ApiError carrying the 409", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409 }))
-    await expect(
-      registerWithPassword("Alice", "taken@test.com", "pass1234", API_URL),
-    ).rejects.toMatchObject({ status: 409 })
+    await expect(registerWithPassword("Alice", "taken@test.com", "pass1234")).rejects.toMatchObject(
+      { status: 409 },
+    )
   })
 
   it("throws an ApiError carrying the 5xx", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }))
-    await expect(
-      registerWithPassword("Alice", "a@test.com", "pass1234", API_URL),
-    ).rejects.toMatchObject({ status: 500 })
+    await expect(registerWithPassword("Alice", "a@test.com", "pass1234")).rejects.toMatchObject({
+      status: 500,
+    })
   })
 })
 
@@ -105,7 +85,7 @@ describe("updateProfile", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
 
-    await updateProfile("user-1", TOKEN, API_URL, { email: "new@test.com" })
+    await updateProfile("user-1", TOKEN, { email: "new@test.com" })
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/ui/users/user-1`,
@@ -126,7 +106,7 @@ describe("getUserFeed", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => mockData })
     vi.stubGlobal("fetch", fetchMock)
 
-    const data = await getUserFeed("user-1", TOKEN, API_URL)
+    const data = await getUserFeed("user-1", TOKEN)
     expect(data).toEqual(mockData)
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/ui/users/user-1/feed`,
@@ -147,7 +127,7 @@ describe("getUserFeed", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => mockData })
     vi.stubGlobal("fetch", fetchMock)
 
-    await getUserFeed("user-1", TOKEN, API_URL)
+    await getUserFeed("user-1", TOKEN)
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
@@ -156,7 +136,7 @@ describe("getUserFeed", () => {
       "fetch",
       vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) }),
     )
-    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("StayUp API error 500")
+    await expect(getUserFeed("user-1", TOKEN)).rejects.toThrow("StayUp API error 500")
   })
 
   it("retries once on a network TypeError", async () => {
@@ -170,7 +150,7 @@ describe("getUserFeed", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => mockData })
     vi.stubGlobal("fetch", fetchMock)
 
-    await getUserFeed("user-1", TOKEN, API_URL)
+    await getUserFeed("user-1", TOKEN)
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
@@ -181,7 +161,7 @@ describe("getConnectorProviders", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => mockData })
     vi.stubGlobal("fetch", fetchMock)
 
-    const providers = await getConnectorProviders(TOKEN, API_URL)
+    const providers = await getConnectorProviders(TOKEN)
     expect(providers).toEqual(mockData.providers)
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/connectors/providers`,
@@ -197,7 +177,7 @@ describe("addUserRepository", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
 
-    await addUserRepository("user-1", TOKEN, API_URL, {
+    await addUserRepository("user-1", TOKEN, {
       provider: "changelog",
       url: "https://github.com/facebook/react/",
       config: { max_scraps: 5 },
@@ -222,7 +202,7 @@ describe("deleteUserRepository", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
 
-    await deleteUserRepository("user-1", "link-9", TOKEN, API_URL)
+    await deleteUserRepository("user-1", "link-9", TOKEN)
 
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/ui/users/user-1/repositories/link-9`,
@@ -237,13 +217,13 @@ describe("provider flux endpoints", () => {
       { id: 1, url: "https://example.com", config: {}, created_at: "", is_subscribed: false },
     ]
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ fluxes }) }))
-    await expect(getProviderFluxes("rss", TOKEN, API_URL)).resolves.toEqual(fluxes)
+    await expect(getProviderFluxes("rss", TOKEN)).resolves.toEqual(fluxes)
   })
 
   it("subscribeFlux POSTs to the provider subscribe endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) })
     vi.stubGlobal("fetch", fetchMock)
-    await subscribeFlux("rss", 3, TOKEN, API_URL)
+    await subscribeFlux("rss", 3, TOKEN)
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/providers/rss/fluxes/3/subscribe`,
       expect.objectContaining({ method: "POST" }),
@@ -253,7 +233,7 @@ describe("provider flux endpoints", () => {
   it("unsubscribeFlux DELETEs the provider subscribe endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) })
     vi.stubGlobal("fetch", fetchMock)
-    await unsubscribeFlux("rss", 3, TOKEN, API_URL)
+    await unsubscribeFlux("rss", 3, TOKEN)
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_URL}/providers/rss/fluxes/3/subscribe`,
       expect.objectContaining({ method: "DELETE" }),
@@ -265,7 +245,7 @@ describe("apiFetch error handling", () => {
   it("does not retry on a 4xx error", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
-    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("StayUp API error 404")
+    await expect(getUserFeed("user-1", TOKEN)).rejects.toThrow("StayUp API error 404")
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -274,7 +254,7 @@ describe("apiFetch error handling", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) })
     vi.stubGlobal("fetch", fetchMock)
     await expect(
-      addUserRepository("user-1", TOKEN, API_URL, {
+      addUserRepository("user-1", TOKEN, {
         provider: "rss",
         url: "https://x.dev/feed",
         config: {},
@@ -292,20 +272,49 @@ describe("apiFetch error handling", () => {
         json: async () => ({ error: "Already subscribed" }),
       }),
     )
-    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("Already subscribed")
+    await expect(getUserFeed("user-1", TOKEN)).rejects.toThrow("Already subscribed")
   })
 
   it("does not retry on a non-network error", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error("boom"))
     vi.stubGlobal("fetch", fetchMock)
-    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("boom")
+    await expect(getUserFeed("user-1", TOKEN)).rejects.toThrow("boom")
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it("rethrows when the retry also fails with a network error", async () => {
     const fetchMock = vi.fn().mockRejectedValue(new TypeError("Network error"))
     vi.stubGlobal("fetch", fetchMock)
-    await expect(getUserFeed("user-1", TOKEN, API_URL)).rejects.toThrow("Network error")
+    await expect(getUserFeed("user-1", TOKEN)).rejects.toThrow("Network error")
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("fetchAuthConfig", () => {
+  const config = { emailPassword: true, oauth: { github: true, google: false } }
+
+  it("returns the config when the shape checks out", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => config })
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(fetchAuthConfig()).resolves.toEqual(config)
+    expect(fetchMock).toHaveBeenCalledWith(`${API_URL}/auth/config`)
+  })
+
+  it("returns null on a non-2xx answer", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }))
+    await expect(fetchAuthConfig()).resolves.toBeNull()
+  })
+
+  it("returns null when the JSON is not an auth config", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ hello: "world" }) }),
+    )
+    await expect(fetchAuthConfig()).resolves.toBeNull()
+  })
+
+  it("returns null when the request throws", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("unreachable")))
+    await expect(fetchAuthConfig()).resolves.toBeNull()
   })
 })

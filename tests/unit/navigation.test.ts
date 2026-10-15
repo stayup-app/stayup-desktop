@@ -25,14 +25,12 @@ describe("useNavigationStore", () => {
         type: "flux",
         fluxId: "flux-123",
         provider: "changelog",
-        instanceId: "i1",
       }),
     )
     expect(result.current.selection).toEqual({
       type: "flux",
       fluxId: "flux-123",
       provider: "changelog",
-      instanceId: "i1",
     })
   })
 
@@ -43,7 +41,6 @@ describe("useNavigationStore", () => {
         type: "flux",
         fluxId: "f1",
         provider: "rss",
-        instanceId: "i1",
       }),
     )
     act(() => result.current.setSelection({ type: "all" }))

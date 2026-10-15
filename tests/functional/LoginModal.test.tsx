@@ -12,7 +12,6 @@ vi.mock("@/lib/api", async (importOriginal) => ({
 }))
 
 const config = (over: Partial<import("@/lib/api").AuthConfig> = {}) => ({
-  registrationMode: "open" as const,
   emailPassword: true,
   oauth: { github: true, google: true },
   ...over,
@@ -113,26 +112,6 @@ describe("LoginModal", () => {
     })
   })
 
-  it("reveals the server field, defaulting to the current API host", async () => {
-    renderWithLang(
-      <LoginModal
-        onLogin={vi.fn()}
-        onRegister={vi.fn()}
-        onOAuth={vi.fn()}
-        loading={false}
-        error={null}
-      />,
-    )
-
-    // The disclosure shows the host of the default API up front.
-    const toggle = await screen.findByRole("button", {
-      name: new RegExp(`${fr.auth.server}.*stayup-api`),
-    })
-    fireEvent.click(toggle)
-
-    expect(await screen.findByLabelText(fr.profile.apiUrl)).toBeInTheDocument()
-  })
-
   it("hides an OAuth provider the instance does not offer", async () => {
     vi.mocked(fetchAuthConfig).mockResolvedValue(config({ oauth: { github: true, google: false } }))
     renderWithLang(
@@ -166,26 +145,6 @@ describe("LoginModal", () => {
     )
 
     await waitFor(() => expect(screen.queryByText(fr.auth.or)).not.toBeInTheDocument())
-  })
-
-  it("warns about admin approval on the register form when the instance requires it", async () => {
-    vi.mocked(fetchAuthConfig).mockResolvedValue(config({ registrationMode: "approval" }))
-    renderWithLang(
-      <LoginModal
-        onLogin={vi.fn()}
-        onRegister={vi.fn()}
-        onOAuth={vi.fn()}
-        loading={false}
-        error={null}
-      />,
-    )
-
-    // Not shown on the login tab…
-    await waitFor(() => expect(fetchAuthConfig).toHaveBeenCalled())
-    expect(screen.queryByText(fr.auth.pendingApprovalHint)).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByText(fr.auth.signUp))
-    expect(await screen.findByText(fr.auth.pendingApprovalHint)).toBeInTheDocument()
   })
 
   it("falls back to offering everything when the API has no /auth/config", async () => {

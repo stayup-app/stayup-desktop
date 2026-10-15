@@ -18,10 +18,9 @@ interface ChangeEmailFormProps {
   userId: string
   currentEmail: string
   token: string
-  apiUrl: string
 }
 
-export function ChangeEmailForm({ userId, currentEmail, token, apiUrl }: ChangeEmailFormProps) {
+export function ChangeEmailForm({ userId, currentEmail, token }: ChangeEmailFormProps) {
   const { t } = useLanguage()
   const schema = useMemo(() => makeSchema(t), [t])
   const [success, setSuccess] = useState(false)
@@ -41,7 +40,7 @@ export function ChangeEmailForm({ userId, currentEmail, token, apiUrl }: ChangeE
     setSuccess(false)
     try {
       if (!token) throw new Error(t.feed.tokenMissing)
-      await updateProfile(userId, token, apiUrl, { email: data.email })
+      await updateProfile(userId, token, { email: data.email })
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : t.common.error)

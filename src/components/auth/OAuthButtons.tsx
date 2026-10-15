@@ -3,7 +3,7 @@ import { useLanguage } from "@/context/LanguageContext"
 interface OAuthButtonsProps {
   onOAuth: (provider: "github" | "google") => Promise<void>
   loading: boolean
-  /** Which buttons to show — from the target instance's `GET /auth/config`.
+  /** Which buttons to show — from `GET /auth/config`.
    *  Both by default, for an API too old to expose the config. */
   providers?: { github: boolean; google: boolean }
 }

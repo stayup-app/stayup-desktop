@@ -1,6 +1,6 @@
-// A provider is never hardcoded: the list comes from GET /connectors/providers
-// and rendering from its `template` (provider_registry.template). A provider
-// with no recognized template falls back to generic rendering.
+// The providers are the five StayUp collectors; how each one is rendered lives
+// in src/lib/providers.ts. A provider with no template falls back to generic
+// rendering.
 export type Provider = string
 
 export interface UserRepository {
@@ -46,8 +46,6 @@ export interface FeedRepository {
   url: string
   provider?: string
   config?: Record<string, unknown>
-  /** The origin instance — a `repository_id` is only unique within an instance. */
-  instanceId?: string
 }
 
 export interface ConnectorData {
@@ -63,7 +61,4 @@ export interface ProviderFlux {
   config: Record<string, unknown>
   created_at: string
   is_subscribed: boolean
-  /** Set for a flux living in a secondary database (otherwise null). */
-  dataSourceId?: number | null
-  dataSourceName?: string | null
 }

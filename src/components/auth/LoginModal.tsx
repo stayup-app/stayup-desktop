@@ -2,11 +2,9 @@ import { useEffect, useState } from "react"
 import { LoginForm } from "./LoginForm"
 import { RegisterForm } from "./RegisterForm"
 import { OAuthButtons } from "./OAuthButtons"
-import { ApiUrlForm } from "@/components/profile/ApiUrlForm"
 import { useLanguage } from "@/context/LanguageContext"
 import { AuroraMark } from "@/components/ui/AuroraMark"
 import { type AuthConfig, fetchAuthConfig } from "@/lib/api"
-import { readApiUrl } from "@/lib/store"
 
 interface LoginModalProps {
   onLogin: (email: string, password: string) => Promise<void>
@@ -16,30 +14,13 @@ interface LoginModalProps {
   error: string | null
 }
 
-function hostOf(url: string): string {
-  try {
-    return new URL(url).host
-  } catch {
-    return url
-  }
-}
-
 export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: LoginModalProps) {
   const { t } = useLanguage()
   const [mode, setMode] = useState<"login" | "register">("login")
-  const [apiHost, setApiHost] = useState("")
   const [config, setConfig] = useState<AuthConfig | null>(null)
-  const [showServer, setShowServer] = useState(false)
-
-  function refresh() {
-    return readApiUrl().then((url) => {
-      setApiHost(hostOf(url))
-      return fetchAuthConfig(url).then(setConfig)
-    })
-  }
 
   useEffect(() => {
-    void refresh()
+    void fetchAuthConfig().then(setConfig)
   }, [])
 
   // An API too old for /auth/config → we offer everything, as before.
@@ -99,10 +80,6 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
             <RegisterForm onSubmit={onRegister} loading={loading} error={error} />
           )}
 
-          {mode === "register" && config?.registrationMode === "approval" && (
-            <p className="mt-3 text-[12px] text-muted-foreground">{t.auth.pendingApprovalHint}</p>
-          )}
-
           <p className="mt-5 text-center text-[13px] text-muted-foreground">
             {mode === "login" ? t.auth.noAccount : t.auth.alreadyHaveAccount}{" "}
             <button
@@ -113,28 +90,6 @@ export function LoginModal({ onLogin, onRegister, onOAuth, loading, error }: Log
               {mode === "login" ? t.auth.signUp : t.auth.signIn}
             </button>
           </p>
-        </div>
-
-        {/* Server: adjustable even before logging in. */}
-        <div className="mt-4 w-[380px] text-center">
-          <button
-            type="button"
-            onClick={() => setShowServer((v) => !v)}
-            className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {t.auth.server} · {apiHost || "…"}
-          </button>
-          {showServer && (
-            <div
-              className="mt-3 rounded-[12px] p-5 text-left"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <ApiUrlForm onChanged={refresh} />
-            </div>
-          )}
         </div>
       </div>
     </div>

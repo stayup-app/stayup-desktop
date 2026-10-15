@@ -1,33 +1,5 @@
 export const en = {
-  instances: {
-    title: "Servers",
-    subtitle: "Add API instances and follow feeds from all of them at once.",
-    primary: "Primary",
-    add: "Add a server",
-    urlLabel: "Server URL",
-    urlPlaceholder: "https://your-api.example.com",
-    cancel: "Cancel",
-    makePrimary: "Make primary",
-    reconnect: "Reconnect",
-    remove: "Remove",
-    rename: "Rename",
-    save: "Save",
-    expired: "Session expired",
-    removePrimaryWarning: "Removing your primary server signs you out of everything.",
-    nameLabel: "Name",
-    unreachable: "Unreachable",
-    reconnectPrompt: "These servers need you to sign in again:",
-    urlUnreachable: "Can't reach that server.",
-    urlIncompatible: "This URL is not a StayUp API.",
-  },
-  serverStatus: {
-    title: "Server status",
-    connected: "Connected",
-    disconnected: "Disconnected",
-  },
-
   auth: {
-    accountPending: "Account created. An administrator needs to approve it before you can sign in.",
     subtitle: "Pick up right where you left off.",
     loginTitle: "Good to see you again.",
     registerTitle: "Create your account.",
@@ -49,9 +21,6 @@ export const en = {
     continueWithGitHub: "Continue with GitHub",
     continueWithGoogle: "Continue with Google",
     or: "or",
-    server: "Server",
-    pendingApprovalHint:
-      "Your account will need an administrator to approve it before you can sign in.",
   },
   feed: {
     myFeeds: "My feeds",
@@ -132,7 +101,6 @@ export const en = {
     error: "An error occurred.",
   },
   userMenu: {
-    instances: "Servers",
     profile: "Profile",
     signOut: "Sign out",
   },
@@ -153,14 +121,6 @@ export const en = {
     updatePassword: "Change password",
     updatingPassword: "Updating…",
     passwordUpdated: "Password changed successfully.",
-    apiUrl: "API URL",
-    apiUrlDescription: "Choose which StayUp API this app talks to.",
-    apiUrlSave: "Save",
-    apiUrlSaving: "Saving…",
-    apiUrlSaved: "API URL updated.",
-    apiUrlReset: "Reset to default",
-    apiUrlResetting: "Resetting…",
-    apiUrlInvalid: "Enter a valid URL.",
   },
   menu: {
     file: {

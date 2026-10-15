@@ -18,15 +18,6 @@ vi.mock("@/hooks/useFeed", async (importOriginal) => ({
 vi.mock("@/hooks/useMenu", () => ({ useMenu: vi.fn() }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("jwt"),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
-  readInstances: vi.fn().mockResolvedValue([]),
-  hostOf: (u: string) => {
-    try {
-      return new URL(u).host
-    } catch {
-      return u
-    }
-  },
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
   readReadItems: vi.fn().mockResolvedValue([]),
@@ -56,37 +47,18 @@ function makeAuth(sess: AppSession | null = session): {
   logout: ReturnType<typeof vi.fn>
 } {
   const logout = vi.fn()
-  const instanceSession = sess
-    ? {
-        ...sess,
-        instanceId: "i1",
-        instanceName: "api.test",
-        instanceUrl: "https://api.test",
-        expired: false,
-      }
-    : null
   const auth = {
-    session: instanceSession,
-    sessions: instanceSession ? [instanceSession] : [],
-    instances: instanceSession
-      ? [{ id: "i1", url: "https://api.test", name: "api.test", token: "jwt" }]
-      : [],
+    session: sess,
+    token: sess ? "jwt" : null,
     loading: false,
     error: null,
     login: vi.fn(),
     register: vi.fn(),
     loginOAuth: vi.fn(),
     logout,
-    addInstance: vi.fn(),
-    reconnectInstance: vi.fn(),
-    removeInstance: vi.fn(),
-    renameInstance: vi.fn(),
-    setPrimary: vi.fn(),
   } as unknown as AuthState
   return { auth, logout }
 }
-
-const INST = { instanceId: "i1", instanceName: "api.test" }
 
 const fluxes = [
   {
@@ -95,7 +67,6 @@ const fluxes = [
     provider: "changelog" as const,
     url: "https://github.com/facebook/react",
     identifier: "facebook/react",
-    ...INST,
   },
   {
     id: "2",
@@ -103,7 +74,6 @@ const fluxes = [
     provider: "youtube" as const,
     url: "https://www.youtube.com/@fireship",
     identifier: "@fireship",
-    ...INST,
   },
 ]
 
@@ -156,20 +126,13 @@ const rawConnectors = {
   ],
 }
 
-// Each row carries its origin instance, as useFeed does after fan-out.
-const connectors = Object.fromEntries(
-  Object.entries(rawConnectors).map(([p, items]) => [
-    p,
-    items.map((it) => ({ ...it, _instance_id: "i1", _instance_name: "api.test" })),
-  ]),
-) as unknown as typeof rawConnectors
+const connectors = rawConnectors
 
 type FeedState = ReturnType<typeof useFeed>
 
 function mockFeed(overrides: Partial<FeedState> = {}) {
   vi.mocked(useFeed).mockReturnValue({
     fluxes,
-    instanceErrors: [],
     connectors,
     templates: TEMPLATES,
     loading: false,
@@ -234,32 +197,6 @@ describe("header", () => {
     fireEvent.click(screen.getByText(fr.common.close))
     expect(screen.queryByText(fr.profile.title)).not.toBeInTheDocument()
   })
-
-  it("opens and closes the instances manager from the user menu", () => {
-    renderLayout()
-
-    fireEvent.click(screen.getByTitle(session.name))
-    fireEvent.click(screen.getByText(fr.userMenu.instances))
-    expect(screen.getByText(fr.instances.subtitle)).toBeInTheDocument()
-
-    fireEvent.click(screen.getByText(fr.common.close))
-    expect(screen.queryByText(fr.instances.subtitle)).not.toBeInTheDocument()
-  })
-
-  it("shows a green server dot that opens the servers manager on click", () => {
-    renderLayout()
-    const dot = screen.getByLabelText(`api.test — ${fr.serverStatus.connected}`)
-    fireEvent.click(dot)
-    expect(screen.getByText(fr.instances.subtitle)).toBeInTheDocument()
-  })
-
-  it("shows a red server dot when that instance's session is dead", () => {
-    mockFeed({
-      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "auth" }],
-    })
-    renderLayout()
-    expect(screen.getByLabelText(`api.test — ${fr.serverStatus.disconnected}`)).toBeInTheDocument()
-  })
 })
 
 describe("feed list", () => {
@@ -295,7 +232,7 @@ describe("feed list", () => {
 
   it("shows only the items of the selected flux", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "1", provider: "changelog", instanceId: "i1" },
+      selection: { type: "flux", fluxId: "1", provider: "changelog" },
     })
     const { container } = renderLayout()
     expect(container.querySelectorAll("[data-index]")).toHaveLength(1)
@@ -304,7 +241,7 @@ describe("feed list", () => {
 
   it("shows every item of the provider when the flux is unknown", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "missing", provider: "youtube", instanceId: "i1" },
+      selection: { type: "flux", fluxId: "missing", provider: "youtube" },
     })
     const { container } = renderLayout()
     expect(container.querySelectorAll("[data-index]")).toHaveLength(1)
@@ -314,46 +251,6 @@ describe("feed list", () => {
     mockFeed({ loading: true, connectors: null })
     renderLayout()
     expect(screen.getByText(fr.feed.loading)).toBeInTheDocument()
-  })
-
-  it("shows a soft strip for an unreachable instance without dropping the feed", () => {
-    mockFeed({
-      instanceErrors: [{ instanceId: "b", instanceName: "Beta", reason: "unreachable" }],
-    })
-    renderLayout()
-    expect(screen.getByText(new RegExp(`${fr.instances.unreachable}.*Beta`))).toBeInTheDocument()
-    // The feed still renders.
-    expect(screen.getByText("Newest video")).toBeInTheDocument()
-    // A transient failure is not a reconnection prompt.
-    expect(screen.queryByText(new RegExp(fr.instances.reconnectPrompt))).not.toBeInTheDocument()
-  })
-
-  it("pushes the reconnect modal when an instance session is dead", () => {
-    mockFeed({
-      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "expired" }],
-    })
-    renderLayout()
-    expect(
-      screen.getByText(new RegExp(`${fr.instances.reconnectPrompt}.*api\\.test`)),
-    ).toBeInTheDocument()
-    // Not shown as a "just retry" strip.
-    expect(
-      screen.queryByText(new RegExp(`${fr.instances.unreachable}.*api\\.test`)),
-    ).not.toBeInTheDocument()
-  })
-
-  it("treats a 401'd instance (auth) as needing reconnection too", () => {
-    mockFeed({
-      instanceErrors: [{ instanceId: "i1", instanceName: "api.test", reason: "auth" }],
-    })
-    renderLayout()
-    expect(screen.getByText(new RegExp(fr.instances.reconnectPrompt))).toBeInTheDocument()
-  })
-
-  it("does not push the reconnect modal when every instance is healthy", () => {
-    mockFeed()
-    renderLayout()
-    expect(screen.queryByText(new RegExp(fr.instances.reconnectPrompt))).not.toBeInTheDocument()
   })
 
   it("renders an error with a retry button", () => {
@@ -373,7 +270,7 @@ describe("read state", () => {
 
     fireEvent.click(container.querySelector('[data-index="0"]')!)
 
-    await waitFor(() => expect(useReadItemsStore.getState().readIds.has("i1:youtube:2")).toBe(true))
+    await waitFor(() => expect(useReadItemsStore.getState().readIds.has("youtube:2")).toBe(true))
   })
 
   it("shows the item content once opened", async () => {
@@ -408,7 +305,7 @@ describe("read state", () => {
   })
 
   it("drops read ids that are no longer in the feed", async () => {
-    useReadItemsStore.setState({ readIds: new Set(["i1:changelog:999"]), initialized: true })
+    useReadItemsStore.setState({ readIds: new Set(["changelog:999"]), initialized: true })
     renderLayout()
 
     await waitFor(() => expect(useReadItemsStore.getState().readIds.size).toBe(0))
@@ -634,7 +531,7 @@ describe("partial connector payloads", () => {
     "treats a missing %s array as empty in the flux view",
     (provider) => {
       useNavigationStore.setState({
-        selection: { type: "flux", fluxId: "1", provider, instanceId: "i1" },
+        selection: { type: "flux", fluxId: "1", provider },
       })
       mockFeed({ connectors: {} as typeof connectors })
       const { container } = renderLayout()

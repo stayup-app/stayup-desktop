@@ -6,8 +6,6 @@ import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
 import { ImportExportButtons } from "./ImportExportButtons"
 import { deleteUserRepository } from "@/lib/api"
-import { decodeToken } from "@/lib/session"
-import type { Instance } from "@/lib/store"
 import { providerIcon, providerAccent } from "./providerIcons"
 import type { ProviderMeta } from "@/lib/providerTemplate"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -28,12 +26,11 @@ function getProviderMeta(provider: Provider, templates: Record<string, ProviderM
 interface FeedSidebarProps {
   fluxes: FeedFlux[]
   templates: Record<string, ProviderMeta>
-  /** The primary instance; used as the default `userId` for OPML import. */
   userId: string
-  instances: Instance[]
+  token: string
   onRefresh: () => void
   loading?: boolean
-  unreadCountByRepoId?: Record<string, number>
+  unreadCountByRepoId?: Record<number, number>
   width?: number
 }
 
@@ -41,7 +38,7 @@ export function FeedSidebar({
   fluxes,
   templates,
   userId,
-  instances,
+  token,
   onRefresh,
   loading = false,
   unreadCountByRepoId = {},
@@ -60,14 +57,6 @@ export function FeedSidebar({
   }, {})
 
   const providers = Object.keys(byProvider) as Provider[]
-  // Instance badge on each flux as soon as there is more than one.
-  const multiInstance = new Set(fluxes.map((f) => f.instanceId)).size > 1
-  const unreadKey = (f: FeedFlux) => `${f.instanceId ?? ""}:${f.repository_id}`
-  // `flux.instanceName` is frozen at feed load; we re-resolve it from
-  // `instances` to reflect a server rename made in the meantime.
-  const instanceLabel = (f: FeedFlux) =>
-    instances.find((i) => i.id === f.instanceId)?.name ?? f.instanceName
-
   function isExpanded(provider: Provider) {
     return expanded[provider] !== false
   }
@@ -87,9 +76,7 @@ export function FeedSidebar({
     setConfirmTarget(null)
     setDeleting(flux.id)
     try {
-      const inst = instances.find((i) => i.id === flux.instanceId)
-      if (!inst) throw new Error(t.feed.tokenMissing)
-      await deleteUserRepository(decodeToken(inst.token).userId, flux.id, inst.token, inst.url)
+      await deleteUserRepository(userId, flux.id, token)
       onRefresh()
     } finally {
       setDeleting(null)
@@ -155,7 +142,7 @@ export function FeedSidebar({
             const open = isExpanded(provider)
             const providerFluxes = byProvider[provider] ?? []
             const totalUnread = providerFluxes.reduce(
-              (sum, flux) => sum + (unreadCountByRepoId[unreadKey(flux)] ?? 0),
+              (sum, flux) => sum + (unreadCountByRepoId[flux.repository_id] ?? 0),
               0,
             )
 
@@ -198,11 +185,8 @@ export function FeedSidebar({
                 {open && (
                   <div className="ml-7 mt-0.5 space-y-0.5 mb-1">
                     {providerFluxes.map((flux) => {
-                      const isActive =
-                        selection.type === "flux" &&
-                        selection.fluxId === flux.id &&
-                        selection.instanceId === flux.instanceId
-                      const fluxUnread = unreadCountByRepoId[unreadKey(flux)] ?? 0
+                      const isActive = selection.type === "flux" && selection.fluxId === flux.id
+                      const fluxUnread = unreadCountByRepoId[flux.repository_id] ?? 0
                       return (
                         <div
                           key={flux.id}
@@ -224,7 +208,6 @@ export function FeedSidebar({
                                 type: "flux",
                                 fluxId: flux.id,
                                 provider: flux.provider,
-                                instanceId: flux.instanceId,
                               })
                             }
                             className={cn(
@@ -235,14 +218,6 @@ export function FeedSidebar({
                             )}
                           >
                             <span className="truncate">{flux.identifier}</span>
-                            {multiInstance && (
-                              <span
-                                className="shrink-0 rounded bg-[var(--surface-2)] px-1 text-[10px] text-dim"
-                                title={instanceLabel(flux)}
-                              >
-                                {instanceLabel(flux)}
-                              </span>
-                            )}
                             {fluxUnread > 0 && (
                               <span
                                 className="text-[12px] font-mono px-1 rounded shrink-0"
@@ -274,7 +249,7 @@ export function FeedSidebar({
       <AddFluxDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        instances={instances}
+        token={token}
         onSuccess={onRefresh}
       />
 

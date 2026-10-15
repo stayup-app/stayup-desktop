@@ -10,7 +10,6 @@ import {
   getProviderFluxes,
   subscribeFlux,
 } from "@/lib/api"
-import type { Instance } from "@/lib/store"
 
 vi.mock("@/lib/api", () => ({
   addUserRepository: vi.fn().mockResolvedValue({ repository: { id: "r1" } }),
@@ -21,14 +20,12 @@ vi.mock("@/lib/api", () => ({
 
 // A JWT whose `sub` is "user-1", so the dialog derives the userId from it.
 const TOKEN = `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify({ sub: "user-1" })).replace(/=/g, "")}.sig`
-const INSTANCES: Instance[] = [{ id: "i1", url: "https://api.test", name: "Primary", token: TOKEN }]
-
-function renderDialog(open = true, instances: Instance[] = INSTANCES) {
+function renderDialog(open = true) {
   const onClose = vi.fn()
   const onSuccess = vi.fn()
   const view = render(
     <LanguageProvider initialLang="fr">
-      <AddFluxDialog open={open} onClose={onClose} instances={instances} onSuccess={onSuccess} />
+      <AddFluxDialog open={open} onClose={onClose} token={TOKEN} onSuccess={onSuccess} />
     </LanguageProvider>,
   )
   return { ...view, onClose, onSuccess }
@@ -94,7 +91,7 @@ describe("add a new flux (form input)", () => {
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
     await waitFor(() =>
-      expect(addUserRepository).toHaveBeenCalledWith("user-1", TOKEN, "https://api.test", {
+      expect(addUserRepository).toHaveBeenCalledWith("user-1", TOKEN, {
         provider: "changelog",
         url: "https://github.com/facebook/react/",
         config: { max_scraps: 5, retention_days: 15 },
@@ -156,37 +153,11 @@ describe("subscribe to an existing flux", () => {
     // The already-followed one is hidden.
     expect(screen.queryByText("taken.example")).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
 
-    await waitFor(() =>
-      expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, TOKEN, "https://api.test", undefined),
-    )
+    await waitFor(() => expect(subscribeFlux).toHaveBeenCalledWith("rss", 10, TOKEN))
     expect(onSuccess).toHaveBeenCalled()
-  })
-
-  it("subscribes to a flux living in a secondary database", async () => {
-    vi.mocked(getProviderFluxes).mockResolvedValue([
-      {
-        id: 4,
-        url: "https://ext.example.com",
-        config: {},
-        created_at: "2026-01-01",
-        is_subscribed: false,
-        dataSourceId: 7,
-        dataSourceName: "Team feeds",
-      },
-    ])
-    renderDialog()
-    await selectProvider("rss")
-    await screen.findByText(/ext\.example/)
-
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "7:4" } })
-    fireEvent.click(screen.getByText(fr.addFlux.add))
-
-    await waitFor(() =>
-      expect(subscribeFlux).toHaveBeenCalledWith("rss", 4, TOKEN, "https://api.test", 7),
-    )
   })
 
   it("rejects an empty selection", async () => {
@@ -211,19 +182,9 @@ describe("subscribe to an existing flux", () => {
     await selectProvider("rss")
     await screen.findByText("free.example")
 
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":10" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "10" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText("subscribe failed")).toBeInTheDocument()
-  })
-
-  it("fails closed when there is no instance to target", async () => {
-    renderDialog(true, [])
-    fireEvent.click(screen.getByText(fr.addFlux.makeRequest))
-    fireEvent.change(screen.getByRole("textbox"), { target: { value: "facebook/react" } })
-    fireEvent.click(screen.getByText(fr.addFlux.add))
-
-    expect(await screen.findByText(fr.feed.tokenMissing)).toBeInTheDocument()
-    expect(addUserRepository).not.toHaveBeenCalled()
   })
 })
 
@@ -251,26 +212,6 @@ describe("pick mode & guards", () => {
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.addFlux.requiredError)).toBeInTheDocument()
     expect(addUserRepository).not.toHaveBeenCalled()
-  })
-
-  it("fetches providers and fluxes against the selected instance", async () => {
-    const second: Instance = { id: "i2", url: "https://b.test", name: "Beta", token: TOKEN }
-    renderDialog(true, [INSTANCES[0], second])
-    await screen.findByRole("button", { name: "Changelog" })
-
-    // The instance selector appears once there is more than one.
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "i2" } })
-
-    await waitFor(() =>
-      expect(getConnectorProviders).toHaveBeenLastCalledWith(TOKEN, "https://b.test"),
-    )
-  })
-
-  it("loads no fluxes when there is no instance", async () => {
-    renderDialog(true, [])
-    // No provider tiles, no flux fetch.
-    expect(getProviderFluxes).not.toHaveBeenCalled()
-    expect(getConnectorProviders).not.toHaveBeenCalled()
   })
 
   it("shows no provider tiles when the connector list fails to load", async () => {
@@ -326,7 +267,7 @@ describe("pick mode & guards", () => {
     renderDialog()
     await selectProvider("rss")
     await screen.findByText("free.example")
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: ":9" } })
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "9" } })
     fireEvent.click(screen.getByText(fr.addFlux.add))
     expect(await screen.findByText(fr.common.error)).toBeInTheDocument()
   })

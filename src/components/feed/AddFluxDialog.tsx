@@ -5,12 +5,11 @@ import {
   getProviderFluxes,
   subscribeFlux,
 } from "@/lib/api"
-import type { Instance } from "@/lib/store"
 import { decodeToken } from "@/lib/session"
+import { PROVIDERS } from "@/lib/providers"
 import { useLanguage } from "@/context/LanguageContext"
 import { cn } from "@/lib/utils"
 import {
-  normalizeTemplate,
   buildFluxUrl,
   matchesFormPattern,
   resolveFeedLabel,
@@ -30,14 +29,12 @@ interface ProviderTile {
 interface AddFluxDialogProps {
   open: boolean
   onClose: () => void
-  instances: Instance[]
+  token: string
   onSuccess: () => void
 }
 
-export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDialogProps) {
+export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialogProps) {
   const { t } = useLanguage()
-  const [instanceId, setInstanceId] = useState(instances[0]?.id ?? "")
-  const active = instances.find((i) => i.id === instanceId) ?? instances[0]
   const [provider, setProvider] = useState<string>("changelog")
   const [identifier, setIdentifier] = useState("")
   const [pickMode, setPickMode] = useState<"existing" | "new">("existing")
@@ -52,12 +49,12 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
   const [approvals, setApprovals] = useState<Record<string, "auto" | "manual">>({})
 
   useEffect(() => {
-    if (!open || !active) return
+    if (!open) return
     let cancelled = false
-    getConnectorProviders(active.token, active.url)
+    getConnectorProviders(token)
       .then((providers) => {
         if (cancelled) return
-        const parsed = providers.map((p) => ({ ...p, tpl: normalizeTemplate(p.template) }))
+        const parsed = providers.map((p) => ({ ...p, tpl: PROVIDERS[p.name]?.template ?? null }))
         setTpls(Object.fromEntries(parsed.map((p) => [p.name, p.tpl])))
         setApprovals(Object.fromEntries(parsed.map((p) => [p.name, p.fluxApproval ?? "auto"])))
         setTiles(
@@ -87,13 +84,13 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
     return () => {
       cancelled = true
     }
-  }, [open, active])
+  }, [open, token])
 
-  // Existing fluxes of the selected provider, on the chosen instance.
+  // Existing fluxes of the selected provider.
   useEffect(() => {
-    if (!open || !active) return
+    if (!open) return
     let cancelled = false
-    getProviderFluxes(provider, active.token, active.url)
+    getProviderFluxes(provider, token)
       .then((list) => {
         if (cancelled) return
         setFluxes(list ?? [])
@@ -108,10 +105,9 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
     return () => {
       cancelled = true
     }
-  }, [open, provider, active])
+  }, [open, provider, token])
 
   function handleClose() {
-    setInstanceId(instances[0]?.id ?? "")
     setProvider("changelog")
     setIdentifier("")
     setSelectedFluxId("")
@@ -120,15 +116,6 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
     setPickMode("existing")
     setPending(false)
     onClose()
-  }
-
-  function selectInstance(next: string) {
-    setInstanceId(next)
-    setProvider("changelog")
-    setIdentifier("")
-    setSelectedFluxId("")
-    setFluxes(null)
-    setError(null)
   }
 
   function selectProvider(next: string) {
@@ -152,16 +139,7 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
       }
       setSubmitting(true)
       try {
-        if (!active) throw new Error(t.feed.tokenMissing)
-        // value = "<dataSourceId>:<id>" ("" for the instance's primary database).
-        const [dsPart, idPart] = selectedFluxId.split(":")
-        await subscribeFlux(
-          provider,
-          Number(idPart),
-          active.token,
-          active.url,
-          dsPart ? Number(dsPart) : undefined,
-        )
+        await subscribeFlux(provider, Number(selectedFluxId), token)
         onSuccess()
         handleClose()
       } catch (err) {
@@ -183,11 +161,10 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
 
     setSubmitting(true)
     try {
-      if (!active) throw new Error(t.feed.tokenMissing)
-      const targetUserId = decodeToken(active.token).userId
+      const targetUserId = decodeToken(token).userId
 
       const url = currentForm ? buildFluxUrl(currentForm, identifier) : identifier
-      const result = await addUserRepository(targetUserId, active.token, active.url, {
+      const result = await addUserRepository(targetUserId, token, {
         provider,
         url,
         config: { max_scraps: 5, retention_days: 15 },
@@ -245,24 +222,6 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
             </div>
           ) : (
             <>
-              {instances.length > 1 && (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-medium text-fg-soft">
-                    {t.instances.title}
-                  </label>
-                  <select
-                    value={instanceId}
-                    onChange={(e) => selectInstance(e.target.value)}
-                    className={inputClass}
-                  >
-                    {instances.map((i) => (
-                      <option key={i.id} value={i.id}>
-                        {i.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-medium text-fg-soft">{t.addFlux.provider}</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -339,12 +298,8 @@ export function AddFluxDialog({ open, onClose, instances, onSuccess }: AddFluxDi
                         </option>
                       ) : (
                         availableFluxes.map((f) => (
-                          <option
-                            key={`${f.dataSourceId ?? ""}:${f.id}`}
-                            value={`${f.dataSourceId ?? ""}:${f.id}`}
-                          >
+                          <option key={f.id} value={String(f.id)}>
                             {fluxLabel(f)}
-                            {f.dataSourceName ? ` — ${f.dataSourceName}` : ""}
                           </option>
                         ))
                       )}

@@ -4,7 +4,7 @@ import { ImportExportButtons } from "@/components/feed/ImportExportButtons"
 import { LanguageProvider } from "@/context/LanguageContext"
 import { buildOpml } from "@/lib/opml"
 import { addUserRepository, getProviderFluxes, subscribeFlux } from "@/lib/api"
-import { readToken, readApiUrl } from "@/lib/store"
+import { readToken } from "@/lib/store"
 import { save, open } from "@tauri-apps/plugin-dialog"
 import { writeTextFile, readTextFile } from "@tauri-apps/plugin-fs"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -18,7 +18,6 @@ vi.mock("@/lib/api", () => ({
 }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("token-1"),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
 }))
@@ -30,8 +29,6 @@ function flux(overrides: Partial<FeedFlux> = {}): FeedFlux {
     provider: "changelog",
     url: "https://github.com/facebook/react/",
     identifier: "facebook/react",
-    instanceId: "i1",
-    instanceName: "api.test",
     ...overrides,
   }
 }
@@ -48,7 +45,6 @@ function renderButtons(fluxes: FeedFlux[] = [], onSuccess = vi.fn()) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(readToken).mockResolvedValue("token-1")
-  vi.mocked(readApiUrl).mockResolvedValue("https://api.test")
 })
 
 describe("export", () => {
@@ -99,7 +95,7 @@ describe("import", () => {
     fireEvent.click(screen.getByLabelText("Importer des flux"))
 
     await screen.findByText(/1 ajouté/)
-    expect(addUserRepository).toHaveBeenCalledWith("user-1", "token-1", "https://api.test", {
+    expect(addUserRepository).toHaveBeenCalledWith("user-1", "token-1", {
       provider: "rss",
       url: "https://blog.example.com/feed.xml",
       config: { max_scraps: 5, retention_days: 15 },
@@ -181,7 +177,7 @@ describe("import", () => {
     fireEvent.click(screen.getByLabelText("Importer des flux"))
 
     await screen.findByText(/1 ajouté/)
-    expect(subscribeFlux).toHaveBeenCalledWith("scrap", 7, "token-1", "https://api.test")
+    expect(subscribeFlux).toHaveBeenCalledWith("scrap", 7, "token-1")
   })
 
   it("shows an error for a file with no valid entries", async () => {

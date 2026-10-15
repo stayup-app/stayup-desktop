@@ -10,12 +10,7 @@ vi.mock("@/lib/api", () => ({ updateProfile: vi.fn() }))
 function renderForm(token = "token-1") {
   return render(
     <LanguageProvider initialLang="fr">
-      <ChangeEmailForm
-        userId="user-1"
-        currentEmail="alice@test.com"
-        token={token}
-        apiUrl="https://api.test"
-      />
+      <ChangeEmailForm userId="user-1" currentEmail="alice@test.com" token={token} />
     </LanguageProvider>,
   )
 }
@@ -39,7 +34,7 @@ describe("ChangeEmailForm", () => {
     fireEvent.submit(screen.getByRole("button", { name: "Mettre à jour l'e-mail" }))
 
     await waitFor(() => {
-      expect(updateProfile).toHaveBeenCalledWith("user-1", "token-1", "https://api.test", {
+      expect(updateProfile).toHaveBeenCalledWith("user-1", "token-1", {
         email: "new@test.com",
       })
     })

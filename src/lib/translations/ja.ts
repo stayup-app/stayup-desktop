@@ -1,35 +1,7 @@
 import type { Translations } from "./en"
 
 export const ja: Translations = {
-  instances: {
-    title: "サーバー",
-    subtitle: "API インスタンスを追加し、すべてのフィードをまとめて購読します。",
-    primary: "プライマリー",
-    add: "サーバーを追加",
-    urlLabel: "サーバー URL",
-    urlPlaceholder: "https://your-api.example.com",
-    cancel: "キャンセル",
-    makePrimary: "プライマリーにする",
-    reconnect: "再接続",
-    remove: "削除",
-    rename: "名前を変更",
-    save: "保存",
-    expired: "セッションの期限切れ",
-    removePrimaryWarning: "プライマリーサーバーを削除すると、すべてからサインアウトします。",
-    nameLabel: "名前",
-    unreachable: "到達不能",
-    reconnectPrompt: "次のサーバーへの再ログインが必要です：",
-    urlUnreachable: "そのサーバーに接続できません。",
-    urlIncompatible: "この URL は StayUp API ではありません。",
-  },
-  serverStatus: {
-    title: "サーバーの状態",
-    connected: "接続済み",
-    disconnected: "切断",
-  },
-
   auth: {
-    accountPending: "アカウントを作成しました。ログインするには管理者の承認が必要です。",
     subtitle: "前回の続きから始めよう。",
     loginTitle: "おかえりなさい。",
     registerTitle: "アカウントを作成しよう。",
@@ -51,8 +23,6 @@ export const ja: Translations = {
     continueWithGitHub: "GitHubで続ける",
     continueWithGoogle: "Googleで続ける",
     or: "または",
-    server: "サーバー",
-    pendingApprovalHint: "サインインする前に、管理者による承認が必要です。",
   },
   feed: {
     myFeeds: "マイフィード",
@@ -133,7 +103,6 @@ export const ja: Translations = {
     error: "エラーが発生しました。",
   },
   userMenu: {
-    instances: "サーバー",
     profile: "プロフィール",
     signOut: "サインアウト",
   },
@@ -154,14 +123,6 @@ export const ja: Translations = {
     updatePassword: "パスワードを変更",
     updatingPassword: "変更中…",
     passwordUpdated: "パスワードを変更しました。",
-    apiUrl: "API URL",
-    apiUrlDescription: "このアプリが使用するStayUp APIを選択します。",
-    apiUrlSave: "保存",
-    apiUrlSaving: "保存中…",
-    apiUrlSaved: "API URLを更新しました。",
-    apiUrlReset: "初期設定に戻す",
-    apiUrlResetting: "リセット中…",
-    apiUrlInvalid: "有効なURLを入力してください。",
   },
   menu: {
     file: {

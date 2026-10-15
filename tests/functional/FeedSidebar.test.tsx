@@ -8,15 +8,11 @@ import { readToken } from "@/lib/store"
 import { fr } from "@/lib/translations/fr"
 import { TEMPLATES } from "./_templates"
 import type { FeedFlux } from "@/hooks/useFeed"
-import type { Instance } from "@/lib/store"
 
 const jwt = (sub: string) =>
   `eyJhbGciOiJIUzI1NiJ9.${btoa(JSON.stringify({ sub })).replace(/=/g, "")}.sig`
 
 const TOKEN = jwt("user-1")
-const INSTANCES: Instance[] = [
-  { id: "i1", url: "https://api.test", name: "api.test", token: TOKEN },
-]
 
 vi.mock("@/lib/api", () => ({
   deleteUserRepository: vi.fn().mockResolvedValue(undefined),
@@ -30,7 +26,6 @@ vi.mock("@/lib/api", () => ({
 }))
 vi.mock("@/lib/store", () => ({
   readToken: vi.fn().mockResolvedValue("jwt"),
-  readApiUrl: vi.fn().mockResolvedValue("https://api.test"),
   readLang: vi.fn().mockResolvedValue(null),
   writeLang: vi.fn().mockResolvedValue(undefined),
 }))
@@ -39,19 +34,6 @@ function renderWithLang(ui: React.ReactElement) {
   return render(<LanguageProvider initialLang="fr">{ui}</LanguageProvider>)
 }
 
-// Typed access to the Node process without pulling in @types/node
-type RejectionHandler = (reason: unknown) => void
-const nodeProcess = (
-  globalThis as unknown as {
-    process: {
-      on: (event: "unhandledRejection", handler: RejectionHandler) => void
-      off: (event: "unhandledRejection", handler: RejectionHandler) => void
-    }
-  }
-).process
-
-const INST = { instanceId: "i1", instanceName: "api.test" }
-
 const fluxes: FeedFlux[] = [
   {
     id: "1",
@@ -59,7 +41,6 @@ const fluxes: FeedFlux[] = [
     provider: "changelog",
     url: "https://github.com/facebook/react",
     identifier: "facebook/react",
-    ...INST,
   },
   {
     id: "2",
@@ -67,7 +48,6 @@ const fluxes: FeedFlux[] = [
     provider: "youtube",
     url: "https://youtube.com/@fireship",
     identifier: "@fireship",
-    ...INST,
   },
   {
     id: "3",
@@ -75,7 +55,6 @@ const fluxes: FeedFlux[] = [
     provider: "youtube",
     url: "https://youtube.com/@theo",
     identifier: "@theo",
-    ...INST,
   },
 ]
 
@@ -91,7 +70,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -104,7 +83,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -118,7 +97,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -133,7 +112,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -156,7 +135,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -170,7 +149,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -187,7 +166,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -197,65 +176,7 @@ describe("FeedSidebar", () => {
       type: "flux",
       fluxId: "1",
       provider: "changelog",
-      instanceId: "i1",
     })
-  })
-
-  it("badges each flux with its instance name when several instances are connected", () => {
-    const multi: FeedFlux[] = [
-      { ...fluxes[0], instanceId: "i1", instanceName: "Alpha" },
-      { ...fluxes[1], instanceId: "i2", instanceName: "Beta" },
-    ]
-    const two: Instance[] = [
-      { id: "i1", url: "https://a.test", name: "Alpha", token: jwt("a") },
-      { id: "i2", url: "https://b.test", name: "Beta", token: jwt("b") },
-    ]
-    renderWithLang(
-      <FeedSidebar
-        fluxes={multi}
-        templates={TEMPLATES}
-        instances={two}
-        userId="user-1"
-        onRefresh={() => {}}
-      />,
-    )
-    expect(screen.getByText("Alpha")).toBeInTheDocument()
-    expect(screen.getByText("Beta")).toBeInTheDocument()
-  })
-
-  it("shows the current server name on the badge, not the one stamped at feed load", () => {
-    const multi: FeedFlux[] = [
-      { ...fluxes[0], instanceId: "i1", instanceName: "old-host.example" },
-      { ...fluxes[1], instanceId: "i2", instanceName: "Beta" },
-    ]
-    const renamed: Instance[] = [
-      { id: "i1", url: "https://a.test", name: "Main", token: jwt("a") },
-      { id: "i2", url: "https://b.test", name: "Beta", token: jwt("b") },
-    ]
-    renderWithLang(
-      <FeedSidebar
-        fluxes={multi}
-        templates={TEMPLATES}
-        instances={renamed}
-        userId="user-1"
-        onRefresh={() => {}}
-      />,
-    )
-    expect(screen.getByText("Main")).toBeInTheDocument()
-    expect(screen.queryByText("old-host.example")).not.toBeInTheDocument()
-  })
-
-  it("shows no instance badge with a single instance", () => {
-    renderWithLang(
-      <FeedSidebar
-        fluxes={fluxes}
-        templates={TEMPLATES}
-        instances={INSTANCES}
-        userId="user-1"
-        onRefresh={() => {}}
-      />,
-    )
-    expect(screen.queryByText("api.test")).not.toBeInTheDocument()
   })
 
   it("renders an empty sidebar without errors when there are no fluxes", () => {
@@ -263,7 +184,7 @@ describe("FeedSidebar", () => {
       <FeedSidebar
         fluxes={[]}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -278,11 +199,11 @@ describe("unread badges", () => {
     renderWithLang(
       <FeedSidebar
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         fluxes={fluxes}
         userId="user-1"
         onRefresh={() => {}}
-        unreadCountByRepoId={{ "i1:2": 3, "i1:3": 4 }}
+        unreadCountByRepoId={{ 2: 3, 3: 4 }}
       />,
     )
     expect(screen.getByText("3")).toBeInTheDocument()
@@ -295,7 +216,7 @@ describe("unread badges", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
         unreadCountByRepoId={{}}
@@ -311,7 +232,7 @@ describe("layout", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
         width={300}
@@ -322,13 +243,13 @@ describe("layout", () => {
 
   it("marks the active flux with an accent bar", () => {
     useNavigationStore.setState({
-      selection: { type: "flux", fluxId: "1", provider: "changelog", instanceId: "i1" },
+      selection: { type: "flux", fluxId: "1", provider: "changelog" },
     })
     const { container } = renderWithLang(
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -344,7 +265,7 @@ describe("refreshing feeds", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={onRefresh}
       />,
@@ -359,7 +280,7 @@ describe("refreshing feeds", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
         loading
@@ -378,7 +299,7 @@ describe("adding a feed", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -397,7 +318,7 @@ describe("deleting a feed", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -417,7 +338,7 @@ describe("deleting a feed", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={onRefresh}
       />,
@@ -426,9 +347,7 @@ describe("deleting a feed", () => {
     fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
     fireEvent.click(screen.getByText(fr.common.delete))
 
-    await waitFor(() =>
-      expect(deleteUserRepository).toHaveBeenCalledWith("user-1", "1", TOKEN, "https://api.test"),
-    )
+    await waitFor(() => expect(deleteUserRepository).toHaveBeenCalledWith("user-1", "1", TOKEN))
     expect(onRefresh).toHaveBeenCalled()
   })
 
@@ -437,7 +356,7 @@ describe("deleting a feed", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -455,7 +374,7 @@ describe("deleting a feed", () => {
       <FeedSidebar
         fluxes={fluxes}
         templates={TEMPLATES}
-        instances={INSTANCES}
+        token={TOKEN}
         userId="user-1"
         onRefresh={() => {}}
       />,
@@ -465,52 +384,5 @@ describe("deleting a feed", () => {
     fireEvent.click(screen.getByTestId("dialog-backdrop"))
 
     expect(screen.queryByText(fr.common.delete)).not.toBeInTheDocument()
-  })
-
-  it("does not call the API when the flux's instance is unknown", async () => {
-    // handleDeleteConfirm rethrows here without a catch, so the rejection never
-    // reaches the UI — swallow it so it does not fail the run.
-    const swallow = vi.fn()
-    nodeProcess.on("unhandledRejection", swallow)
-
-    const orphan: FeedFlux[] = [{ ...fluxes[0], instanceId: "gone" }]
-    renderWithLang(
-      <FeedSidebar
-        fluxes={orphan}
-        templates={TEMPLATES}
-        instances={INSTANCES}
-        userId="user-1"
-        onRefresh={() => {}}
-      />,
-    )
-    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
-    fireEvent.click(screen.getByText(fr.common.delete))
-
-    await waitFor(() => expect(screen.queryByText(fr.common.delete)).not.toBeInTheDocument())
-    expect(deleteUserRepository).not.toHaveBeenCalled()
-    nodeProcess.off("unhandledRejection", swallow)
-  })
-
-  it("routes the delete to the flux's own instance", async () => {
-    const two: Instance[] = [
-      INSTANCES[0],
-      { id: "i2", url: "https://b.test", name: "Beta", token: jwt("bob") },
-    ]
-    const onRefresh = vi.fn()
-    renderWithLang(
-      <FeedSidebar
-        fluxes={[{ ...fluxes[0], instanceId: "i2", instanceName: "Beta" }]}
-        templates={TEMPLATES}
-        instances={two}
-        userId="user-1"
-        onRefresh={onRefresh}
-      />,
-    )
-    fireEvent.click(screen.getAllByLabelText(fr.feed.deleteAriaLabel)[0])
-    fireEvent.click(screen.getByText(fr.common.delete))
-
-    await waitFor(() =>
-      expect(deleteUserRepository).toHaveBeenCalledWith("bob", "1", jwt("bob"), "https://b.test"),
-    )
   })
 })

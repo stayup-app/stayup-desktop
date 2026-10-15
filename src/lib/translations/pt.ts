@@ -1,36 +1,7 @@
 import type { Translations } from "./en"
 
 export const pt: Translations = {
-  instances: {
-    title: "Servidores",
-    subtitle: "Adicione instâncias de API e acompanhe os feeds de todas de uma vez.",
-    primary: "Principal",
-    add: "Adicionar um servidor",
-    urlLabel: "URL do servidor",
-    urlPlaceholder: "https://sua-api.example.com",
-    cancel: "Cancelar",
-    makePrimary: "Tornar principal",
-    reconnect: "Reconectar",
-    remove: "Remover",
-    rename: "Renomear",
-    save: "Salvar",
-    expired: "Sessão expirada",
-    removePrimaryWarning: "Remover o servidor principal desconecta você de tudo.",
-    nameLabel: "Nome",
-    unreachable: "Inacessível",
-    reconnectPrompt: "Estes servidores exigem que inicie sessão novamente:",
-    urlUnreachable: "Não foi possível contactar esse servidor.",
-    urlIncompatible: "Este URL não é uma API StayUp.",
-  },
-  serverStatus: {
-    title: "Estado dos servidores",
-    connected: "Ligado",
-    disconnected: "Desligado",
-  },
-
   auth: {
-    accountPending:
-      "Conta criada. Um administrador tem de a aprovar antes de poderes iniciar sessão.",
     subtitle: "Continua de onde paraste.",
     loginTitle: "Que bom te ver de novo.",
     registerTitle: "Cria a tua conta.",
@@ -52,9 +23,6 @@ export const pt: Translations = {
     continueWithGitHub: "Continuar com o GitHub",
     continueWithGoogle: "Continuar com o Google",
     or: "ou",
-    server: "Servidor",
-    pendingApprovalHint:
-      "Sua conta precisará da aprovação de um administrador antes de você poder entrar.",
   },
   feed: {
     myFeeds: "Os meus feeds",
@@ -135,7 +103,6 @@ export const pt: Translations = {
     error: "Ocorreu um erro.",
   },
   userMenu: {
-    instances: "Servidores",
     profile: "Perfil",
     signOut: "Terminar sessão",
   },
@@ -156,14 +123,6 @@ export const pt: Translations = {
     updatePassword: "Alterar palavra-passe",
     updatingPassword: "A modificar…",
     passwordUpdated: "Palavra-passe alterada com sucesso.",
-    apiUrl: "URL da API",
-    apiUrlDescription: "Escolha qual API StayUp esta aplicação usa.",
-    apiUrlSave: "Guardar",
-    apiUrlSaving: "Guardando…",
-    apiUrlSaved: "URL da API atualizada.",
-    apiUrlReset: "Repor predefinição",
-    apiUrlResetting: "A repor…",
-    apiUrlInvalid: "Introduza um URL válido.",
   },
   menu: {
     file: {
