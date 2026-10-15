@@ -17,6 +17,7 @@
     "process:allow-restart",
     "process:allow-exit",
     "dialog:default",
-    "fs:default"
+    "fs:default",
+    "notification:default"
   ]
 }

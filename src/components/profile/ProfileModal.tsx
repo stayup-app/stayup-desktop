@@ -1,5 +1,6 @@
 import { ChangeEmailForm } from "./ChangeEmailForm"
 import { ChangePasswordForm } from "./ChangePasswordForm"
+import { NotificationsToggle } from "./NotificationsToggle"
 import { useLanguage } from "@/context/LanguageContext"
 import type { AppSession } from "@/lib/session"
 
@@ -45,6 +46,16 @@ export function ProfileModal({ open, onClose, session, token }: ProfileModalProp
               <p className="text-xs text-muted-foreground">{t.profile.passwordDescription}</p>
             </div>
             <ChangePasswordForm userId={session.userId} token={token} />
+          </div>
+
+          <div className="h-px bg-border" />
+
+          <div className="space-y-2">
+            <div>
+              <h3 className="text-sm font-medium">{t.profile.notificationsTitle}</h3>
+              <p className="text-xs text-muted-foreground">{t.profile.notificationsDescription}</p>
+            </div>
+            <NotificationsToggle />
           </div>
         </div>
 

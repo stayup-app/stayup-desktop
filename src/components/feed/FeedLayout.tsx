@@ -1,9 +1,10 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from "react"
-import { CheckCheck } from "lucide-react"
+import { CheckCheck, Search, X } from "lucide-react"
 import { useNavigationStore } from "@/store/navigation"
 import { useReadItemsStore, getTaggedItemId } from "@/store/readItems"
 import { useFeed } from "@/hooks/useFeed"
 import { useMenu } from "@/hooks/useMenu"
+import { useNewItemNotifications } from "@/hooks/useNewItemNotifications"
 import { useLanguage } from "@/context/LanguageContext"
 import { useTheme } from "@/context/ThemeContext"
 import { FeedSidebar } from "./FeedSidebar"
@@ -15,7 +16,7 @@ import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
 import { openUrl } from "@/lib/utils"
 import { resolveOpenUrl, type ProviderMeta } from "@/lib/providerTemplate"
-import type { UserFeedResponse } from "@/lib/api"
+import { listSavedItems, searchItems, type UserFeedResponse } from "@/lib/api"
 import type { useAuth } from "@/hooks/useAuth"
 import type { TaggedItem } from "@/types"
 
@@ -24,7 +25,16 @@ interface FeedLayoutProps {
   onCheckUpdates: () => void
 }
 
-type FilterMode = "all" | "unread"
+type FilterMode = "all" | "unread" | "saved"
+
+/** A search is only sent from this many characters on (the API refuses less). */
+const MIN_QUERY = 2
+
+/** Rows coming back from the API carry their provider column: they are tagged
+ *  the same way the feed's rows are. */
+function tagRows(rows: Array<TaggedItem["item"] & { provider: string }>): TaggedItem[] {
+  return rows.map((row) => ({ provider: row.provider, item: row }))
+}
 
 function getItemDate(tagged: TaggedItem): string {
   const item = tagged.item
@@ -116,8 +126,10 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   )
 
   useEffect(() => {
-    void init()
-  }, [init])
+    void init({ userId: session.userId, token })
+  }, [init, session.userId, token])
+
+  useNewItemNotifications(connectors, t)
 
   const stableRefresh = useCallback(() => refresh(), [refresh])
 
@@ -151,6 +163,7 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
 
   const selectionId = useMemo(() => {
     if (selection.type === "category") return `category:${selection.provider}`
+    if (selection.type === "folder") return `folder:${selection.name}`
     if (selection.type === "flux") return `flux:${selection.fluxId}`
     return selection.type
   }, [selection])
@@ -175,6 +188,11 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
 
     if (selection.type === "all") {
       raw = flattenConnectors(connectors)
+    } else if (selection.type === "folder") {
+      const ids = new Set(
+        fluxes.filter((f) => f.folder === selection.name).map((f) => f.repository_id),
+      )
+      raw = flattenConnectors(connectors).filter((i) => ids.has(i.item.repository_id))
     } else if (selection.type === "category") {
       const { provider } = selection
       const items = connectors[provider] ?? []
@@ -193,16 +211,56 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
     )
   }, [connectors, selection, fluxes])
 
+  const [query, setQuery] = useState("")
+  // Rows that do not come from the feed (saved items, search results). `null`
+  // while the feed's own items are shown.
+  const [remote, setRemote] = useState<TaggedItem[] | null>(null)
+  const searching = query.trim().length >= MIN_QUERY
+  const wantsSaved = filterMode === "saved"
+
+  useEffect(() => {
+    if (!searching && !wantsSaved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRemote(null)
+      return
+    }
+    let cancelled = false
+    // Typing fires this on every key: wait for a pause.
+    const timer = setTimeout(
+      async () => {
+        try {
+          const rows = searching
+            ? await searchItems(session.userId, query.trim(), token)
+            : await listSavedItems(session.userId, token)
+          if (!cancelled) setRemote(tagRows(rows))
+        } catch {
+          if (!cancelled) setRemote([])
+        }
+      },
+      searching ? 300 : 0,
+    )
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [searching, wantsSaved, query, session.userId, token])
+
+  // What the list draws from: the feed's items, or the remote rows.
+  const pool = useMemo(
+    () => remote ?? (searching || wantsSaved ? [] : sortedItems),
+    [remote, searching, wantsSaved, sortedItems],
+  )
+
   // In "unread" mode: include unread items + the currently open item so it stays
   // visible while reading. It disappears only when another item is opened.
   const filteredItems = useMemo(() => {
-    if (filterMode === "unread") {
-      return sortedItems.filter(
+    if (filterMode === "unread" && !searching) {
+      return pool.filter(
         (item) => !readIds.has(getTaggedItemId(item)) || getTaggedItemId(item) === openItemId,
       )
     }
-    return sortedItems
-  }, [sortedItems, readIds, filterMode, openItemId])
+    return pool
+  }, [pool, readIds, filterMode, searching, openItemId])
 
   // Refs for keyboard handler — always current without re-registering the listener
   const filteredItemsRef = useRef(filteredItems)
@@ -232,9 +290,9 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
   // keeps it visible during the same render cycle (readIds updates after).
   useEffect(() => {
     if (openItemId === null) return
-    const item = sortedItems.find((i) => getTaggedItemId(i) === openItemId)
+    const item = pool.find((i) => getTaggedItemId(i) === openItemId)
     if (item) void markRead(item)
-  }, [openItemId, sortedItems, markRead])
+  }, [openItemId, pool, markRead])
 
   const unreadCount = useMemo(
     () => sortedItems.filter((item) => !readIds.has(getTaggedItemId(item))).length,
@@ -401,6 +459,20 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => {
+                setFilterState({ selectionId, mode: "saved" })
+              }}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded text-[15px] transition-colors",
+                filterMode === "saved"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              style={filterMode === "saved" ? { background: "var(--surface-3)" } : undefined}
+            >
+              {t.feed.filterSaved}
+            </button>
             <div className="flex-1" />
             {unreadCount > 0 && (
               <button
@@ -409,6 +481,30 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
                 className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
               >
                 <CheckCheck size={16} />
+              </button>
+            )}
+          </div>
+
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 shrink-0"
+            style={{ borderBottom: "1px solid var(--border-subtle)" }}
+          >
+            <Search size={14} className="text-muted-foreground shrink-0" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t.feed.searchPlaceholder}
+              aria-label={t.feed.searchPlaceholder}
+              className="flex-1 min-w-0 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                aria-label={t.feed.clearSearch}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X size={14} />
               </button>
             )}
           </div>

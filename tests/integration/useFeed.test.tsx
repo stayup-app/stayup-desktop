@@ -129,3 +129,34 @@ describe("useFeed", () => {
     expect(getUserFeed).toHaveBeenCalledTimes(2)
   })
 })
+
+describe("useFeed folders and background reloads", () => {
+  it("carries each flux's folder", async () => {
+    vi.mocked(getUserFeed).mockResolvedValue({
+      ...feedResponse,
+      repositories: [{ ...feedResponse.repositories[0], folder: "AI" }],
+    } as never)
+    const { result } = renderHook(() => useFeed(token, onAuthError))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.fluxes[0].folder).toBe("AI")
+  })
+
+  it("reloads quietly every few minutes and keeps the feed when a reload fails", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const { result } = renderHook(() => useFeed(token, onAuthError))
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      vi.mocked(getUserFeed).mockRejectedValue(new Error("down"))
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+      })
+
+      expect(getUserFeed).toHaveBeenCalledTimes(2)
+      expect(result.current.error).toBeNull()
+      expect(result.current.fluxes).toHaveLength(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

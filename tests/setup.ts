@@ -48,3 +48,10 @@ vi.mock("@tauri-apps/api", () => ({
 // jsdom does not implement scrollIntoView, which FeedLayout uses to keep the
 // selected row visible.
 Element.prototype.scrollIntoView = vi.fn()
+
+// No notification service in jsdom: the app talks to the native one through Tauri.
+vi.mock("@tauri-apps/plugin-notification", () => ({
+  isPermissionGranted: vi.fn().mockResolvedValue(true),
+  requestPermission: vi.fn().mockResolvedValue("granted"),
+  sendNotification: vi.fn(),
+}))

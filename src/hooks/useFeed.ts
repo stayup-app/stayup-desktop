@@ -11,6 +11,8 @@ export interface FeedFlux {
   provider: Provider
   url: string
   identifier: string
+  /** The user's own grouping of this flux, if any. */
+  folder?: string | null
 }
 
 interface FeedState {
@@ -25,6 +27,9 @@ interface UseFeed extends FeedState {
   refresh: () => void
 }
 
+/** How often the feed is silently reloaded, to notice new items. */
+const POLL_MS = 5 * 60 * 1000
+
 /** Loads the signed-in user's feed. `onAuthError` fires when the API rejects the
  *  token (revoked, expired): the caller signs the user out. */
 export function useFeed(token: string, onAuthError: () => void): UseFeed {
@@ -36,39 +41,49 @@ export function useFeed(token: string, onAuthError: () => void): UseFeed {
     error: null,
   })
 
-  const load = useCallback(async () => {
-    try {
-      const data = await getUserFeed(decodeToken(token).userId, token)
-      setState({
-        fluxes: data.repositories.map((repo) => ({
-          id: repo.id,
-          repository_id: repo.repository_id,
-          provider: repo.provider,
-          url: repo.url,
-          identifier: resolveFeedLabel(PROVIDERS[repo.provider]?.template ?? null, {
+  const load = useCallback(
+    async (quiet = false) => {
+      try {
+        const data = await getUserFeed(decodeToken(token).userId, token)
+        setState({
+          fluxes: data.repositories.map((repo) => ({
+            id: repo.id,
+            repository_id: repo.repository_id,
+            provider: repo.provider,
             url: repo.url,
-            config: (repo.config ?? {}) as Record<string, unknown>,
-          }),
-        })),
-        connectors: data.connectors ?? {},
-        templates: PROVIDERS,
-        loading: false,
-        error: null,
-      })
-    } catch (e) {
-      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-        onAuthError()
-        return
+            identifier: resolveFeedLabel(PROVIDERS[repo.provider]?.template ?? null, {
+              url: repo.url,
+              config: (repo.config ?? {}) as Record<string, unknown>,
+            }),
+            folder: repo.folder ?? null,
+          })),
+          connectors: data.connectors ?? {},
+          templates: PROVIDERS,
+          loading: false,
+          error: null,
+        })
+      } catch (e) {
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          onAuthError()
+          return
+        }
+        // A background reload failing must not replace a feed already on screen.
+        if (!quiet) setState((s) => ({ ...s, loading: false, error: "Erreur de chargement." }))
       }
-      setState((s) => ({ ...s, loading: false, error: "Erreur de chargement." }))
-    }
-  }, [token, onAuthError])
+    },
+    [token, onAuthError],
+  )
 
   useEffect(() => {
     // Async load: `load`'s only setState comes after the awaits, no synchronous
     // render cascade.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
+  }, [load])
+
+  useEffect(() => {
+    const timer = setInterval(() => void load(true), POLL_MS)
+    return () => clearInterval(timer)
   }, [load])
 
   const refresh = useCallback(() => {

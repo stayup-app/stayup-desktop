@@ -1,11 +1,20 @@
 import { useState } from "react"
-import { ChevronDown, ChevronRight, LayoutList, Plus, RefreshCw, Trash2 } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderInput,
+  LayoutList,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from "lucide-react"
 import { cn, providerDisplayName } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation"
 import { useLanguage } from "@/context/LanguageContext"
 import { AddFluxDialog } from "./AddFluxDialog"
 import { ImportExportButtons } from "./ImportExportButtons"
-import { deleteUserRepository } from "@/lib/api"
+import { deleteUserRepository, setRepositoryFolder } from "@/lib/api"
 import { providerIcon, providerAccent } from "./providerIcons"
 import type { ProviderMeta } from "@/lib/providerTemplate"
 import type { FeedFlux } from "@/hooks/useFeed"
@@ -50,11 +59,19 @@ export function FeedSidebar({
   const [addOpen, setAddOpen] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<FeedFlux | null>(null)
+  const [folderTarget, setFolderTarget] = useState<FeedFlux | null>(null)
+  const [folderName, setFolderName] = useState("")
 
-  const byProvider = fluxes.reduce<Partial<Record<Provider, FeedFlux[]>>>((acc, flux) => {
-    ;(acc[flux.provider] ??= []).push(flux)
-    return acc
-  }, {})
+  const folderNames = [
+    ...new Set(fluxes.map((f) => f.folder).filter((f): f is string => !!f)),
+  ].sort()
+
+  const byProvider = fluxes
+    .filter((flux) => !flux.folder)
+    .reduce<Partial<Record<Provider, FeedFlux[]>>>((acc, flux) => {
+      ;(acc[flux.provider] ??= []).push(flux)
+      return acc
+    }, {})
 
   const providers = Object.keys(byProvider) as Provider[]
   function isExpanded(provider: Provider) {
@@ -81,6 +98,83 @@ export function FeedSidebar({
     } finally {
       setDeleting(null)
     }
+  }
+
+  function openFolderDialog(flux: FeedFlux, e: React.MouseEvent) {
+    e.stopPropagation()
+    setFolderName(flux.folder ?? "")
+    setFolderTarget(flux)
+  }
+
+  async function handleFolderSave() {
+    if (!folderTarget) return
+    const flux = folderTarget
+    setFolderTarget(null)
+    await setRepositoryFolder(userId, flux.id, folderName.trim() || null, token)
+    onRefresh()
+  }
+
+  function renderFlux(flux: FeedFlux, meta: ReturnType<typeof getProviderMeta>) {
+    const isActive = selection.type === "flux" && selection.fluxId === flux.id
+    const fluxUnread = unreadCountByRepoId[flux.repository_id] ?? 0
+    return (
+      <div
+        key={flux.id}
+        className={cn(
+          "group flex items-center rounded-md transition-colors",
+          isActive ? "" : "hover:bg-accent",
+        )}
+        style={isActive ? { background: "var(--surface-3)" } : undefined}
+      >
+        {isActive && (
+          <div
+            className="w-0.5 h-4 rounded-full mr-1 shrink-0"
+            style={{ background: meta.color }}
+          />
+        )}
+        <button
+          onClick={() =>
+            setSelection({
+              type: "flux",
+              fluxId: flux.id,
+              provider: flux.provider,
+            })
+          }
+          className={cn(
+            "flex flex-1 items-center gap-1 px-2 py-1 text-[14px] font-mono text-left min-w-0",
+            isActive
+              ? "text-foreground font-medium"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <span className="truncate">{flux.identifier}</span>
+          {fluxUnread > 0 && (
+            <span
+              className="text-[12px] font-mono px-1 rounded shrink-0"
+              style={{ background: meta.dimColor, color: meta.color }}
+            >
+              {fluxUnread}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={(e) => openFolderDialog(flux, e)}
+          className="shrink-0 p-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+          aria-label={t.feed.moveToFolder}
+          title={t.feed.moveToFolder}
+        >
+          <FolderInput className="h-3 w-3" />
+        </button>
+        <button
+          onClick={(e) => handleDeleteClick(flux, e)}
+          disabled={deleting === flux.id}
+          className="shrink-0 p-1 mr-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity disabled:opacity-50"
+          aria-label={t.feed.deleteAriaLabel}
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -135,6 +229,44 @@ export function FeedSidebar({
 
         {/* Provider groups */}
         <nav className="space-y-0.5">
+          {folderNames.map((folder) => {
+            const folderFluxes = fluxes.filter((f) => f.folder === folder)
+            const unread = folderFluxes.reduce(
+              (sum, flux) => sum + (unreadCountByRepoId[flux.repository_id] ?? 0),
+              0,
+            )
+            const active = selection.type === "folder" && selection.name === folder
+            return (
+              <div key={`folder-${folder}`} className="mb-1">
+                <button
+                  onClick={() => setSelection({ type: "folder", name: folder })}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-2 py-1.5 text-[15px] rounded-md transition-colors",
+                    active
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  style={active ? { background: "var(--surface-3)" } : undefined}
+                >
+                  <Folder className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate flex-1 text-left">{folder}</span>
+                  {unread > 0 && (
+                    <span
+                      className="text-[12px] font-mono px-1.5 py-0.5 rounded-full shrink-0"
+                      style={{ background: "var(--teal-dim)", color: "var(--teal)" }}
+                    >
+                      {unread}
+                    </span>
+                  )}
+                </button>
+                <div className="ml-7 mt-0.5 space-y-0.5">
+                  {folderFluxes.map((flux) =>
+                    renderFlux(flux, getProviderMeta(flux.provider, templates)),
+                  )}
+                </div>
+              </div>
+            )
+          })}
           {providers.map((provider) => {
             const meta = getProviderMeta(provider, templates)
             const isCategoryActive =
@@ -184,60 +316,7 @@ export function FeedSidebar({
 
                 {open && (
                   <div className="ml-7 mt-0.5 space-y-0.5 mb-1">
-                    {providerFluxes.map((flux) => {
-                      const isActive = selection.type === "flux" && selection.fluxId === flux.id
-                      const fluxUnread = unreadCountByRepoId[flux.repository_id] ?? 0
-                      return (
-                        <div
-                          key={flux.id}
-                          className={cn(
-                            "group flex items-center rounded-md transition-colors",
-                            isActive ? "" : "hover:bg-accent",
-                          )}
-                          style={isActive ? { background: "var(--surface-3)" } : undefined}
-                        >
-                          {isActive && (
-                            <div
-                              className="w-0.5 h-4 rounded-full mr-1 shrink-0"
-                              style={{ background: meta.color }}
-                            />
-                          )}
-                          <button
-                            onClick={() =>
-                              setSelection({
-                                type: "flux",
-                                fluxId: flux.id,
-                                provider: flux.provider,
-                              })
-                            }
-                            className={cn(
-                              "flex flex-1 items-center gap-1 px-2 py-1 text-[14px] font-mono text-left min-w-0",
-                              isActive
-                                ? "text-foreground font-medium"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                          >
-                            <span className="truncate">{flux.identifier}</span>
-                            {fluxUnread > 0 && (
-                              <span
-                                className="text-[12px] font-mono px-1 rounded shrink-0"
-                                style={{ background: meta.dimColor, color: meta.color }}
-                              >
-                                {fluxUnread}
-                              </span>
-                            )}
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(flux, e)}
-                            disabled={deleting === flux.id}
-                            className="shrink-0 p-1 mr-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity disabled:opacity-50"
-                            aria-label={t.feed.deleteAriaLabel}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )
-                    })}
+                    {providerFluxes.map((flux) => renderFlux(flux, meta))}
                   </div>
                 )}
               </div>
@@ -252,6 +331,50 @@ export function FeedSidebar({
         token={token}
         onSuccess={onRefresh}
       />
+
+      {folderTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            data-testid="dialog-backdrop"
+            className="absolute inset-0"
+            style={{ background: "rgba(8,10,16,0.72)", backdropFilter: "blur(10px)" }}
+            onClick={() => setFolderTarget(null)}
+          />
+          <form
+            className="aurora-pop relative z-10 w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-modal"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleFolderSave()
+            }}
+          >
+            <label className="block text-sm mb-3 text-fg-soft" htmlFor="folder-name">
+              {t.feed.folderPrompt}
+            </label>
+            <input
+              id="folder-name"
+              autoFocus
+              value={folderName}
+              onChange={(e) => setFolderName(e.target.value)}
+              className="w-full rounded-md border border-border bg-transparent px-3 py-1.5 text-sm mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setFolderTarget(null)}
+                className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-surface-hi transition-colors"
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                type="submit"
+                className="rounded-md border border-border px-4 py-1.5 text-sm font-semibold hover:bg-surface-hi transition-colors"
+              >
+                {t.feed.folderSave}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {confirmTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">

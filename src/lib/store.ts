@@ -72,3 +72,30 @@ export async function writeReadItems(ids: string[]): Promise<void> {
   const store = await getStore()
   await store.set(READ_ITEMS_KEY, ids)
 }
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+const NOTIFICATIONS_KEY = "notifications_enabled"
+const LAST_NOTIFIED_KEY = "last_notified_item_id"
+
+/** Desktop notifications are on unless the user turned them off. */
+export async function readNotificationsEnabled(): Promise<boolean> {
+  const store = await getStore()
+  return (await store.get<boolean>(NOTIFICATIONS_KEY)) ?? true
+}
+
+export async function writeNotificationsEnabled(enabled: boolean): Promise<void> {
+  const store = await getStore()
+  await store.set(NOTIFICATIONS_KEY, enabled)
+}
+
+/** The highest item id the user was already told about, `null` on a first run. */
+export async function readLastNotifiedId(): Promise<number | null> {
+  const store = await getStore()
+  return (await store.get<number>(LAST_NOTIFIED_KEY)) ?? null
+}
+
+export async function writeLastNotifiedId(id: number): Promise<void> {
+  const store = await getStore()
+  await store.set(LAST_NOTIFIED_KEY, id)
+}

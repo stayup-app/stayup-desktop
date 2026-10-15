@@ -12,8 +12,19 @@ vi.mocked(load).mockResolvedValue({
 } as unknown as Awaited<ReturnType<typeof load>>)
 
 // Imported after the mock is wired so the module-level store cache uses it
-const { readToken, writeToken, clearToken, readLang, writeLang, readReadItems, writeReadItems } =
-  await import("@/lib/store")
+const {
+  readToken,
+  writeToken,
+  clearToken,
+  readLang,
+  writeLang,
+  readReadItems,
+  writeReadItems,
+  readNotificationsEnabled,
+  writeNotificationsEnabled,
+  readLastNotifiedId,
+  writeLastNotifiedId,
+} = await import("@/lib/store")
 
 /** Route store reads by key so a test can stage a full settings blob. */
 function stageStore(values: Record<string, unknown>) {
@@ -111,5 +122,26 @@ describe("store instance caching", () => {
     await readToken()
     await readLang()
     expect(vi.mocked(load).mock.calls.length).toBe(callsBefore)
+  })
+})
+
+describe("notification settings", () => {
+  it("are on unless turned off", async () => {
+    await expect(readNotificationsEnabled()).resolves.toBe(true)
+    stageStore({ notifications_enabled: false })
+    await expect(readNotificationsEnabled()).resolves.toBe(false)
+  })
+
+  it("persists the switch", async () => {
+    await writeNotificationsEnabled(false)
+    expect(set).toHaveBeenCalledWith("notifications_enabled", false)
+  })
+
+  it("remembers the last item the user was told about", async () => {
+    await expect(readLastNotifiedId()).resolves.toBeNull()
+    stageStore({ last_notified_item_id: 42 })
+    await expect(readLastNotifiedId()).resolves.toBe(42)
+    await writeLastNotifiedId(43)
+    expect(set).toHaveBeenCalledWith("last_notified_item_id", 43)
   })
 })

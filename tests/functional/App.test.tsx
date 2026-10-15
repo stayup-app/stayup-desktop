@@ -31,6 +31,9 @@ vi.mock("@/lib/store", () => ({
   writeLang: vi.fn().mockResolvedValue(undefined),
   readReadItems: vi.fn().mockResolvedValue([]),
   writeReadItems: vi.fn().mockResolvedValue(undefined),
+  readNotificationsEnabled: vi.fn().mockResolvedValue(true),
+  readLastNotifiedId: vi.fn().mockResolvedValue(null),
+  writeLastNotifiedId: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock("@/lib/api", () => ({
   deleteUserRepository: vi.fn(),
@@ -39,6 +42,7 @@ vi.mock("@/lib/api", () => ({
   getScrapRepos: vi.fn().mockResolvedValue([]),
   subscribeScrap: vi.fn(),
   fetchAuthConfig: vi.fn().mockResolvedValue(null),
+  getItemState: vi.fn().mockResolvedValue({ read: [], saved: [] }),
 }))
 
 const session = {

@@ -11,6 +11,12 @@ import {
   getProviderFluxes,
   subscribeFlux,
   unsubscribeFlux,
+  getItemState,
+  markItemsRead,
+  setItemSaved,
+  listSavedItems,
+  searchItems,
+  setRepositoryFolder,
 } from "@/lib/api"
 
 const API_URL = "https://api.example.com"
@@ -316,5 +322,57 @@ describe("fetchAuthConfig", () => {
   it("returns null when the request throws", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("unreachable")))
     await expect(fetchAuthConfig()).resolves.toBeNull()
+  })
+})
+
+describe("item state endpoints", () => {
+  function answer(body: unknown = {}) {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => body })
+    vi.stubGlobal("fetch", fetchMock)
+    return fetchMock
+  }
+
+  it("getItemState reads the keys", async () => {
+    const fetchMock = answer({ read: ["rss:1"], saved: [] })
+    expect(await getItemState("u1", TOKEN)).toEqual({ read: ["rss:1"], saved: [] })
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/ui/users/u1/state`)
+  })
+
+  it("markItemsRead POSTs the ids", async () => {
+    const fetchMock = answer()
+    await markItemsRead("u1", [1, 2], TOKEN)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_URL}/ui/users/u1/items/read`)
+    expect(init.method).toBe("POST")
+    expect(JSON.parse(init.body)).toEqual({ ids: [1, 2] })
+  })
+
+  it("setItemSaved PUTs the flag", async () => {
+    const fetchMock = answer()
+    await setItemSaved("u1", 5, true, TOKEN)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_URL}/ui/users/u1/items/5/saved`)
+    expect(init.method).toBe("PUT")
+    expect(JSON.parse(init.body)).toEqual({ saved: true })
+  })
+
+  it("listSavedItems unwraps the items", async () => {
+    answer({ items: [{ id: 5, provider: "rss" }] })
+    expect(await listSavedItems("u1", TOKEN)).toEqual([{ id: 5, provider: "rss" }])
+  })
+
+  it("searchItems encodes the query", async () => {
+    const fetchMock = answer({ items: [] })
+    await searchItems("u1", "a&b c", TOKEN)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/ui/users/u1/search?q=a%26b%20c`)
+  })
+
+  it("setRepositoryFolder PATCHes the folder, null to clear", async () => {
+    const fetchMock = answer()
+    await setRepositoryFolder("u1", "l1", "AI", TOKEN)
+    await setRepositoryFolder("u1", "l1", null, TOKEN)
+    expect(fetchMock.mock.calls[0][1].method).toBe("PATCH")
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ folder: "AI" })
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ folder: null })
   })
 })

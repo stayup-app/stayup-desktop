@@ -5,6 +5,7 @@ export type NavSelection =
   | { type: "all" }
   | { type: "category"; provider: Provider }
   | { type: "flux"; fluxId: string; provider: Provider }
+  | { type: "folder"; name: string }
 
 interface NavigationState {
   selection: NavSelection
