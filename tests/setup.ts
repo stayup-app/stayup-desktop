@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom"
+import "@testing-library/jest-dom/vitest"
 import { vi } from "vitest"
 
 // jsdom v29 does not expose localStorage.clear — provide a full implementation

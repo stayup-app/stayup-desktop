@@ -76,7 +76,7 @@ export function ChangePasswordForm({ userId, token }: ChangePasswordFormProps) {
           id="current-password"
           type="password"
           autoComplete="current-password"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("currentPassword")}
         />
         {errors.currentPassword && (
@@ -92,7 +92,7 @@ export function ChangePasswordForm({ userId, token }: ChangePasswordFormProps) {
           id="new-password"
           type="password"
           autoComplete="new-password"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("newPassword")}
         />
         {errors.newPassword && (
@@ -108,7 +108,7 @@ export function ChangePasswordForm({ userId, token }: ChangePasswordFormProps) {
           id="confirm-password"
           type="password"
           autoComplete="new-password"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("confirmPassword")}
         />
         {errors.confirmPassword && (

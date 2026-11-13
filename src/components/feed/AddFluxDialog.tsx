@@ -193,7 +193,7 @@ export function AddFluxDialog({ open, onClose, token, onSuccess }: AddFluxDialog
     resolveFeedLabel(tpls[provider], { url: f.url, config: f.config })
 
   const inputClass =
-    "w-full rounded-[10px] border border-border bg-[var(--bg)] text-foreground px-3.5 py-2.5 text-sm focus:outline-none focus:border-peach/70 focus:shadow-peach-ring transition-colors"
+    "w-full rounded-[10px] border border-border bg-(--bg) text-foreground px-3.5 py-2.5 text-sm focus:outline-hidden focus:border-peach/70 focus:shadow-peach-ring transition-colors"
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

@@ -20,6 +20,6 @@ export default defineConfig(async () => ({
   build: {
     // Tauri 2 embeds a modern WebView — safari13 is too restrictive for plugin-store's async destructuring
     target: ["chrome105", "safari15", "firefox102"],
-    minify: "esbuild",
+    minify: "oxc",
   },
 }))

@@ -17,7 +17,7 @@ export function TemplatedEntry({ template, item, source, color }: TemplatedEntry
   const date = view.timestamp ? formatDate(view.timestamp) : ""
   const srcName = typeof item._data_source_name === "string" ? item._data_source_name : ""
   const srcBadge = srcName ? (
-    <span className="shrink-0 rounded bg-[var(--surface-2)] px-1.5 py-0.5 text-[11px] text-dim">
+    <span className="shrink-0 rounded bg-(--surface-2) px-1.5 py-0.5 text-[11px] text-dim">
       {srcName}
     </span>
   ) : null

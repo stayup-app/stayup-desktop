@@ -218,8 +218,7 @@ export async function getConnectorProviders(token: string): Promise<ConnectorPro
 /** `{ repository }` (flux created) or `{ status: 'pending' }` (`manual`
  *  provider: the request goes to the admin approval queue). */
 export type AddRepositoryResult =
-  | { repository: UserRepositoryItem; status?: undefined }
-  | { status: "pending" }
+  { repository: UserRepositoryItem; status?: undefined } | { status: "pending" }
 
 export async function addUserRepository(
   userId: string,

@@ -45,7 +45,7 @@ export function RegisterForm({ onSubmit, loading, error }: RegisterFormProps) {
           type="text"
           autoComplete="name"
           placeholder={t.auth.namePlaceholder}
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("name")}
         />
         {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
@@ -59,7 +59,7 @@ export function RegisterForm({ onSubmit, loading, error }: RegisterFormProps) {
           id="register-email"
           type="email"
           autoComplete="email"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("email")}
         />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
@@ -73,7 +73,7 @@ export function RegisterForm({ onSubmit, loading, error }: RegisterFormProps) {
           id="register-password"
           type="password"
           autoComplete="new-password"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("password")}
         />
         {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}

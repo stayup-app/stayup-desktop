@@ -57,7 +57,7 @@ export function ChangeEmailForm({ userId, currentEmail, token }: ChangeEmailForm
           id="profile-email"
           type="email"
           autoComplete="email"
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           {...register("email")}
         />
         {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}

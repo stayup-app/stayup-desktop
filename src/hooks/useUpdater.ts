@@ -3,12 +3,7 @@ import { check } from "@tauri-apps/plugin-updater"
 import { relaunch } from "@tauri-apps/plugin-process"
 
 export type UpdateStatus =
-  | "idle"
-  | "checking"
-  | "up-to-date"
-  | "downloading"
-  | "restarting"
-  | "error"
+  "idle" | "checking" | "up-to-date" | "downloading" | "restarting" | "error"
 
 export function useUpdater() {
   const [status, setStatus] = useState<UpdateStatus>("idle")

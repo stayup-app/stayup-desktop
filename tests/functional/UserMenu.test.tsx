@@ -69,7 +69,7 @@ describe("UserMenu", () => {
 
     fireEvent.mouseLeave(signOut)
     expect(signOut.style.color).toBe("var(--fg-soft)")
-    expect(signOut.style.background).toBe("transparent")
+    expect(signOut.style.backgroundColor).toBe("transparent")
   })
 
   it("stays open on a mousedown inside the menu", () => {

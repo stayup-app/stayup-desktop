@@ -496,7 +496,7 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t.feed.searchPlaceholder}
               aria-label={t.feed.searchPlaceholder}
-              className="flex-1 min-w-0 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+              className="flex-1 min-w-0 bg-transparent text-[15px] outline-hidden placeholder:text-muted-foreground"
             />
             {query && (
               <button
