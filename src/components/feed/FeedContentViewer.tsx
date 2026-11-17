@@ -157,7 +157,7 @@ function GenericContent({
 }) {
   const content = typeof item.content === "string" ? item.content : ""
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6">
       <div className="flex items-center gap-2 mb-5">
         <span
           className="text-[13px] font-mono font-semibold px-1.5 py-0.5 rounded"

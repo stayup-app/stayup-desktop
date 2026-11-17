@@ -159,7 +159,7 @@ export function TemplatedDetail({
     const rows = resolveCollection(template, ctx)
     const cols = d.columns ?? []
     return (
-      <div className="p-6 max-w-4xl">
+      <div className="p-6">
         {header}
         <div
           className="overflow-x-auto rounded border"
@@ -241,7 +241,7 @@ export function TemplatedDetail({
   if (mode === "link-list") {
     const rows = resolveCollection(template, ctx)
     return (
-      <div className="p-6 max-w-2xl">
+      <div className="p-6">
         {header}
         <ul className="space-y-2">
           {rows.map((el, i) => {
@@ -272,11 +272,11 @@ export function TemplatedDetail({
     const embed = usableEmbedUrl(resolveText(d.embedUrl ?? fields.embedUrl, ctx))
     const image = resolveText(d.image ?? fields.image, ctx)
     return (
-      <div className="p-6 max-w-2xl">
+      <div className="p-6">
         {header}
         <div
           className="mb-5 rounded overflow-hidden"
-          style={{ aspectRatio: "16/9", maxWidth: 640 }}
+          style={{ aspectRatio: "16/9", maxWidth: 960 }}
         >
           {embed ? (
             <iframe
@@ -284,6 +284,7 @@ export function TemplatedDetail({
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               title={title}
             />
           ) : image ? (
@@ -302,7 +303,7 @@ export function TemplatedDetail({
     const cover = resolveText(d.image ?? fields.image, ctx)
     const notes = resolveText(d.body ?? fields.summary, ctx)
     return (
-      <div className="p-6 max-w-2xl">
+      <div className="p-6">
         {header}
         {cover && (
           <div className="mb-4 rounded overflow-hidden" style={{ aspectRatio: "1", maxWidth: 240 }}>
@@ -332,7 +333,7 @@ export function TemplatedDetail({
   if (mode === "gallery") {
     const shots = resolveCollection(template, ctx)
     return (
-      <div className="p-6 max-w-3xl">
+      <div className="p-6">
         {header}
         <div
           className="grid gap-3"
@@ -385,7 +386,7 @@ export function TemplatedDetail({
 
   if (mode === "html") {
     return (
-      <div className="p-6 max-w-2xl">
+      <div className="p-6">
         {header}
         {body && (
           <>
@@ -402,7 +403,7 @@ export function TemplatedDetail({
 
   // mode === "text"
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6">
       {header}
       {body && (
         <div
