@@ -1,3 +1,4 @@
+import { API_URL } from "@/lib/config"
 /**
  * Display template engine.
  *
@@ -378,6 +379,13 @@ export function usableEmbedUrl(url: string | null | undefined): string | null {
   if (!/^https?:\/\//.test(url)) return null
   if (!/\/embed\/[\w-]{4,}/.test(url) && !/[?&]v=[\w-]{4,}/.test(url)) return null
   return url
+}
+
+/** YouTube rejects embeds from the tauri:// origin (error 153): route them
+ *  through the API-hosted player page, which has a real https origin. */
+export function hostedEmbedUrl(url: string | null): string | null {
+  const m = url?.match(/^https:\/\/www\.youtube(?:-nocookie)?\.com\/embed\/([\w-]{4,20})/)
+  return m ? `${API_URL}/embed/youtube/${m[1]}` : url
 }
 
 /** A row's external "open" URL, for keyboard shortcuts — same rules as the

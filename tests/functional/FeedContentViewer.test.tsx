@@ -270,7 +270,7 @@ describe("youtube content (template: media)", () => {
     expect(screen.getByText("@fireship")).toBeInTheDocument()
     expect(container.querySelector("iframe")).toHaveAttribute(
       "src",
-      "https://www.youtube-nocookie.com/embed/abc123",
+      "https://stayup-api.r-sik.workers.dev/embed/youtube/abc123",
     )
     fireEvent.click(screen.getByText("Watch on YouTube"))
     expect(open).toHaveBeenCalledWith("https://youtu.be/abc123")

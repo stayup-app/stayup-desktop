@@ -22,6 +22,7 @@ import {
   resolveOpenUrl,
   resolveText,
   stripScheme,
+  hostedEmbedUrl,
   usableEmbedUrl,
   type ProviderTemplate,
   type ResolveCtx,
@@ -322,6 +323,18 @@ describe("resolveCollection / elementCtx", () => {
     expect(el.row).toBe(ctx.row)
     expect(el.vars).toBe(ctx.vars)
     expect(resolveAccessor("x", el)).toBe(9)
+  })
+})
+
+describe("hostedEmbedUrl", () => {
+  it("routes YouTube embeds through the API-hosted player", () => {
+    expect(hostedEmbedUrl("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ")).toMatch(
+      /\/embed\/youtube\/dQw4w9WgXcQ$/,
+    )
+  })
+  it("leaves other urls and null untouched", () => {
+    expect(hostedEmbedUrl(null)).toBeNull()
+    expect(hostedEmbedUrl("https://player.vimeo.com/embed/12345")).toBe("https://player.vimeo.com/embed/12345")
   })
 })
 

@@ -144,7 +144,7 @@ describe("media mode", () => {
     })
     expect(container.querySelector("iframe")).toHaveAttribute(
       "src",
-      "https://www.youtube-nocookie.com/embed/abc123",
+      "https://stayup-api.r-sik.workers.dev/embed/youtube/abc123",
     )
   })
 

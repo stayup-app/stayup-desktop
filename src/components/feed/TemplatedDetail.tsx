@@ -6,6 +6,7 @@ import {
   resolveAccessor,
   resolveCollection,
   resolveText,
+  hostedEmbedUrl,
   usableEmbedUrl,
 } from "@/lib/providerTemplate"
 import { formatDate, openUrl } from "@/lib/utils"
@@ -269,7 +270,7 @@ export function TemplatedDetail({
   }
 
   if (mode === "media") {
-    const embed = usableEmbedUrl(resolveText(d.embedUrl ?? fields.embedUrl, ctx))
+    const embed = hostedEmbedUrl(usableEmbedUrl(resolveText(d.embedUrl ?? fields.embedUrl, ctx)))
     const image = resolveText(d.image ?? fields.image, ctx)
     return (
       <div className="p-6">
