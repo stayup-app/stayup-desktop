@@ -334,7 +334,9 @@ describe("hostedEmbedUrl", () => {
   })
   it("leaves other urls and null untouched", () => {
     expect(hostedEmbedUrl(null)).toBeNull()
-    expect(hostedEmbedUrl("https://player.vimeo.com/embed/12345")).toBe("https://player.vimeo.com/embed/12345")
+    expect(hostedEmbedUrl("https://player.vimeo.com/embed/12345")).toBe(
+      "https://player.vimeo.com/embed/12345",
+    )
   })
 })
 
