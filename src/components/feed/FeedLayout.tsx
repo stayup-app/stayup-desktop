@@ -384,7 +384,6 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 h-[52px] shrink-0"
-        data-tauri-drag-region
         style={{ borderBottom: "1px solid var(--border-soft)" }}
       >
         <div className="flex items-center gap-2">

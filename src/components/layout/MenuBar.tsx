@@ -132,7 +132,10 @@ function LinuxMenuBar({ lang, t, setLang, onCheckUpdates, onRefresh }: MenuBarPr
   useEffect(() => {
     if (openId === null) return
     function onMouseDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpenId(null)
+      // The bar spans the full width, so its empty area counts as "outside" too.
+      const target = e.target as Node
+      if (!rootRef.current || target === rootRef.current || !rootRef.current.contains(target))
+        setOpenId(null)
     }
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -153,10 +156,11 @@ function LinuxMenuBar({ lang, t, setLang, onCheckUpdates, onRefresh }: MenuBarPr
         items[(at + step + items.length) % items.length].focus()
       }
     }
-    document.addEventListener("mousedown", onMouseDown)
+    // Capture phase: the title-bar drag region below may swallow the event.
+    document.addEventListener("mousedown", onMouseDown, true)
     document.addEventListener("keydown", onKeyDown)
     return () => {
-      document.removeEventListener("mousedown", onMouseDown)
+      document.removeEventListener("mousedown", onMouseDown, true)
       document.removeEventListener("keydown", onKeyDown)
     }
   })
