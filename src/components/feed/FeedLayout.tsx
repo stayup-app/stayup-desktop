@@ -11,6 +11,7 @@ import { FeedSidebar } from "./FeedSidebar"
 import { UnifiedFeedList } from "./UnifiedFeedList"
 import { FeedContentViewer } from "./FeedContentViewer"
 import { UserMenu } from "@/components/layout/UserMenu"
+import { MenuBar } from "@/components/layout/MenuBar"
 import { ProfileModal } from "@/components/profile/ProfileModal"
 import { AuroraWordmark } from "@/components/ui/AuroraMark"
 import { cn } from "@/lib/utils"
@@ -373,6 +374,13 @@ export function FeedLayout({ auth, onCheckUpdates }: FeedLayoutProps) {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden" style={{ background: "var(--bg)" }}>
+      <MenuBar
+        lang={lang}
+        t={t}
+        setLang={setLang}
+        onCheckUpdates={onCheckUpdates}
+        onRefresh={stableRefresh}
+      />
       {/* Header */}
       <header
         className="flex items-center justify-between px-4 h-[52px] shrink-0"

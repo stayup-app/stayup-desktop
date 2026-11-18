@@ -164,4 +164,16 @@ describe("useMenu", () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(setAsAppMenu).not.toHaveBeenCalled()
   })
+
+  it("leaves the native menu uninstalled on Linux (the app draws its own MenuBar)", async () => {
+    vi.spyOn(window.navigator, "userAgent", "get").mockReturnValue(
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    )
+    renderHook(() => useMenu(baseProps()))
+
+    await new Promise((r) => setTimeout(r, 0))
+    expect(Menu.new).not.toHaveBeenCalled()
+    expect(setAsAppMenu).not.toHaveBeenCalled()
+    vi.restoreAllMocks()
+  })
 })

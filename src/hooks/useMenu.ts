@@ -5,6 +5,7 @@ import { getVersion } from "@tauri-apps/api/app"
 import { exit } from "@tauri-apps/plugin-process"
 import type { Language, Translations } from "@/lib/translations"
 import type { Theme } from "@/context/ThemeContext"
+import { usesCustomMenuBar } from "@/lib/platform"
 
 interface UseMenuOptions {
   lang: Language
@@ -31,6 +32,9 @@ export function useMenu({
   }, [onCheckUpdates, onRefresh])
 
   useEffect(() => {
+    // On Linux the menu is rendered by <MenuBar /> (the GTK popup can't be styled).
+    if (usesCustomMenuBar()) return
+
     let cancelled = false
 
     async function buildMenu() {
