@@ -145,7 +145,7 @@ function LinuxMenuBar({ lang, t, setLang, onCheckUpdates, onRefresh }: MenuBarPr
       else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault()
         const items = Array.from(
-          rootRef.current?.querySelectorAll<HTMLElement>('[role^="menuitem"]') ?? [],
+          rootRef.current?.querySelectorAll<HTMLElement>('[role="menu"] [role^="menuitem"]') ?? [],
         )
         if (items.length === 0) return
         const at = items.indexOf(document.activeElement as HTMLElement)

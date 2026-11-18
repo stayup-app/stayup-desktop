@@ -107,6 +107,24 @@ describe("MenuBar", () => {
     expect(screen.getByRole("menu", { name: fr.menu.help.title })).toBeTruthy()
   })
 
+  it("moves focus through the items with the up/down arrow keys, wrapping around", async () => {
+    setUserAgent(LINUX_UA)
+    render(<MenuBar {...props()} />)
+    await userEvent.click(screen.getByRole("menuitem", { name: fr.menu.file.title }))
+
+    const update = screen.getByRole("menuitem", { name: fr.menu.file.checkForUpdates })
+    const quit = screen.getByRole("menuitem", { name: new RegExp(fr.menu.file.quit) })
+
+    // First press lands on the first entry of the open menu, not on a bar tab.
+    fireEvent.keyDown(document, { key: "ArrowDown" })
+    expect(document.activeElement).toBe(update)
+    // Up from the first entry wraps to the last one, and down wraps back.
+    fireEvent.keyDown(document, { key: "ArrowUp" })
+    expect(document.activeElement).toBe(quit)
+    fireEvent.keyDown(document, { key: "ArrowDown" })
+    expect(document.activeElement).toBe(update)
+  })
+
   it("marks the current language and switches language on click", async () => {
     setUserAgent(LINUX_UA)
     const p = props()
